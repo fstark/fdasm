@@ -11,7 +11,10 @@ public:
 	{
 		kCODE,
 		kSTRZ,
+		kSTR8S,
+		kSTRF2,
 		kDATA,
+		kDATAW,
 		kCOUNT
 	} SectionType;
 
@@ -28,6 +31,8 @@ public:
 	Emitter(Disassembler& disassembler) : _disassembler(disassembler)
 	{
 	}
+
+	virtual ~Emitter() = default;
 
 	virtual void emit() = 0;
 };
@@ -52,10 +57,40 @@ public:
 	void emit() override;
 };
 
+class DataWEmitter : public Emitter
+{
+public:
+	DataWEmitter(Disassembler& disassembler) : Emitter(disassembler)
+	{
+	}
+
+	void emit() override;
+};
+
 class StrzEmitter : public Emitter
 {
 public:
 	StrzEmitter(Disassembler& disassembler) : Emitter(disassembler)
+	{
+	}
+
+	void emit() override;
+};
+
+class StrF2Emitter : public Emitter
+{
+public:
+	StrF2Emitter(Disassembler& disassembler) : Emitter(disassembler)
+	{
+	}
+
+	void emit() override;
+};
+
+class Str8sEmitter : public Emitter
+{
+public:
+	Str8sEmitter(Disassembler& disassembler) : Emitter(disassembler)
 	{
 	}
 
@@ -79,9 +114,13 @@ public:
 
     uint8_t read_byte();
 
+	void unread() { --_current; }
+
     uint16_t read_word();
 
 	adrs_t adrs() const { return _current; }
+
+	adrs_t get_offset() const { return _dest_adrs; }
 
     void disassemble_strz();
 

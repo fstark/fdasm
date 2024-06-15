@@ -1,8 +1,13 @@
+CFLAGS=-std=c++14 -Wall -Wextra -Werror -pedantic -O3
+
 fdasm: fdasm.o disassembler.o
-	g++ fdasm.o disassembler.o -o fdasm
+	g++ ${CFLAGS} fdasm.o disassembler.o -o fdasm
 
 fdasm.o: fdasm.cpp disassembler.h
-	g++ -c fdasm.cpp -o fdasm.o
+	g++ -c ${CFLAGS} fdasm.cpp -o fdasm.o
 
 disassembler.o: disassembler.cpp disassembler.h
-	g++ -c disassembler.cpp -o disassembler.o
+	g++ -c ${CFLAGS} disassembler.cpp -o disassembler.o
+
+clean:
+	rm -f fdasm fdasm.o disassembler.o
