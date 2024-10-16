@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <cassert>
 
+#include "label.h"
+
 #define MAX_CODE_LEN 256000
 
 std::vector<Span> CodeEmitter::emit( size_t max_len )
@@ -416,16 +418,6 @@ Disassembler::Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::
         std::make_unique<DataWEmitter>(*this)
     } {}
 
-std::vector<Line> Disassembler::disassemble()
-{
-	std::vector<Line> lines;
-	current_ = 0;
-    while (current_ < bytes_.size())
-		lines.push_back(disassemble_instruction());
-
-	return lines;
-}
-
 uint8_t Disassembler::read_byte()
 {
 	assert( current_ < bytes_.size() );
@@ -453,30 +445,49 @@ uint16_t Disassembler::read_word()
 // 	return buffer;
 // }
 
-Line Disassembler::disassemble_instruction()
+Line Disassembler::disassemble_one_instruction( RomContents::RegionType type, adrs_t end_adrs )
 {
-    auto type = rom_content_->get_region_type( current_ );
+	auto adrs = current_;
+ 	//	Lets look at the size (limited to 8 bytes)
+	int size = end_adrs-adrs+1;
+	if (size>8)
+		size = 8;
 
-	//	Lets look at the szie (lomited to 8 bytes)
-	int max_size = 0;
-	for (int a=current_;a<bytes_.size();a++)
-	{
-		// fprintf( stderr, "%d ", rom_content_->get_region_type(a) );
-		if (rom_content_->get_region_type( a )!=type)
-			break;
-		max_size++;
-		if (max_size==16)
-			break;
-	}
-	// fprintf( stderr, "%04X %d %d\n", current_, type, max_size );
-	auto start = current_;
-	auto spans = _emitters[type]->emit( max_size );
+	auto spans = _emitters[type]->emit( size );
 	adrs_t end = current_-1;
 
-	Line l{ bytes_, start, end };
+	Line l{ bytes_, adrs, end };
 	l.set_spans( spans );
 
 	return l;
+}
+
+void Disassembler::disassemble_type( RomContents::RegionType type, adrs_t end_adrs )
+{
+	while (current_ <= end_adrs)
+	{
+		auto l = disassemble_one_instruction( type, end_adrs );
+		lines_.push_back( l );
+	}
+}
+
+void Disassembler::disassemble_label( const Label &l )
+{
+	current_ = l.start_adrs();
+
+	disassemble_type( l.type(), l.end_adrs() );
+}
+
+std::vector<Line> Disassembler::disassemble()
+{
+	lines_.clear();
+
+	for (auto &l: rom_content_->get_labels())
+	{
+		disassemble_label( l );
+	}
+
+	return lines_;
 }
 
 void Disassembler::dump()

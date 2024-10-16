@@ -1,6 +1,10 @@
+#pragma once
+
 #include "common.h"
 #include <vector>
 #include <iostream>
+
+class Label;
 
 class RomContents
 {
@@ -27,6 +31,9 @@ public:
     adrs_t end_;
 
 	RegionType get_region_type(adrs_t adrs);
+    Label *label_from_adrs(adrs_t adrs);
+
+    static const std::vector<Label> &get_labels();
 
 private:
     std::vector<RegionType> regions_;

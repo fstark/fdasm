@@ -224,6 +224,12 @@ class Disassembler
 
     std::unique_ptr<Emitter> _emitters[RomContents::kCOUNT];
 
+	std::vector<Line> lines_;
+
+	Line disassemble_one_instruction( RomContents::RegionType type, adrs_t end_adrs );
+	void disassemble_type( RomContents::RegionType type, adrs_t end_adrs );
+	void disassemble_label( const Label &l );
+
 public:
     Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<RomContents> rom_content);
 
@@ -243,10 +249,6 @@ public:
 	adrs_t adrs() const { return current_; }
 
 	adrs_t get_offset() const { return dest_adrs_; }
-
-    // void disassemble_strz();
-
-    Line disassemble_instruction();
 
 	void dump();
 };
