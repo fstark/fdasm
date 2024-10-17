@@ -19,13 +19,13 @@ test: ../fdasm
 CF2=-O3 --std=c++1z `sdl2-config --cflags` -I../external/imgui -I../external/imgui/backends 
 
 ui.o: ui.cpp ui.h
-	# c++ ${CF2} -c ../external/imgui/backends/imgui_impl_sdl2.cpp -o imgui_impl_sdl2.o
-	# c++ ${CF2} -c ../external/imgui/backends/imgui_impl_opengl3.cpp -o imgui_impl_opengl3.o
-	# c++ ${CF2} -c ../external/imgui/imgui.cpp -o imgui.o
-	# c++ ${CF2} -c ../external/imgui/imgui_demo.cpp -o imgui_demo.o
-	# c++ ${CF2} -c ../external/imgui/imgui_draw.cpp -o imgui_draw.o
-	# c++ ${CF2} -c ../external/imgui/imgui_tables.cpp -o imgui_tables.o
-	# c++ ${CF2} -c ../external/imgui/imgui_widgets.cpp -o imgui_widgets.o
+	c++ ${CF2} -c ../external/imgui/backends/imgui_impl_sdl2.cpp -o imgui_impl_sdl2.o
+	c++ ${CF2} -c ../external/imgui/backends/imgui_impl_opengl3.cpp -o imgui_impl_opengl3.o
+	c++ ${CF2} -c ../external/imgui/imgui.cpp -o imgui.o
+	c++ ${CF2} -c ../external/imgui/imgui_demo.cpp -o imgui_demo.o
+	c++ ${CF2} -c ../external/imgui/imgui_draw.cpp -o imgui_draw.o
+	c++ ${CF2} -c ../external/imgui/imgui_tables.cpp -o imgui_tables.o
+	c++ ${CF2} -c ../external/imgui/imgui_widgets.cpp -o imgui_widgets.o
 	g++ ${CF2} -c ${CXXFLAGS} ui.cpp -o ui.o
 
 clean:
