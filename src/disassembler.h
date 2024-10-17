@@ -1,5 +1,7 @@
-#include <vector>
+#pragma once
+
 #include <memory>
+#include <vector>
 #include "common.h"
 
 using namespace std::literals::string_literals;
@@ -16,17 +18,25 @@ public:
 		kPseudo,
 		kString,
 		kText,
-		kExpression
+		kExpression,
+		kLabel
 	} SpanType;
 
 private:
 	SpanType type_;
 	std::string content_;
+	adrs_t adrs_ = 0;	// Just for hack
 
 public:
 	Span( SpanType type, const std::string &text ) :
 		type_{ type },
 		content_{ text }
+		{}
+
+	Span( SpanType type, const std::string &text, adrs_t adrs ) :
+		type_{ type },
+		content_{ text },
+		adrs_{ adrs }
 		{}
 
 	SpanType get_type() const { return type_; } // unused
@@ -35,6 +45,8 @@ public:
 	{
 		return content_;
 	}
+
+	adrs_t adrs() const { return adrs_; }
 
 	static Span mnemonic( const char *text )
 	{
@@ -61,7 +73,7 @@ public:
 	{
 		char buffer[6];
 		snprintf( buffer, 6, "%04XH", adrs );
-		return { kAddress, buffer };
+		return { kAddress, buffer, adrs };
 	}
 
 	static Span byte( adrs_t data )
@@ -84,6 +96,11 @@ public:
 	static Span expression( const char *str )
 	{
 		return { kExpression, str };
+	}
+
+	static Span label( const char *str )
+	{
+		return { kLabel, str };
 	}
 };
 
@@ -163,19 +180,20 @@ public:
 	std::vector<Span> emit( size_t max_len ) override;
 };
 
-#include "region.h"
+#include "annotations.h"
 #include <iostream>
 
 
 class Line
 {
+	bool empty_ = true;
+
     const std::vector<uint8_t> &bytes_;	// I don't think we want this (only the offsets)
 
 
 public:
 	adrs_t start_adrs_;
 	adrs_t end_adrs_;
-	std::string adrs_;
 
 	std::vector<Span> content_;
 
@@ -183,23 +201,22 @@ public:
 	int byte_count() const { return end_adrs_-start_adrs_+1; }
 
 	Line( const std::vector<uint8_t> &bytes, adrs_t start_adrs, adrs_t end_adrs ) :
+		empty_{ false },
 		bytes_{ bytes },
 		start_adrs_{ start_adrs },
 		end_adrs_{ end_adrs }
 	{
-		char buffer[256];
-		char *p = buffer;
-		
-		p += snprintf( p, 256, "%04X:", start_adrs_ );
-
-		const char *sep = "";
-		for (auto a = start_adrs_;a<=end_adrs_;a++)
-		{
-			p += snprintf( p, 256, "%s%02X", sep, bytes[a] );	//	#### Incorrect due to start address of ROM
-			sep = " ";
-		}
-		adrs_ = buffer;
 	}
+
+	Line( const std::vector<uint8_t> &bytes, adrs_t start_adrs ) :
+		empty_{ true },
+		bytes_{ bytes },
+		start_adrs_{ start_adrs },
+		end_adrs_{ start_adrs }// #### Or -1
+	{
+	}
+
+	bool is_empty() const { return empty_; }
 
 	const std::vector<Span> spans() const { return content_; }
 
@@ -220,18 +237,18 @@ class Disassembler
     adrs_t current_ = 0;
     adrs_t dest_adrs_;
 
-	std::shared_ptr<RomContents> rom_content_;
+	std::shared_ptr<Annotations> rom_content_;
 
-    std::unique_ptr<Emitter> _emitters[RomContents::kCOUNT];
+    std::unique_ptr<Emitter> _emitters[Annotations::kCOUNT];
 
 	std::vector<Line> lines_;
 
-	Line disassemble_one_instruction( RomContents::RegionType type, adrs_t end_adrs );
-	void disassemble_type( RomContents::RegionType type, adrs_t end_adrs );
+	Line disassemble_one_instruction( Annotations::RegionType type, adrs_t end_adrs );
+	void disassemble_type( Annotations::RegionType type, adrs_t end_adrs );
 	void disassemble_label( const Label &l );
 
 public:
-    Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<RomContents> rom_content);
+    Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<Annotations> rom_content);
 
 	~Disassembler()
 	{

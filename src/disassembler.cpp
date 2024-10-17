@@ -76,7 +76,7 @@ std::vector<Span> CodeEmitter::emit( size_t max_len )
 		if (x==3)
 		{
 			return {
-				Span::mnemonic( y%1?"INX":"DCX" ),
+				Span::mnemonic( y%1?"DCX":"INX" ),
 				Span::reg( register_names2[y/2] )
 			};
 		}
@@ -218,7 +218,7 @@ std::vector<Span> CodeEmitter::emit( size_t max_len )
 				// p += snprintf( p, MAX_CODE_LEN, "SPHL");	
 				return 
 				{
-					Span::mnemonic( "SPHL" )
+					Span::mnemonic( "XCHG" )
 				};
 			}
 			else if (y==6)
@@ -404,7 +404,7 @@ std::vector<Span> Str8sEmitter::emit( size_t max_len )
 	return res;
 }
 
-Disassembler::Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<RomContents> rom_content)
+Disassembler::Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<Annotations> rom_content)
     : bytes_( bytes ),
 	dest_adrs_( adrs ),
 	rom_content_( rom_content ),
@@ -445,7 +445,7 @@ uint16_t Disassembler::read_word()
 // 	return buffer;
 // }
 
-Line Disassembler::disassemble_one_instruction( RomContents::RegionType type, adrs_t end_adrs )
+Line Disassembler::disassemble_one_instruction( Annotations::RegionType type, adrs_t end_adrs )
 {
 	auto adrs = current_;
  	//	Lets look at the size (limited to 8 bytes)
@@ -462,7 +462,7 @@ Line Disassembler::disassemble_one_instruction( RomContents::RegionType type, ad
 	return l;
 }
 
-void Disassembler::disassemble_type( RomContents::RegionType type, adrs_t end_adrs )
+void Disassembler::disassemble_type( Annotations::RegionType type, adrs_t end_adrs )
 {
 	while (current_ <= end_adrs)
 	{
@@ -473,6 +473,10 @@ void Disassembler::disassemble_type( RomContents::RegionType type, adrs_t end_ad
 
 void Disassembler::disassemble_label( const Label &l )
 {
+	Line label{ bytes_, l.start_adrs() };
+	std::vector<Span> label_spans = { Span::label( l.name().c_str() ) };
+	label.set_spans( label_spans );
+	lines_.push_back( label );
 	current_ = l.start_adrs();
 
 	disassemble_type( l.type(), l.end_adrs() );

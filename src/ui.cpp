@@ -1,3 +1,14 @@
+#include "ui.h"
+
+
+#include <memory>
+#include "disassembler.h"
+#include "annotations.h"
+#include "label.h"
+#include "explorer.h"
+#include <stdio.h>
+
+
 #include "imgui.h"
 
 #include "imgui_impl_sdl2.h"
@@ -11,20 +22,13 @@
 #include <SDL_opengl.h>
 #endif
 
-#include <memory>
-#include "disassembler.h"
-#include <stdio.h>
-
-SDL_Window *window = NULL;
-SDL_GLContext gl_context;
-
-int InitImgUI()
+void UI::InitImgUI()
 {
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER | IMG_INIT_PNG) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
-        return -1;
+        throw std::runtime_error("Failed to initialize SDL");
     }
 
     const char* glsl_version = "#version 150";
@@ -63,7 +67,10 @@ int InitImgUI()
     // Initialize ImGui
     ImGui::CreateContext();
 
-    return 0;
+    // Set the font size
+    io.Fonts->AddFontFromFileTTF("external/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
+    tiny_font_ = io.Fonts->AddFontFromFileTTF("external/imgui/misc/fonts/ProggyClean.ttf", 26.0f/3);
+    large_font_ = io.Fonts->AddFontFromFileTTF("external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
 }
 
 static bool hoover[65536];
@@ -87,7 +94,7 @@ void DrawAddress( const Line &l )
     ImGui::SameLine();
 }
 
-void DrawByte( uint8_t b, adrs_t adrs )
+void UI::DrawByte( uint8_t b, adrs_t adrs )
 {
     char buffer[3];
     snprintf( buffer, 3, "%02x", b );	//	#### Incorrect due to start address of ROM
@@ -120,6 +127,8 @@ void DrawByte( uint8_t b, adrs_t adrs )
         // ImGui::Text("Item hovered: %02x", b);
         // ImGui::EndTooltip();
         hoover[adrs] = true;
+
+        info_byte_ = explorer_.rom().get(adrs);
     }
     else
         hoover[adrs] = false;
@@ -127,7 +136,7 @@ void DrawByte( uint8_t b, adrs_t adrs )
     ImGui::SameLine();
 }
 
-void DrawBytes( const Line &l )
+void UI::DrawBytes( const Line &l )
 {
     for (int i = 0;i!=l.byte_count();i++)
     {
@@ -135,11 +144,13 @@ void DrawBytes( const Line &l )
     }
 }
 
-void ShowHelloWorldWindow( Disassembler *disassembler )
+void UI::Run()
 {
     int done = 0;
 
     ImGuiIO& io = ImGui::GetIO();
+
+    Disassembler *disassembler = explorer_.disassembler();
 
     auto lines = disassembler->disassemble();
 
@@ -168,6 +179,7 @@ void ShowHelloWorldWindow( Disassembler *disassembler )
     float char_width = ImGui::CalcTextSize("A").x;
     // 4 bytes + ':' + 8*2 bytes + 7 sep = 28 + 2 margins
     float adrs_width = 30*char_width;
+    float label_width = 21*char_width;
 
     ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
     ImGuiListClipper clipper;
@@ -210,21 +222,35 @@ void ShowHelloWorldWindow( Disassembler *disassembler )
             // First one being constant size
             // ImGui::TextColored(byte_color, "%s", line.adrs_.c_str()); // Display address
 
-            DrawAddress( line );
-            DrawBytes( line );
+            if (!line.is_empty())
+            {
+                DrawAddress( line );
+                DrawBytes( line );
+            }
+            else
+            {
+                ImGui::SameLine(label_width);
+                ImGui::TextColored( std_color, "%s:", line.spans()[0].content().c_str() );
+                ImGui::SameLine();
+            }
 
             ImGui::SameLine(adrs_width);
             // ImGui::Text("%s", line.text_.c_str()); // Display disassembled text
+            if (!line.is_empty())
             for (const auto &span:line.spans())
             {
                 auto color = std_color;
+                bool hack = false;
+                bool is_mnem = false;
                 switch (span.get_type())
                 {
                     case Span::kMnemonic:
                         color = mnemonic_color;
+                        is_mnem = true;
                         break;
                     case Span::kAddress:
                         color = adrs_color;
+                        hack = true;
                         break;
                     case Span::kString:
                         color = string_color;
@@ -233,7 +259,24 @@ void ShowHelloWorldWindow( Disassembler *disassembler )
                         color = std_color;
                         break;
                 }
-                ImGui::TextColored( color, "%s", span.content().c_str() );
+
+                //  Look if address has a label:
+                Label *lbl;
+                if (hack && (lbl = Annotations::label_from_adrs(span.adrs())))
+                {
+                    ImGui::TextColored(adrs_color, "%s", lbl->name().c_str() ); // Display label
+                }
+                else
+                {
+                    ImGui::TextColored( color, "%s", span.content().c_str() );
+                    if (is_mnem && ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        auto v = explorer_.rom().get(line.start_adrs_);
+                        DisplayInstruction( explorer_.cpu_info().instruction( v ) );
+                        ImGui::EndTooltip();
+                    }
+                }
                 ImGui::SameLine();
             }
             ImGui::Text( "" );
@@ -255,6 +298,13 @@ void ShowHelloWorldWindow( Disassembler *disassembler )
     // End the ImGui window
     ImGui::End();
 
+    // Show demo ImgUI window
+    ImGui::ShowDemoWindow();
+
+    //  Byte info if needed
+    ShowByteInfoWindow();
+
+
         // Rendering
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
@@ -265,7 +315,63 @@ void ShowHelloWorldWindow( Disassembler *disassembler )
         SDL_GL_SwapWindow(window);
 
     }
+}
 
+void UI::DisplayInstruction( const Instruction &instruction )
+{
+    ImGui::PushFont(large_font_);
+    ImGui::Text("%s", instruction.mnemonic().c_str());
+    ImGui::PopFont();
+    ImGui::Separator();
+    ImGui::PushTextWrapPos(320);
+    ImGui::Text("%s", instruction.description().c_str());
+    ImGui::Text("%s", instruction.flags().c_str());
+    ImGui::Text("%s", instruction.effect().c_str());
+    ImGui::PopTextWrapPos();
+}
+
+void UI::ShowByteInfoWindow()
+{
+    //  Window with 320, not resizable
+    ImGui::SetNextWindowSize(ImVec2(320, 200));
+    ImGui::Begin("Byte Info", nullptr, ImGuiWindowFlags_NoResize);
+
+    // Display the byte info in a large font
+
+    char info_char_ = info_byte_&0x7f;
+    if (info_char_<32 || info_char_>126)
+        info_char_ = ' ';
+
+    ImGui::PushFont(large_font_);
+    ImGui::Text("%02X|%c|%3d|%03o|%c%c%c%c %c%c%c%c",
+        info_byte_,
+        info_char_,
+        info_byte_,
+        info_byte_,
+        info_byte_&0x80?'1':'0',
+        info_byte_&0x40?'1':'0',
+        info_byte_&0x20?'1':'0',
+        info_byte_&0x10?'1':'0',
+        info_byte_&0x08?'1':'0',
+        info_byte_&0x04?'1':'0',
+        info_byte_&0x02?'1':'0',
+        info_byte_&0x01?'1':'0'
+        );
+    ImGui::PopFont();
+    ImGui::PushFont(tiny_font_);
+    ImGui::Text("hex asc dec oct binary");
+    ImGui::PopFont();
+    ImGui::Separator();
+    auto i = explorer_.cpu_info().instruction(info_byte_);
+    DisplayInstruction( i );
+
+    ImGui::End();
+}
+
+
+void UI::ShutdownImgUI()
+{
+    // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();

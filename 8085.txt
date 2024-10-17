@@ -1,0 +1,1273 @@
+00: NOP
+    No operations
+    Flags affected: None
+
+01: LXI B, D16
+    Load register pair B with 16-bit data
+    Flags affected: None
+    BC <- byte 3, byte 2
+
+02: STAX B
+    Store accumulator indirect
+    Flags affected: None
+    (BC) <- A
+
+03: INX B
+    Increment register pair B
+    Flags affected: None
+    BC <- BC + 1
+
+04: INR B
+    Increment register B
+    Flags affected: Z, S, P, AC
+    B <- B + 1
+
+05: DCR B
+    Decrement register B
+    Flags affected: Z, S, P, AC
+    B <- B - 1
+
+06: MVI B, D8
+    Move immediate 8-bit data to register B
+    Flags affected: None
+    B <- byte 2
+
+07: RLC
+    Rotate accumulator left
+    Flags affected: C
+    A = A << 1; bit 0 = prev bit 7; CY = prev bit 7
+
+08: NOP
+    No operations
+    Flags affected: None
+
+09: DAD B
+    Add register pair BC to HL
+    Flags affected: C
+    HL = HL + BC
+
+0A: LDAX B
+    Load accumulator indirect
+    Flags affected: None
+    A <- (BC)
+
+0B: DCX B
+    Decrement register pair BC
+    Flags affected: None
+    BC <- BC - 1
+
+0C: INR C
+    Increment register C
+    Flags affected: Z, S, P, AC
+    C <- C + 1
+
+0D: DCR C
+    Decrement register C
+    Flags affected: Z, S, P, AC
+    C <- C - 1
+
+0E: MVI C, D8
+    Move immediate 8-bit data to register C
+    Flags affected: None
+    C <- byte 2
+
+0F: RRC
+    Rotate accumulator right
+    Flags affected: C
+    A = A >> 1; bit 7 = prev bit 0; CY = prev bit 0
+
+10: NOP
+    No operations
+    Flags affected: None
+
+11: LXI D, D16
+    Load register pair immediate
+    Flags affected: None
+    DE <- byte 3, byte 2
+
+12: STAX D
+    Store accumulator indirect
+    Flags affected: None
+    (DE) <- A
+
+13: INX D
+    Increment register pair DE
+    Flags affected: None
+    DE <- DE + 1
+
+14: INR D
+    Increment register D
+    Flags affected: Z, S, P, AC
+    D <- D + 1
+
+15: DCR D
+    Decrement register D
+    Flags affected: Z, S, P, AC
+    D <- D - 1
+
+16: MVI D, D8
+    Move immediate 8-bit data to register D
+    Flags affected: None
+    D <- byte 2
+
+17: RAL
+    Rotate accumulator left through carry
+    Flags affected: C
+    A = A << 1; bit 0 = CY; CY = prev bit 7
+
+18: NOP
+    No operations
+    Flags affected: None
+
+19: DAD D
+    Add register pair DE to HL
+    Flags affected: C
+    HL = HL + DE
+
+1A: LDAX D
+    Load accumulator indirect
+    Flags affected: None
+    A <- (DE)
+
+1B: DCX D
+    Decrement register pair DE
+    Flags affected: None
+    DE <- DE - 1
+
+1C: INR E
+    Increment register E
+    Flags affected: Z, S, P, AC
+    E <- E + 1
+
+1D: DCR E
+    Decrement register E
+    Flags affected: Z, S, P, AC
+    E <- E - 1
+
+1E: MVI E, D8
+    Move immediate 8-bit data to register E
+    Flags affected: None
+    E <- byte 2
+
+1F: RAR
+    Rotate accumulator right through carry
+    Flags affected: C
+    A = A >> 1; bit 7 = CY; CY = prev bit 0
+
+20: RIM
+    Read interrupt mask
+    Flags affected: None
+    A <- interrupt mask
+
+21: LXI H, D16
+    Load register pair immediate
+    Flags affected: None
+    HL <- byte 3, byte 2
+
+22: SHLD adr
+    Store HL direct
+    Flags affected: None
+    (adr) <- L; (adr+1) <- H
+
+23: INX H
+    Increment register pair HL
+    Flags affected: None
+    HL <- HL + 1
+
+24: INR H
+    Increment register H
+    Flags affected: Z, S, P, AC
+    H <- H + 1
+
+25: DCR H
+    Decrement register H
+    Flags affected: Z, S, P, AC
+    H <- H - 1
+
+26: MVI H, D8
+    Move immediate 8-bit data to register H
+    Flags affected: None
+    H <- byte 2
+
+27: DAA
+    Decimal adjust accumulator
+    Flags affected: Z, S, P, AC, CY
+    A = BCD adjust A
+
+28: NOP
+    No operations
+    Flags affected: None
+
+29: DAD H
+    Add register pair HL to HL
+    Flags affected: C
+    HL = HL + HL
+
+2A: LHLD adr
+    Load HL direct
+    Flags affected: None
+    L <- (adr); H <- (adr+1)
+
+2B: DCX H
+    Decrement register pair HL
+    Flags affected: None
+    HL <- HL - 1
+
+2C: INR L
+    Increment register L
+    Flags affected: Z, S, P, AC
+    L <- L + 1
+
+2D: DCR L
+    Decrement register L
+    Flags affected: Z, S, P, AC
+    L <- L - 1
+
+2E: MVI L, D8
+    Move immediate 8-bit data to register L
+    Flags affected: None
+    L <- byte 2
+
+2F: CMA
+    Complement accumulator
+    Flags affected: None
+    A <- ~A
+
+30: SIM
+    Set interrupt mask
+    Flags affected: None
+    Set mask in A
+
+31: LXI SP, D16
+    Load register pair immediate
+    Flags affected: None
+    SP <- byte 3, byte 2
+
+32: STA adr
+    Store accumulator direct
+    Flags affected: None
+    (adr) <- A
+
+33: INX SP
+    Increment stack pointer
+    Flags affected: None
+    SP <- SP + 1
+
+34: INR M
+    Increment memory
+    Flags affected: Z, S, P, AC
+    (HL) <- (HL) + 1
+
+35: DCR M
+    Decrement memory
+    Flags affected: Z, S, P, AC
+    (HL) <- (HL) - 1
+
+36: MVI M, D8
+    Move immediate 8-bit data to memory
+    Flags affected: None
+    (HL) <- byte 2
+
+37: STC
+    Set carry flag
+    Flags affected: CY
+    CY <- 1
+
+38: NOP
+    No operations
+    Flags affected: None
+
+39: DAD SP
+    Add stack pointer to HL
+    Flags affected: C
+    HL = HL + SP
+
+3A: LDA adr
+    Load accumulator direct
+    Flags affected: None
+    A <- (adr)
+
+3B: DCX SP
+    Decrement stack pointer
+    Flags affected: None
+    SP <- SP - 1
+
+3C: INR A
+    Increment accumulator
+    Flags affected: Z, S, P, AC
+    A <- A + 1
+
+3D: DCR A
+    Decrement accumulator
+    Flags affected: Z, S, P, AC
+    A <- A - 1
+
+3E: MVI A, D8
+    Move immediate 8-bit data to accumulator
+    Flags affected: None
+    A <- byte 2
+
+3F: CMC
+    Complement carry flag
+    Flags affected: CY
+    CY <- ~CY
+
+40: MOV B, B
+    Move B to B
+    Flags affected: None
+    B <- B
+
+41: MOV B, C
+    Move C to B
+    Flags affected: None
+    B <- C
+
+42: MOV B, D
+    Move D to B
+    Flags affected: None
+    B <- D
+
+43: MOV B, E
+    Move E to B
+    Flags affected: None
+    B <- E
+
+44: MOV B, H
+    Move H to B
+    Flags affected: None
+    B <- H
+
+45: MOV B, L
+    Move L to B
+    Flags affected: None
+    B <- L
+
+46: MOV B, M
+    Move memory to B
+    Flags affected: None
+    B <- (HL)
+
+47: MOV B, A
+    Move A to B
+    Flags affected: None
+    B <- A
+
+48: MOV C, B
+    Move B to C
+    Flags affected: None
+    C <- B
+
+49: MOV C, C
+    Move C to C
+    Flags affected: None
+    C <- C
+
+4A: MOV C, D
+    Move D to C
+    Flags affected: None
+    C <- D
+
+4B: MOV C, E
+    Move E to C
+    Flags affected: None
+    C <- E
+
+4C: MOV C, H
+    Move H to C
+    Flags affected: None
+    C <- H
+
+4D: MOV C, L
+    Move L to C
+    Flags affected: None
+    C <- L
+
+4E: MOV C, M
+    Move memory to C
+    Flags affected: None
+    C <- (HL)
+
+4F: MOV C, A
+    Move A to C
+    Flags affected: None
+    C <- A
+
+50: MOV D, B
+    Move B to D
+    Flags affected: None
+    D <- B
+
+51: MOV D, C
+    Move C to D
+    Flags affected: None
+    D <- C
+
+52: MOV D, D
+    Move D to D
+    Flags affected: None
+    D <- D
+
+53: MOV D, E
+    Move E to D
+    Flags affected: None
+    D <- E
+
+54: MOV D, H
+    Move H to D
+    Flags affected: None
+    D <- H
+
+55: MOV D, L
+    Move L to D
+    Flags affected: None
+    D <- L
+
+56: MOV D, M
+    Move memory to D
+    Flags affected: None
+    D <- (HL)
+
+57: MOV D, A
+    Move A to D
+    Flags affected: None
+    D <- A
+
+58: MOV E, B
+    Move B to E
+    Flags affected: None
+    E <- B
+
+59: MOV E, C
+    Move C to E
+    Flags affected: None
+    E <- C
+
+5A: MOV E, D
+    Move D to E
+    Flags affected: None
+    E <- D
+
+5B: MOV E, E
+    Move E to E
+    Flags affected: None
+    E <- E
+
+5C: MOV E, H
+    Move H to E
+    Flags affected: None
+    E <- H
+
+5D: MOV E, L
+    Move L to E
+    Flags affected: None
+    E <- L
+
+5E: MOV E, M
+    Move memory to E
+    Flags affected: None
+    E <- (HL)
+
+5F: MOV E, A
+    Move A to E
+    Flags affected: None
+    E <- A
+
+60: MOV H, B
+    Move B to H
+    Flags affected: None
+    H <- B
+
+61: MOV H, C
+    Move C to H
+    Flags affected: None
+    H <- C
+
+62: MOV H, D
+    Move D to H
+    Flags affected: None
+    H <- D
+
+63: MOV H, E
+    Move E to H
+    Flags affected: None
+    H <- E
+
+64: MOV H, H
+    Move H to H
+    Flags affected: None
+    H <- H
+
+65: MOV H, L
+    Move L to H
+    Flags affected: None
+    H <- L
+
+66: MOV H, M
+    Move memory to H
+    Flags affected: None
+    H <- (HL)
+
+67: MOV H, A
+    Move A to H
+    Flags affected: None
+    H <- A
+
+68: MOV L, B
+    Move B to L
+    Flags affected: None
+    L <- B
+
+69: MOV L, C
+    Move C to L
+    Flags affected: None
+    L <- C
+
+6A: MOV L, D
+    Move D to L
+    Flags affected: None
+    L <- D
+
+6B: MOV L, E
+    Move E to L
+    Flags affected: None
+    L <- E
+
+6C: MOV L, H
+    Move H to L
+    Flags affected: None
+    L <- H
+
+6D: MOV L, L
+    Move L to L
+    Flags affected: None
+    L <- L
+
+6E: MOV L, M
+    Move memory to L
+    Flags affected: None
+    L <- (HL)
+
+6F: MOV L, A
+    Move A to L
+    Flags affected: None
+    L <- A
+
+70: MOV M, B
+    Move B to memory
+    Flags affected: None
+    (HL) <- B
+
+71: MOV M, C
+    Move C to memory
+    Flags affected: None
+    (HL) <- C
+
+72: MOV M, D
+    Move D to memory
+    Flags affected: None
+    (HL) <- D
+
+73: MOV M, E
+    Move E to memory
+    Flags affected: None
+    (HL) <- E
+
+74: MOV M, H
+    Move H to memory
+    Flags affected: None
+    (HL) <- H
+
+75: MOV M, L
+    Move L to memory
+    Flags affected: None
+    (HL) <- L
+
+76: HLT
+    Halt
+    Flags affected: None
+    Halt the processor
+
+77: MOV M, A
+    Move A to memory
+    Flags affected: None
+    (HL) <- A
+
+78: MOV A, B
+    Move B to A
+    Flags affected: None
+    A <- B
+
+79: MOV A, C
+    Move C to A
+    Flags affected: None
+    A <- C
+
+7A: MOV A, D
+    Move D to A
+    Flags affected: None
+    A <- D
+
+7B: MOV A, E
+    Move E to A
+    Flags affected: None
+    A <- E
+
+7C: MOV A, H
+    Move H to A
+    Flags affected: None
+    A <- H
+
+7D: MOV A, L
+    Move L to A
+    Flags affected: None
+    A <- L
+
+7E: MOV A, M
+    Move memory to A
+    Flags affected: None
+    A <- (HL)
+
+7F: MOV A, A
+    Move A to A
+    Flags affected: None
+    A <- A
+
+80: ADD B
+    Add register B to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + B
+
+81: ADD C
+    Add register C to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + C
+
+82: ADD D
+    Add register D to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + D
+
+83: ADD E
+    Add register E to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + E
+
+84: ADD H
+    Add register H to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + H
+
+85: ADD L
+    Add register L to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + L
+
+86: ADD M
+    Add memory to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + (HL)
+
+87: ADD A
+    Add accumulator to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + A
+
+88: ADC B
+    Add register B to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + B + CY
+
+89: ADC C
+    Add register C to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + C + CY
+
+8A: ADC D
+    Add register D to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + D + CY
+
+8B: ADC E
+    Add register E to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + E + CY
+
+8C: ADC H
+    Add register H to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + H + CY
+
+8D: ADC L
+    Add register L to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + L + CY
+
+8E: ADC M
+    Add memory to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + (HL) + CY
+
+8F: ADC A
+    Add accumulator to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + A + CY
+
+90: SUB B
+    Subtract register B from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - B
+
+91: SUB C
+    Subtract register C from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - C
+
+92: SUB D
+    Subtract register D from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - D
+
+93: SUB E
+    Subtract register E from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - E
+
+94: SUB H
+    Subtract register H from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - H
+
+95: SUB L
+    Subtract register L from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - L
+
+96: SUB M
+    Subtract memory from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - (HL)
+
+97: SUB A
+    Subtract accumulator from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - A
+
+98: SBB B
+    Subtract register B from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - B - CY
+
+99: SBB C
+    Subtract register C from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - C - CY
+
+9A: SBB D
+    Subtract register D from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - D - CY
+
+9B: SBB E
+    Subtract register E from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - E - CY
+
+9C: SBB H
+    Subtract register H from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - H - CY
+
+9D: SBB L
+    Subtract register L from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - L - CY
+
+9E: SBB M
+    Subtract memory from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - (HL) - CY
+
+9F: SBB A
+    Subtract accumulator from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - A - CY
+
+A0: ANA B
+    Logical AND register B with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & B
+
+A1: ANA C
+    Logical AND register C with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & C
+
+A2: ANA D
+    Logical AND register D with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & D
+
+A3: ANA E
+    Logical AND register E with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & E
+
+A4: ANA H
+    Logical AND register H with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & H
+
+A5: ANA L
+    Logical AND register L with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & L
+
+A6: ANA M
+    Logical AND memory with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & (HL)
+
+A7: ANA A
+    Logical AND accumulator with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & A
+
+A8: XRA B
+    Logical XOR register B with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ B
+
+A9: XRA C
+    Logical XOR register C with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ C
+
+AA: XRA D
+    Logical XOR register D with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ D
+
+AB: XRA E
+    Logical XOR register E with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ E
+
+AC: XRA H
+    Logical XOR register H with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ H
+
+AD: XRA L
+    Logical XOR register L with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ L
+
+AE: XRA M
+    Logical XOR memory with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ (HL)
+
+AF: XRA A
+    Logical XOR accumulator with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ A
+
+B0: ORA B
+    Logical OR register B with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | B
+
+B1: ORA C
+    Logical OR register C with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | C
+
+B2: ORA D
+    Logical OR register D with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | D
+
+B3: ORA E
+    Logical OR register E with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | E
+
+B4: ORA H
+    Logical OR register H with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | H
+
+B5: ORA L
+    Logical OR register L with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | L
+
+B6: ORA M
+    Logical OR memory with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | (HL)
+
+B7: ORA A
+    Logical OR accumulator with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | A
+
+B8: CMP B
+    Compare register B with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - B
+
+B9: CMP C
+    Compare register C with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - C
+
+BA: CMP D
+    Compare register D with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - D
+
+BB: CMP E
+    Compare register E with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - E
+
+BC: CMP H
+    Compare register H with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - H
+
+BD: CMP L
+    Compare register L with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - L
+
+BE: CMP M
+    Compare memory with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - (HL)
+
+BF: CMP A
+    Compare accumulator with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - A
+
+C0: RNZ
+    Return if not zero
+    Flags affected: None
+    If Z = 0, PC <- top of stack
+
+C1: POP B
+    Pop register pair BC from stack
+    Flags affected: None
+    C <- (SP); B <- (SP+1); SP <- SP + 2
+
+C2: JNZ adr
+    Jump if not zero
+    Flags affected: None
+    If Z = 0, PC <- adr
+
+C3: JMP adr
+    Jump
+    Flags affected: None
+    PC <- adr
+
+C4: CNZ adr
+    Call if not zero
+    Flags affected: None
+    If Z = 0, CALL adr
+
+C5: PUSH B
+    Push register pair BC onto stack
+    Flags affected: None
+    (SP-2) <- C; (SP-1) <- B; SP <- SP - 2
+
+C6: ADI D8
+    Add immediate to accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A + byte 2
+
+C7: RST 0
+    Restart
+    Flags affected: None
+    CALL $0000
+
+C8: RZ
+    Return if zero
+    Flags affected: None
+    If Z = 1, PC <- top of stack
+
+C9: RET
+    Return
+    Flags affected: None
+    PC <- top of stack
+
+CA: JZ adr
+    Jump if zero
+    Flags affected: None
+    If Z = 1, PC <- adr
+
+CB: JMP adr
+    Jump
+    Flags affected: None
+    PC <- adr
+
+CC: CZ adr
+    Call if zero
+    Flags affected: None
+    If Z = 1, CALL adr
+
+CD: CALL adr
+    Call
+    Flags affected: None
+    CALL adr
+
+CE: ACI D8
+    Add immediate to accumulator with carry
+    Flags affected: Z, S, P, CY, AC
+    A <- A + byte 2 + CY
+
+CF: RST 1
+    Restart
+    Flags affected: None
+    CALL $0008
+
+D0: RNC
+    Return if not carry
+    Flags affected: None
+    If CY = 0, PC <- top of stack
+
+D1: POP D
+    Pop register pair DE from stack
+    Flags affected: None
+    E <- (SP); D <- (SP+1); SP <- SP + 2
+
+D2: JNC adr
+    Jump if not carry
+    Flags affected: None
+    If CY = 0, PC <- adr
+
+D3: OUT D8
+    Output to port
+    Flags affected: None
+    (port) <- A
+
+D4: CNC adr
+    Call if not carry
+    Flags affected: None
+    If CY = 0, CALL adr
+
+D5: PUSH D
+    Push register pair DE onto stack
+    Flags affected: None
+    (SP-2) <- E; (SP-1) <- D; SP <- SP - 2
+
+D6: SUI D8
+    Subtract immediate from accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A - byte 2
+
+D7: RST 2
+    Restart
+    Flags affected: None
+    CALL $0010
+
+D8: RC
+    Return if carry
+    Flags affected: None
+    If CY = 1, PC <- top of stack
+
+D9: RET
+    Return
+    Flags affected: None
+    PC <- top of stack
+
+DA: JC adr
+    Jump if carry
+    Flags affected: None
+    If CY = 1, PC <- adr
+
+DB: IN D8
+    Input from port
+    Flags affected: None
+    A <- (port)
+
+DC: CC adr
+    Call if carry
+    Flags affected: None
+    If CY = 1, CALL adr
+
+DD: CALL adr
+    Call
+    Flags affected: None
+    CALL adr
+
+DE: SBI D8
+    Subtract immediate from accumulator with borrow
+    Flags affected: Z, S, P, CY, AC
+    A <- A - byte 2 - CY
+
+DF: RST 3
+    Restart
+    Flags affected: None
+    CALL $0018
+
+E0: RPO
+    Return if parity odd
+    Flags affected: None
+    If P = 0, PC <- top of stack
+
+E1: POP H
+    Pop register pair HL from stack
+    Flags affected: None
+    L <- (SP); H <- (SP+1); SP <- SP + 2
+
+E2: JPO adr
+    Jump if parity odd
+    Flags affected: None
+    If P = 0, PC <- adr
+
+E3: XTHL
+    Exchange stack top with HL
+    Flags affected: None
+    L <-> (SP); H <-> (SP+1)
+
+E4: CPO adr
+    Call if parity odd
+    Flags affected: None
+    If P = 0, CALL adr
+
+E5: PUSH H
+    Push register pair HL onto stack
+    Flags affected: None
+    (SP-2) <- L; (SP-1) <- H; SP <- SP - 2
+
+E6: ANI D8
+    Logical AND immediate with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A & byte 2
+
+E7: RST 4
+    Restart
+    Flags affected: None
+    CALL $0020
+
+E8: RPE
+    Return if parity even
+    Flags affected: None
+    If P = 1, PC <- top of stack
+
+E9: PCHL
+    Jump to HL
+    Flags affected: None
+    PC <- HL
+
+EA: JPE adr
+    Jump if parity even
+    Flags affected: None
+    If P = 1, PC <- adr
+
+EB: XCHG
+    Exchange DE and HL
+    Flags affected: None
+    H <-> D; L <-> E
+
+EC: CPE adr
+    Call if parity even
+    Flags affected: None
+    If P = 1, CALL adr
+
+ED: CALL adr
+    Call
+    Flags affected: None
+    CALL adr
+
+EE: XRI D8
+    Logical XOR immediate with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A ^ byte 2
+
+EF: RST 5
+    Restart
+    Flags affected: None
+    CALL $0028
+
+F0: RP
+    Return if positive
+    Flags affected: None
+    If S = 0, PC <- top of stack
+
+F1: POP PSW
+    Pop processor status word from stack
+    Flags affected: Z, S, P, CY, AC
+    Flags <- (SP); A <- (SP+1); SP <- SP + 2
+
+F2: JP adr
+    Jump if positive
+    Flags affected: None
+    If S = 0, PC <- adr
+
+F3: DI
+    Disable interrupts
+    Flags affected: None
+    Disable interrupts
+
+F4: CP adr
+    Call if positive
+    Flags affected: None
+    If S = 0, CALL adr
+
+F5: PUSH PSW
+    Push processor status word onto stack
+    Flags affected: None
+    (SP-2) <- Flags; (SP-1) <- A; SP <- SP - 2
+
+F6: ORI D8
+    Logical OR immediate with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A <- A | byte 2
+
+F7: RST 6
+    Restart
+    Flags affected: None
+    CALL $0030
+
+F8: RM
+    Return if minus
+    Flags affected: None
+    If S = 1, PC <- top of stack
+
+F9: SPHL
+    Move HL to SP
+    Flags affected: None
+    SP <- HL
+
+FA: JM adr
+    Jump if minus
+    Flags affected: None
+    If S = 1, PC <- adr
+
+FB: EI
+    Enable interrupts
+    Flags affected: None
+    Enable interrupts
+
+FC: CM adr
+    Call if minus
+    Flags affected: None
+    If S = 1, CALL adr
+
+FD: CALL adr
+    Call
+    Flags affected: None
+    CALL adr
+
+FE: CPI D8
+    Compare immediate with accumulator
+    Flags affected: Z, S, P, CY, AC
+    A - byte 2
+
+FF: RST 7
+    Restart
+    Flags affected: None
+    CALL $0038

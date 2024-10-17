@@ -3,10 +3,11 @@
 #include "common.h"
 #include <vector>
 #include <iostream>
+#include <string>
 
 class Label;
 
-class RomContents
+class Annotations
 {
 public:
 	typedef enum
@@ -21,8 +22,8 @@ public:
 		kCOUNT
 	} RegionType;
 
-    RomContents( const char *filename );
-    ~RomContents()
+    Annotations( const std::string &filename );
+    ~Annotations()
     {
         std::clog << "Deleting Rom Contents" << std::endl;
     }
@@ -31,19 +32,19 @@ public:
     adrs_t end_;
 
 	RegionType get_region_type(adrs_t adrs);
-    Label *label_from_adrs(adrs_t adrs);
 
+    static Label *label_from_adrs(adrs_t adrs);
     static const std::vector<Label> &get_labels();
 
 private:
     std::vector<RegionType> regions_;
 
-    void set_region( adrs_t start, adrs_t end, RomContents::RegionType type )
+    void set_region( adrs_t start, adrs_t end, Annotations::RegionType type )
     {
         std::clog << "Setting region " << start << " to " << end << " to " << type << std::endl;
         for (adrs_t adrs = start; adrs <= end; adrs++)
             regions_[adrs-start_] = type;
     }
 
-    void read_regions( const char * filename );
+    void read_regions( const std::string &filename );
 };

@@ -1,9 +1,12 @@
-#include "region.h"
+#include "annotations.h"
 #include <cassert>
 #include <stdio.h>
 #include "label.h"
+#include <map>
+#include <unordered_map>
+#include <string>
 
-RomContents::RomContents( const char *filename )
+Annotations::Annotations( const std::string &filename )
 {
     start_ = 0;
     end_ = 0x7fff;
@@ -15,13 +18,14 @@ RomContents::RomContents( const char *filename )
 }
 
 static std::vector<Label> sLabels;
+static std::unordered_map<adrs_t, Label> sLabelMap;
 
-void RomContents::read_regions( const char * filename )
+void Annotations::read_regions( const std::string &filename )
 {
-    FILE *file = fopen( filename, "r" );
+    FILE *file = fopen( filename.c_str(), "r" );
     if (file == NULL)
     {
-        printf( "Failed to open file: %s\n", filename );
+        printf( "Failed to open file: %s\n", filename.c_str() );
         return;
     }
 
@@ -37,19 +41,19 @@ void RomContents::read_regions( const char * filename )
         if ((n=sscanf(line, "%X %s %s", &adrs, type, label)))
         {
             // fprintf( stderr, "     %x %x %s\n", start, end, type );
-            RomContents::RegionType RegionType = RomContents::kUNKNOWN;
+            Annotations::RegionType RegionType = Annotations::kUNKNOWN;
             if (strcmp(type, "CODE") == 0)
-                RegionType = RomContents::kCODE;
+                RegionType = Annotations::kCODE;
             else if (strcmp(type, "STRZ") == 0)
-                RegionType = RomContents::kSTRZ;
+                RegionType = Annotations::kSTRZ;
             else if (strcmp(type, "DATAW") == 0)
-                RegionType = RomContents::kDATAW;
+                RegionType = Annotations::kDATAW;
             else if (strcmp(type, "STR8S") == 0)
-                RegionType = RomContents::kSTR8S;
+                RegionType = Annotations::kSTR8S;
             else if (strcmp(type, "DATA") == 0)
-                RegionType = RomContents::kDATA;
+                RegionType = Annotations::kDATA;
             else if (strcmp(type, "STRF2") == 0)
-                RegionType = RomContents::kSTRF2;
+                RegionType = Annotations::kSTRF2;
  
             sLabels.push_back( { static_cast<adrs_t>(adrs), 0, label, RegionType } );
         }
@@ -57,6 +61,12 @@ void RomContents::read_regions( const char * filename )
 
     // Sorts the labels by address
     std::sort(sLabels.begin(), sLabels.end(), [](const Label &a, const Label &b) { return a.start_adrs() < b.start_adrs(); });
+
+    sLabelMap.clear();
+    for (const auto &label : sLabels)
+    {
+        sLabelMap.emplace(label.start_adrs(), label);
+    }
 
     //  Sets the end address of each label
     for (size_t i = 0; i < sLabels.size() - 1; i++)
@@ -68,7 +78,7 @@ void RomContents::read_regions( const char * filename )
     fclose(file);
 }
 
-RomContents::RegionType RomContents::get_region_type(adrs_t adrs)
+Annotations::RegionType Annotations::get_region_type(adrs_t adrs)
 {
     // Find in the sLabels sorted array
     // the last one that is less than adrs
@@ -82,18 +92,15 @@ RomContents::RegionType RomContents::get_region_type(adrs_t adrs)
     return kCODE;
 }
 
-Label *RomContents::label_from_adrs(adrs_t adrs)
+Label *Annotations::label_from_adrs(adrs_t adrs)
 {
-    for (auto it = sLabels.rbegin(); it != sLabels.rend(); it++)
-    {
-        if (it->start_adrs() == adrs)
-            return &(*it);
-    }
-
+    auto it = sLabelMap.find(adrs);
+    if (it != sLabelMap.end())
+        return &it->second;
     return nullptr;
 }
 
-const std::vector<Label> &RomContents::get_labels()
+const std::vector<Label> &Annotations::get_labels()
 {
     return sLabels;
 }
