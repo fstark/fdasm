@@ -4,6 +4,9 @@ Fred's disassembler
 # TODO
 
 - Create some sort of Document object that gather everything together
+    -> ROM
+    -> Labels
+    -> Disassembler
 - Split the UI code in bits
 - Implement info panels for
     - Bytes

@@ -73,4 +73,42 @@ CPUInfo::CPUInfo( const std::string filename )
         Instruction i( opcode, mnemonic, description, flags, effect );
         instructions_[opcode] = i;
     }
+
+    //  Mark the jumps, call & conditional jumps
+
+
+    instructions_[0xc2].is_jump_ = true;    //  JNZ
+    instructions_[0xc3].is_jump_ = true;    //  JMP
+    instructions_[0xc4].is_jump_ = true;    //  CNZ
+    instructions_[0xca].is_jump_ = true;    //  JZ
+    instructions_[0xcc].is_jump_ = true;    //  CZ
+    instructions_[0xcd].is_jump_ = true;    //  CALL
+
+    instructions_[0xd2].is_jump_ = true;    //  JNC
+    instructions_[0xd4].is_jump_ = true;    //  CNC
+    instructions_[0xda].is_jump_ = true;    //  JC
+    instructions_[0xdc].is_jump_ = true;    //  CC
+
+    instructions_[0xe2].is_jump_ = true;    //  JPO
+    instructions_[0xe4].is_jump_ = true;    //  CPO
+    instructions_[0xea].is_jump_ = true;    //  JPE
+    instructions_[0xec].is_jump_ = true;    //  CPE
+
+    instructions_[0xf2].is_jump_ = true;    //  JP
+    instructions_[0xf4].is_jump_ = true;    //  CP
+    instructions_[0xfa].is_jump_ = true;    //  JM
+    instructions_[0xfc].is_jump_ = true;    //  CM
+
+
+    //  Instructions that reference an address
+
+
+    instructions_[0x01].is_ref_ = true;     //  LXI
+    instructions_[0x11].is_ref_ = true;     //  LXI
+    instructions_[0x21].is_ref_ = true;     //  LXI
+    instructions_[0x22].is_ref_ = true;     //  SHLD
+    instructions_[0x2a].is_ref_ = true;     //  LHLD
+    instructions_[0x31].is_ref_ = true;     //  LXI
+    instructions_[0x32].is_ref_ = true;     //  STA
+    instructions_[0x3a].is_ref_ = true;     //  LDA
 }

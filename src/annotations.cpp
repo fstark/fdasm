@@ -6,14 +6,12 @@
 #include <unordered_map>
 #include <string>
 
-Annotations::Annotations( const std::string &filename )
+Annotations::Annotations( ROMFile &rom, const std::string &filename )
+    : rom_{ rom }
 {
-    start_ = 0;
-    end_ = 0x7fff;
+    regions_.resize(rom_.size());
 
-    regions_.resize(end_-start_+1);
-
-    set_region( 0, 0x7fff, kCODE );
+    set_region( 0, rom_.size()-1, kCODE );
     read_regions( filename );
 }
 
@@ -55,10 +53,17 @@ void Annotations::read_regions( const std::string &filename )
             else if (strcmp(type, "STRF2") == 0)
                 RegionType = Annotations::kSTRF2;
  
-            sLabels.push_back( { static_cast<adrs_t>(adrs), 0, label, RegionType } );
+            sLabels.push_back( { static_cast<adrs_t>(adrs), label, RegionType } );
         }
     }
 
+    fclose(file);
+
+    labels_changed();
+}
+
+void Annotations::labels_changed()
+{
     // Sorts the labels by address
     std::sort(sLabels.begin(), sLabels.end(), [](const Label &a, const Label &b) { return a.start_adrs() < b.start_adrs(); });
 
@@ -69,13 +74,26 @@ void Annotations::read_regions( const std::string &filename )
     }
 
     //  Sets the end address of each label
-    for (size_t i = 0; i < sLabels.size() - 1; i++)
+    for (size_t i = 0; i+1 < sLabels.size(); i++)
     {
         sLabels[i].set_end_adrs(sLabels[i + 1].start_adrs() - 1);
     }
-    sLabels.back().set_end_adrs(0x7fff);    // #### hard-coded
 
-    fclose(file);
+    if (!sLabels.empty())
+        sLabels.back().set_end_adrs(0x7fff);
+}
+
+void Annotations::add_label( const std::string &name, adrs_t adrs, RegionType type )
+{
+    Label label(adrs, name, type);
+    sLabels.push_back(label);
+    labels_changed();
+}
+
+void Annotations::add_labels( const std::vector<Label> &labels )
+{
+    sLabels.insert(sLabels.end(), labels.begin(), labels.end());
+    labels_changed();
 }
 
 Annotations::RegionType Annotations::get_region_type(adrs_t adrs)

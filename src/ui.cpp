@@ -85,19 +85,33 @@ auto string_color = ImVec4(198/255.0, 140/255.0, 116/255.0, 1.0f);
 
 auto select_color = ImVec4(255/255.0, 255/255.0, 255/255.0, 1.0f);
 
-void DrawAddress( const Line &l )
+void UI::DrawAddress( const Line &l )
 {
     //  Draw the Address for the line
     char buffer[5];
     snprintf( buffer, 5, "%04x", l.start_adrs_ );
     ImGui::TextColored(adrs_color, "%s", buffer ); // Display address
+    if (ImGui::IsItemHovered())
+    {
+        inspect_adrs( l.start_adrs_ );
+    }
     ImGui::SameLine();
 }
 
 void UI::DrawByte( uint8_t b, adrs_t adrs )
 {
     char buffer[3];
-    snprintf( buffer, 3, "%02x", b );	//	#### Incorrect due to start address of ROM
+
+        //  How to display the byte
+    if (show_ascii_)
+    {
+        uint8_t c = b&0x7f;
+        if (c<32 || c>127)
+            c = ' ';
+        snprintf( buffer, 3, "%c ", c);
+    }
+    else
+        snprintf( buffer, 3, "%02x", b );
 
 
     auto color = byte_color;
@@ -164,6 +178,10 @@ void UI::Run()
                 done = true;
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == 'a')
+                show_ascii_ = true;
+            if (event.type == SDL_KEYUP && event.key.keysym.sym == 'a')
+                show_ascii_ = false;
         }
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -173,7 +191,7 @@ void UI::Run()
     // Create a new ImGui window
     ImGui::Begin("ROM Disassembly");
 
-
+    ImGui::Text("a: ASCII");
 
     // Get imgui character width
     float char_width = ImGui::CalcTextSize("A").x;
@@ -242,6 +260,7 @@ void UI::Run()
                 auto color = std_color;
                 bool hack = false;
                 bool is_mnem = false;
+                bool is_adrs = false;
                 switch (span.get_type())
                 {
                     case Span::kMnemonic:
@@ -251,6 +270,7 @@ void UI::Run()
                     case Span::kAddress:
                         color = adrs_color;
                         hack = true;
+                        is_adrs = true;
                         break;
                     case Span::kString:
                         color = string_color;
@@ -265,6 +285,10 @@ void UI::Run()
                 if (hack && (lbl = Annotations::label_from_adrs(span.adrs())))
                 {
                     ImGui::TextColored(adrs_color, "%s", lbl->name().c_str() ); // Display label
+                    if (is_adrs && ImGui::IsItemHovered())
+                    {
+                        inspect_adrs( span.adrs() );
+                    }
                 }
                 else
                 {
@@ -275,6 +299,13 @@ void UI::Run()
                         auto v = explorer_.rom().get(line.start_adrs_);
                         DisplayInstruction( explorer_.cpu_info().instruction( v ) );
                         ImGui::EndTooltip();
+                    }
+                    if (is_adrs && ImGui::IsItemHovered())
+                    {
+                        inspect_adrs( span.adrs() );
+                        // ImGui::BeginTooltip();
+                        // Display( explorer_.cpu_info().instruction( v ) );
+                        // ImGui::EndTooltip();
                     }
                 }
                 ImGui::SameLine();
@@ -302,8 +333,10 @@ void UI::Run()
     ImGui::ShowDemoWindow();
 
     //  Byte info if needed
-    ShowByteInfoWindow();
+    ByteInspector();
 
+    //  Address info if needed
+    AdrsInspector();
 
         // Rendering
         ImGui::Render();
@@ -330,11 +363,11 @@ void UI::DisplayInstruction( const Instruction &instruction )
     ImGui::PopTextWrapPos();
 }
 
-void UI::ShowByteInfoWindow()
+void UI::ByteInspector()
 {
     //  Window with 320, not resizable
-    ImGui::SetNextWindowSize(ImVec2(320, 200));
-    ImGui::Begin("Byte Info", nullptr, ImGuiWindowFlags_NoResize);
+    // ImGui::SetNextWindowSize(ImVec2(320, 200));
+    ImGui::Begin("Byte Info", nullptr, ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize);
 
     // Display the byte info in a large font
 
@@ -368,6 +401,54 @@ void UI::ShowByteInfoWindow()
     ImGui::End();
 }
 
+void UI::AdrsInspector()
+{
+    ImGui::Begin("Adrs Info", nullptr, ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::PushFont(large_font_);
+    if (info_lbl_)
+    {
+        ImGui::Text("%s:", info_lbl_->name().c_str());
+        ImGui::SameLine();
+    }
+    ImGui::Text("%04X", info_adrs_);
+    ImGui::PopFont();
+    ImGui::Separator();
+    if (info_lbl_)
+    {
+        ImGui::Text("%s", info_lbl_->name().c_str());
+    }
+
+    for (const auto &ref:xrefs_to_)
+    {
+        auto adrs = ref.from_;
+
+        switch (ref.type_)
+        {
+            case XRef::kJUMP:
+                ImGui::TextColored(ImVec4(244/255.0, 71/255.0, 71/255.0, 1.0f), "%04X:", adrs);
+                break;
+            case XRef::kREF:
+                ImGui::TextColored(ImVec4(71/255.0, 71/255.0, 244/255.0, 1.0f), "%04X:", adrs);
+                break;
+            case XRef::kDATA:
+                ImGui::TextColored(ImVec4(128/255.0, 128/255.0, 128/255.0, 1.0f), "%04X:", adrs);
+                break;
+        }
+
+        if (ref.instruction)
+        {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(244/255.0, 71/255.0, 71/255.0, 1.0f), "%s", ref.instruction->mnemonic().c_str());
+        }
+        else
+        {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(128/255.0, 128/255.0, 128/255.0, 1.0f), "DATA");
+        }
+    }
+
+    ImGui::End();
+}
 
 void UI::ShutdownImgUI()
 {
