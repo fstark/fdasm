@@ -14,7 +14,7 @@ test: ../fdasm
 
 # Rules to build object files
 %.o: %.cpp
-	g++ -c ${CXXFLAGS} $< -o $@
+	g++ -c ${CXXFLAGS} -MMD -MP $< -o $@
 
 CF2=-O3 --std=c++1z `sdl2-config --cflags` -I../external/imgui -I../external/imgui/backends 
 
@@ -29,4 +29,7 @@ ui.o: ui.cpp ui.h
 	g++ ${CF2} -c ${CXXFLAGS} ui.cpp -o ui.o
 
 clean:
-	rm -f fdasm ${OBJS}
+	rm -f fdasm ${OBJS} *.d
+
+# Include the dependency files
+-include $(OBJS:.o=.d)

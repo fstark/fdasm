@@ -93,7 +93,7 @@ void UI::DrawAddress( const Line &l )
     ImGui::TextColored(adrs_color, "%s", buffer ); // Display address
     if (ImGui::IsItemHovered())
     {
-        inspect_adrs( l.start_adrs_ );
+        // inspect_adrs( l.start_adrs_ );
     }
     ImGui::SameLine();
 }
@@ -142,10 +142,18 @@ void UI::DrawByte( uint8_t b, adrs_t adrs )
         // ImGui::EndTooltip();
         hoover[adrs] = true;
 
-        info_byte_ = explorer_.rom().get(adrs);
+        //  Show the byte inspector
+        byte_inspector_ = std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(adrs) );
+        byte_inspector_->unique();
     }
     else
         hoover[adrs] = false;
+
+    if (ImGui::IsItemClicked())
+    {
+        panels_.push_back( std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(adrs) ) );
+        panels_.back()->set_closable( true );
+    }
 
     ImGui::SameLine();
 }
@@ -287,7 +295,13 @@ void UI::Run()
                     ImGui::TextColored(adrs_color, "%s", lbl->name().c_str() ); // Display label
                     if (is_adrs && ImGui::IsItemHovered())
                     {
-                        inspect_adrs( span.adrs() );
+                        adrs_inspector_  = std::make_unique<AdrsInspectorPanel>( *this, span.adrs() );
+                        adrs_inspector_->unique();
+                    }
+                    if (is_adrs && ImGui::IsItemClicked())
+                    {
+                        panels_.push_back( std::make_unique<AdrsInspectorPanel>( *this, span.adrs() ) );
+                        panels_.back()->set_closable( true );
                     }
                 }
                 else
@@ -297,15 +311,19 @@ void UI::Run()
                     {
                         ImGui::BeginTooltip();
                         auto v = explorer_.rom().get(line.start_adrs_);
-                        DisplayInstruction( explorer_.cpu_info().instruction( v ) );
+                        ByteInspectorPanel::DisplayInstruction( *this, explorer_.cpu_info().instruction( v ) );
                         ImGui::EndTooltip();
                     }
+                    // #### wtf copy/paste
                     if (is_adrs && ImGui::IsItemHovered())
                     {
-                        inspect_adrs( span.adrs() );
-                        // ImGui::BeginTooltip();
-                        // Display( explorer_.cpu_info().instruction( v ) );
-                        // ImGui::EndTooltip();
+                        adrs_inspector_  = std::make_unique<AdrsInspectorPanel>( *this, span.adrs() );
+                        adrs_inspector_->unique();
+                    }
+                    if (is_adrs && ImGui::IsItemClicked())
+                    {
+                        panels_.push_back( std::make_unique<AdrsInspectorPanel>( *this, span.adrs() ) );
+                        panels_.back()->set_closable( true );
                     }
                 }
                 ImGui::SameLine();
@@ -333,10 +351,19 @@ void UI::Run()
     ImGui::ShowDemoWindow();
 
     //  Byte info if needed
-    ByteInspector();
+    if (byte_inspector_)
+        byte_inspector_->Draw();
 
     //  Address info if needed
-    AdrsInspector();
+    if (adrs_inspector_)
+        adrs_inspector_->Draw();
+
+    for (const auto &p:panels_)
+        p->Draw();
+
+    //  Remove all panels that are not open
+    panels_.erase( std::remove_if( panels_.begin(), panels_.end(), [](const std::unique_ptr<Panel> &p) { return !p->is_open(); } ), panels_.end() );
+
 
         // Rendering
         ImGui::Render();
@@ -350,9 +377,9 @@ void UI::Run()
     }
 }
 
-void UI::DisplayInstruction( const Instruction &instruction )
+/* static */ void ByteInspectorPanel::DisplayInstruction( const UI &ui, const Instruction &instruction )
 {
-    ImGui::PushFont(large_font_);
+    ImGui::PushFont(ui.large_font());
     ImGui::Text("%s", instruction.mnemonic().c_str());
     ImGui::PopFont();
     ImGui::Separator();
@@ -363,59 +390,67 @@ void UI::DisplayInstruction( const Instruction &instruction )
     ImGui::PopTextWrapPos();
 }
 
-void UI::ByteInspector()
+void Panel::Draw()
 {
     //  Window with 320, not resizable
     // ImGui::SetNextWindowSize(ImVec2(320, 200));
-    ImGui::Begin("Byte Info", nullptr, ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize);
 
-    // Display the byte info in a large font
+    bool *is_open_ptr = nullptr;
+    if (is_closable_)
+        is_open_ptr = &is_open_;
+    ImGui::Begin( name().c_str(), is_open_ptr, ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize);
 
-    char info_char_ = info_byte_&0x7f;
-    if (info_char_<32 || info_char_>126)
-        info_char_ = ' ';
-
-    ImGui::PushFont(large_font_);
-    ImGui::Text("%02X|%c|%3d|%03o|%c%c%c%c %c%c%c%c",
-        info_byte_,
-        info_char_,
-        info_byte_,
-        info_byte_,
-        info_byte_&0x80?'1':'0',
-        info_byte_&0x40?'1':'0',
-        info_byte_&0x20?'1':'0',
-        info_byte_&0x10?'1':'0',
-        info_byte_&0x08?'1':'0',
-        info_byte_&0x04?'1':'0',
-        info_byte_&0x02?'1':'0',
-        info_byte_&0x01?'1':'0'
-        );
-    ImGui::PopFont();
-    ImGui::PushFont(tiny_font_);
-    ImGui::Text("hex asc dec oct binary");
-    ImGui::PopFont();
-    ImGui::Separator();
-    auto i = explorer_.cpu_info().instruction(info_byte_);
-    DisplayInstruction( i );
+    DoDraw();
 
     ImGui::End();
 }
 
-void UI::AdrsInspector()
+void ByteInspectorPanel::DoDraw()
 {
-    ImGui::Begin("Adrs Info", nullptr, ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::PushFont(large_font_);
-    if (info_lbl_)
-    {
-        ImGui::Text("%s:", info_lbl_->name().c_str());
-        ImGui::SameLine();
-    }
-    ImGui::Text("%04X", info_adrs_);
+    // Display the byte info in a large font
+
+    char info_char_ = data_&0x7f;
+    if (info_char_<32 || info_char_>126)
+        info_char_ = ' ';
+
+    ImGui::PushFont(ui_.large_font());
+    ImGui::Text("%02X|%c|%3d|%03o|%c%c%c%c %c%c%c%c",
+        data_,
+        info_char_,
+        data_,
+        data_,
+        data_&0x80?'1':'0',
+        data_&0x40?'1':'0',
+        data_&0x20?'1':'0',
+        data_&0x10?'1':'0',
+        data_&0x08?'1':'0',
+        data_&0x04?'1':'0',
+        data_&0x02?'1':'0',
+        data_&0x01?'1':'0'
+        );
+    ImGui::PopFont();
+    ImGui::PushFont(ui_.tiny_font());
+    ImGui::Text("hex asc dec oct binary");
     ImGui::PopFont();
     ImGui::Separator();
-    if (info_lbl_)
+    auto i = ui_.explorer().cpu_info().instruction(data_);
+    DisplayInstruction( ui_, i );
+}
+
+void AdrsInspectorPanel::DoDraw()
+{
+    ImGui::PushFont(ui_.large_font());
+    if (label_)
     {
-        ImGui::Text("%s", info_lbl_->name().c_str());
+        ImGui::Text("%s:", label_->name().c_str());
+        ImGui::SameLine();
+    }
+    ImGui::Text("%04X", data_);
+    ImGui::PopFont();
+    ImGui::Separator();
+    if (label_)
+    {
+        ImGui::Text("%s", label_->name().c_str());
     }
 
     for (const auto &ref:xrefs_to_)
@@ -446,8 +481,6 @@ void UI::AdrsInspector()
             ImGui::TextColored(ImVec4(128/255.0, 128/255.0, 128/255.0, 1.0f), "DATA");
         }
     }
-
-    ImGui::End();
 }
 
 void UI::ShutdownImgUI()
@@ -460,4 +493,13 @@ void UI::ShutdownImgUI()
     SDL_GL_DeleteContext(gl_context);
     SDL_DestroyWindow(window);
     SDL_Quit();
+}
+
+
+AdrsInspectorPanel::AdrsInspectorPanel( UI &ui, adrs_t data ) : InspectorPanel( ui, data )
+{
+    title_ = "Address";
+    //  The label for this address if any
+    label_ = Annotations::label_from_adrs( data_ );
+    xrefs_to_ = ui.explorer().xrefs().xrefs_to( data_ );
 }

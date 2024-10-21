@@ -456,6 +456,14 @@ Line Disassembler::disassemble_one_instruction( Annotations::RegionType type, ad
 	auto spans = _emitters[type]->emit( size );
 	adrs_t end = current_-1;
 
+	if (end>end_adrs)
+	{
+		//	The instruction did not fit in the region
+		//	We finish the disassembly with a DB
+		current_ = adrs;
+		return disassemble_one_instruction( Annotations::kDATA, end_adrs );
+	}
+
 	Line l{ bytes_, adrs, end };
 	l.set_spans( spans );
 
