@@ -30,7 +30,7 @@ class XRefs
 {
     const ROMFile &rom_;                  //  The ROM we cross reference
     const CPUInfo &cpu_info_;             //  Information about instructions and their relation to addresses
-    const Annotations &annotations_;      //  The annotations helps to identify regions of the ROM
+    // const Annotations &annotations_;      //  The annotations helps to identify regions of the ROM
 
     std::vector<XRef> references_;
 
@@ -83,10 +83,10 @@ class XRefs
     }
 
 public:
-    XRefs( const ROMFile &rom, const CPUInfo &cpu_info, const Annotations &annotations ) :
+    XRefs( const ROMFile &rom, const CPUInfo &cpu_info /*, const Annotations &annotations */ ) :
         rom_{ rom },
-        cpu_info_{ cpu_info },
-        annotations_{ annotations }
+        cpu_info_{ cpu_info }
+        // annotations_{ annotations }
     {
         for (adrs_t adrs = 0; adrs < rom.size(); adrs++)
         {

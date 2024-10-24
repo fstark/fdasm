@@ -231,6 +231,36 @@ public:
 	}
 };
 
+class Disassembly
+{
+	std::vector<Line> lines_;
+public:
+	Disassembly() = default;
+
+	Disassembly( std::vector<Line> &lines ) : lines_{ lines }
+	{
+	}
+
+	Disassembly( std::vector<Line> &&lines ) : lines_{ std::move(lines) }
+	{
+	}
+
+	const std::vector<Line> &lines() const { return lines_; }
+
+	size_t adrs_to_line( adrs_t adrs ) const
+	{
+		for (size_t i = 0; i<lines_.size(); i++)
+		{
+			if (lines_[i].start_adrs_<=adrs && lines_[i].end_adrs_>=adrs)
+				return i;
+		}
+		return 0;
+	}
+};
+
+//	I think the disassembler should hold the lines
+//	or return some sort of Disassembly object
+//	(so we don't scan the vector<Line> for content)
 class Disassembler
 {
     const std::vector<uint8_t> bytes_;
@@ -255,7 +285,7 @@ public:
 		std::clog << "Adieu, cruel world!" << std::endl;
 	}
 
-    std::vector<Line> disassemble();
+    Disassembly disassemble();
 
     uint8_t read_byte();
 

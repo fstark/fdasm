@@ -8,19 +8,9 @@
 #include "explorer.h"
 #include <stdio.h>
 
+#include "uicommon.h"
 
-#include "imgui.h"
-
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_opengl3.h"
-
-#include <SDL.h>
-#include <SDL_image.h>
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <SDL_opengles2.h>
-#else
-#include <SDL_opengl.h>
-#endif
+#include "byteinspector.h"
 
 void UI::InitImgUI()
 {
@@ -73,37 +63,162 @@ void UI::InitImgUI()
     large_font_ = io.Fonts->AddFontFromFileTTF("external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
 }
 
-static bool hoover[65536];
+auto dbg_color = ImVec4(0/255.0, 255/255.0, 0/255.0, 1.0f);
 
 auto adrs_color = ImVec4(244/255.0, 71/255.0, 71/255.0, 1.0f);
 auto byte_color = ImVec4(71/255.0, 244/255.0, 71/255.0, 1.0f);
+auto byte_select_color = ImVec4(35/255.0, 122/255.0, 35/255.0, 1.0f);
 auto data_color = ImVec4(0.8f, 0.8f, 0.1f, 1.0f);
 
 auto std_color = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+auto std_select_color = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
 auto mnemonic_color = ImVec4(84/255.0, 147/255.0, 201/255.0, 1.0f);
 auto string_color = ImVec4(198/255.0, 140/255.0, 116/255.0, 1.0f);
 
 auto select_color = ImVec4(255/255.0, 255/255.0, 255/255.0, 1.0f);
 
-void UI::DrawAddress( const Line &l )
+// void UI::DrawAddress( adrs_t adrs )
+// {
+//     //  Draw the Address for the line
+//     char buffer[5];
+//     snprintf( buffer, 5, "%04x", adrs );
+//     ImGui::TextColored(adrs_color, "%s", buffer ); // Display address
+//     if (ImGui::IsItemHovered())
+//     {
+//         InspectAdrs( adrs, true );
+//     }
+//     if (ImGui::IsItemClicked())
+//     {
+//         InspectAdrs( adrs, false );
+//     }
+//     ImGui::SameLine();
+// }
+
+void UI::Select( const char *buffer )
 {
-    //  Draw the Address for the line
-    char buffer[5];
-    snprintf( buffer, 5, "%04x", l.start_adrs_ );
-    ImGui::TextColored(adrs_color, "%s", buffer ); // Display address
-    if (ImGui::IsItemHovered())
+    ImVec2 text_size = ImGui::CalcTextSize(buffer);
+    ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+    ImGui::GetWindowDrawList()->AddRectFilled(cursor_pos, ImVec2(cursor_pos.x + text_size.x, cursor_pos.y + text_size.y), ImGui::GetColorU32(select_color));
+}
+
+//  Draws an address with specific style
+//  and handle interactions
+void UI::DrawAddress( adrs_t adrs, eDisplayStyle display_style, eInteractions interactions )
+{
+    char buffer[256];
+
+    switch (display_style)
     {
-        // inspect_adrs( l.start_adrs_ );
+        case kDisplayHex:
+            snprintf( buffer, 256, "%04x", adrs );
+            break;
+        case kDisplayDecimal:
+            snprintf( buffer, 256, "%5d", adrs );
+            break;
+        case kDisplayLabel:
+            {
+                auto lbl = Annotations::label_from_adrs( adrs );
+                if (lbl)
+                    snprintf( buffer, 256, "%s", lbl->name().c_str() );
+                else
+                    snprintf( buffer, 256, "%04x", adrs );
+            }
+            break;
+        case kDisplayDisplacement:
+            {
+                auto lbl = Annotations::label_before_adrs( adrs, 99 );
+                if (!lbl)
+                    snprintf( buffer, 256, "%04x       ", adrs );
+                else if (lbl->start_adrs() == adrs)
+                    snprintf( buffer, 256, "%s   ", lbl->name().c_str() );
+                else if (adrs-lbl->start_adrs()<10)
+                    snprintf( buffer, 256, "%s+%d ", lbl->name().c_str(), adrs-lbl->start_adrs() );
+                else
+                    snprintf( buffer, 256, "%s+%d", lbl->name().c_str(), adrs-lbl->start_adrs() );
+                while (strlen(buffer)<8+1+2)
+                    strcat( buffer, " " );
+            }
+            break;
+    default:
+        snprintf( buffer, 256, "????" );
+        break;
     }
+
+    if (is_hoover(adrs))
+    {
+        Select( buffer );
+    }
+
+    ImGui::TextColored(adrs_color, "%s", buffer ); // Display address
+}
+
+//  #### Should pass an optional address for interaction
+void UI::DrawByte( uint8_t byte, eDisplayStyle display_style, eInteractions interactions, adrs_t adrs )
+{
+    char buffer[256];
+
+    switch (display_style)
+    {
+        case kDisplayHex:
+            snprintf( buffer, 256, "%02x", byte );
+            break;
+        case kDisplayAscii:
+        {
+            uint8_t c = byte&0x7f;
+            if (c<32 || c>127)
+                c = ' ';
+            snprintf( buffer, 3, "%c ", c);
+            break;
+        }
+        case kDisplayBinary:
+            snprintf( buffer, 256, "%c%c%c%c%c%c%c%c",
+                byte&0x80?'1':'0',
+                byte&0x40?'1':'0',
+                byte&0x20?'1':'0',
+                byte&0x10?'1':'0',
+                byte&0x08?'1':'0',
+                byte&0x04?'1':'0',
+                byte&0x02?'1':'0',
+                byte&0x01?'1':'0' );
+            break;
+        case kDisplayOctal:
+            snprintf( buffer, 256, "%03o", byte );
+            break;
+        case kDisplayDecimal:
+            snprintf( buffer, 256, "%3d", byte );
+            break;
+        default:
+            snprintf( buffer, 256, "??" );
+            break;
+    }
+
+    if (is_hoover(adrs))
+    {
+        UI::Select( buffer );
+        ImGui::TextColored(byte_select_color, "%s", buffer );
+    }
+    else
+        ImGui::TextColored(byte_color, "%s", buffer );
+
+    // if (ImGui::IsItemHovered())
+    // {
+    //     InspectAdrs( adrs, true );
+    // }
+    // if (ImGui::IsItemClicked())
+    // {
+    //     InspectAdrs( adrs, false );
+    // }
     ImGui::SameLine();
 }
 
+/*
+// obsolete
 void UI::DrawByte( uint8_t b, adrs_t adrs )
 {
     char buffer[3];
 
         //  How to display the byte
-    if (show_ascii_)
+    if (force_ascii_)
     {
         uint8_t c = b&0x7f;
         if (c<32 || c>127)
@@ -115,7 +230,7 @@ void UI::DrawByte( uint8_t b, adrs_t adrs )
 
 
     auto color = byte_color;
-    if (hoover[adrs])
+    if (hoover_[adrs])
     {
         color = select_color;
         
@@ -127,7 +242,7 @@ void UI::DrawByte( uint8_t b, adrs_t adrs )
 
     ImGui::TextColored(color, "%s", buffer ); // Display byte
 
-    if (hoover[adrs])
+    if (hoover_[adrs])
     {
         ImGui::PopStyleColor( 4 );        
     }
@@ -140,14 +255,14 @@ void UI::DrawByte( uint8_t b, adrs_t adrs )
         // ImGui::BeginTooltip();
         // ImGui::Text("Item hovered: %02x", b);
         // ImGui::EndTooltip();
-        hoover[adrs] = true;
+        hoover_[adrs] = true;
 
         //  Show the byte inspector
         byte_inspector_ = std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(adrs) );
         byte_inspector_->unique();
     }
     else
-        hoover[adrs] = false;
+        hoover_[adrs] = false;
 
     if (ImGui::IsItemClicked())
     {
@@ -157,12 +272,13 @@ void UI::DrawByte( uint8_t b, adrs_t adrs )
 
     ImGui::SameLine();
 }
+*/
 
-void UI::DrawBytes( const Line &l )
+void UI::DrawBytes( const Line &l, eDisplayStyle display_style, eInteractions interactions )
 {
     for (int i = 0;i!=l.byte_count();i++)
     {
-        DrawByte( l.get_byte(i), l.start_adrs_+i );
+        DrawByte( l.get_byte(i), display_style,interactions, l.start_adrs_+i );
     }
 }
 
@@ -171,10 +287,6 @@ void UI::Run()
     int done = 0;
 
     ImGuiIO& io = ImGui::GetIO();
-
-    Disassembler *disassembler = explorer_.disassembler();
-
-    auto lines = disassembler->disassemble();
 
     while (!done)
     {
@@ -187,165 +299,32 @@ void UI::Run()
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
             if (event.type == SDL_KEYDOWN && event.key.keysym.sym == 'a')
-                show_ascii_ = true;
+                force_ascii_ = true;
             if (event.type == SDL_KEYUP && event.key.keysym.sym == 'a')
-                show_ascii_ = false;
+                force_ascii_ = false;
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == 'l')
+                force_labels_ = true;
+            if (event.type == SDL_KEYUP && event.key.keysym.sym == 'l')
+                force_labels_ = false;
+            //  Testing is "Ctrl" is pressed (alone)
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LALT)
+            {
+                std::clog << "LINKS" << std::endl;
+                link_ = true;
+            }
+            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_LALT)
+            {
+                std::clog << "NO LINKS" << std::endl;
+                link_ = false;
+            }
         }
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-    // Create a new ImGui window
-    ImGui::Begin("ROM Disassembly");
-
-    ImGui::Text("a: ASCII");
-
-    // Get imgui character width
-    float char_width = ImGui::CalcTextSize("A").x;
-    // 4 bytes + ':' + 8*2 bytes + 7 sep = 28 + 2 margins
-    float adrs_width = 30*char_width;
-    float label_width = 21*char_width;
-
-    ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-    ImGuiListClipper clipper;
-    clipper.Begin(lines.size(), ImGui::GetTextLineHeightWithSpacing());
-    while (clipper.Step())
-    {
-        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-        {
-            const auto& line = lines[i];
-
-
-        // Set background color for even lines
-        // if (i % 2 == 0)
-        {
-            // ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.6f, 1.0f, 0.6f, 1.0f)); // Light green background
-            // ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.7f, 1.0f, 0.7f, 1.0f)); // Slightly darker green when hovered
-            // // ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.8f, 1.0f, 0.8f, 1.0f)); // Slightly darker green when active
-
-            // ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.8f, 1.0f, 0.8f, 1.0f)); // Slightly darker green when active
-        // ImGui::Selectable(buff, false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, ImVec2(0, 0));
-        // ImGui::SameLine();
-            ImGui::Separator();
-        }
-
-        // char buff[16];
-        // sprintf( buff, "##%i", i );
-
-        // Use ImGui::Selectable to create a selectable item with the background color
-        // ImGui::Selectable(buff, false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, ImVec2(0, 0));
-
-        // Display line address and text in two columns
-        // First one being constant size
-        // ImGui::SameLine();
-
-
-            auto byte_color = data_color;
-            if (hoover[line.start_adrs_])
-                byte_color = select_color;
-            // Display line address and text in two columns
-            // First one being constant size
-            // ImGui::TextColored(byte_color, "%s", line.adrs_.c_str()); // Display address
-
-            if (!line.is_empty())
-            {
-                DrawAddress( line );
-                DrawBytes( line );
-            }
-            else
-            {
-                ImGui::SameLine(label_width);
-                ImGui::TextColored( std_color, "%s:", line.spans()[0].content().c_str() );
-                ImGui::SameLine();
-            }
-
-            ImGui::SameLine(adrs_width);
-            // ImGui::Text("%s", line.text_.c_str()); // Display disassembled text
-            if (!line.is_empty())
-            for (const auto &span:line.spans())
-            {
-                auto color = std_color;
-                bool hack = false;
-                bool is_mnem = false;
-                bool is_adrs = false;
-                switch (span.get_type())
-                {
-                    case Span::kMnemonic:
-                        color = mnemonic_color;
-                        is_mnem = true;
-                        break;
-                    case Span::kAddress:
-                        color = adrs_color;
-                        hack = true;
-                        is_adrs = true;
-                        break;
-                    case Span::kString:
-                        color = string_color;
-                        break;
-                    default:
-                        color = std_color;
-                        break;
-                }
-
-                //  Look if address has a label:
-                Label *lbl;
-                if (hack && (lbl = Annotations::label_from_adrs(span.adrs())))
-                {
-                    ImGui::TextColored(adrs_color, "%s", lbl->name().c_str() ); // Display label
-                    if (is_adrs && ImGui::IsItemHovered())
-                    {
-                        adrs_inspector_  = std::make_unique<AdrsInspectorPanel>( *this, span.adrs() );
-                        adrs_inspector_->unique();
-                    }
-                    if (is_adrs && ImGui::IsItemClicked())
-                    {
-                        panels_.push_back( std::make_unique<AdrsInspectorPanel>( *this, span.adrs() ) );
-                        panels_.back()->set_closable( true );
-                    }
-                }
-                else
-                {
-                    ImGui::TextColored( color, "%s", span.content().c_str() );
-                    if (is_mnem && ImGui::IsItemHovered())
-                    {
-                        ImGui::BeginTooltip();
-                        auto v = explorer_.rom().get(line.start_adrs_);
-                        ByteInspectorPanel::DisplayInstruction( *this, explorer_.cpu_info().instruction( v ) );
-                        ImGui::EndTooltip();
-                    }
-                    // #### wtf copy/paste
-                    if (is_adrs && ImGui::IsItemHovered())
-                    {
-                        adrs_inspector_  = std::make_unique<AdrsInspectorPanel>( *this, span.adrs() );
-                        adrs_inspector_->unique();
-                    }
-                    if (is_adrs && ImGui::IsItemClicked())
-                    {
-                        panels_.push_back( std::make_unique<AdrsInspectorPanel>( *this, span.adrs() ) );
-                        panels_.back()->set_closable( true );
-                    }
-                }
-                ImGui::SameLine();
-            }
-            ImGui::Text( "" );
-
-        // Pop the style color for even lines
-        // if (i % 2 == 0)
-        // {
-        //     ImGui::PopStyleColor(3);
-        // }
-
-        }
-    }
-    clipper.End();
-    ImGui::EndChild();
-
-
-//ImGui::IsItemHovered()
-
-    // End the ImGui window
-    ImGui::End();
+    //  The main window
+    code_inspector_->Draw();
 
     // Show demo ImgUI window
     ImGui::ShowDemoWindow();
@@ -358,7 +337,15 @@ void UI::Run()
     if (adrs_inspector_)
         adrs_inspector_->Draw();
 
+    //  Data inspector
+    if (data_inspector_panel_)
+        data_inspector_panel_ -> Draw();
+
+    std::vector<Panel *> to_draw;
     for (const auto &p:panels_)
+        to_draw.push_back( p.get() );
+
+    for (const auto p:to_draw)
         p->Draw();
 
     //  Remove all panels that are not open
@@ -377,110 +364,26 @@ void UI::Run()
     }
 }
 
-/* static */ void ByteInspectorPanel::DisplayInstruction( const UI &ui, const Instruction &instruction )
-{
-    ImGui::PushFont(ui.large_font());
-    ImGui::Text("%s", instruction.mnemonic().c_str());
-    ImGui::PopFont();
-    ImGui::Separator();
-    ImGui::PushTextWrapPos(320);
-    ImGui::Text("%s", instruction.description().c_str());
-    ImGui::Text("%s", instruction.flags().c_str());
-    ImGui::Text("%s", instruction.effect().c_str());
-    ImGui::PopTextWrapPos();
-}
 
 void Panel::Draw()
 {
     //  Window with 320, not resizable
-    // ImGui::SetNextWindowSize(ImVec2(320, 200));
+    ImGui::SetNextWindowSize(ImVec2(320, 200), ImGuiCond_FirstUseEver);
 
     bool *is_open_ptr = nullptr;
     if (is_closable_)
         is_open_ptr = &is_open_;
-    ImGui::Begin( name().c_str(), is_open_ptr, ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize);
+
+    if (has_resize)
+        ImGui::Begin( name().c_str(), is_open_ptr );
+    else
+        ImGui::Begin( name().c_str(), is_open_ptr, ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize);
+
+    // std::clog << "Drawing " << name() << std::endl;
 
     DoDraw();
 
     ImGui::End();
-}
-
-void ByteInspectorPanel::DoDraw()
-{
-    // Display the byte info in a large font
-
-    char info_char_ = data_&0x7f;
-    if (info_char_<32 || info_char_>126)
-        info_char_ = ' ';
-
-    ImGui::PushFont(ui_.large_font());
-    ImGui::Text("%02X|%c|%3d|%03o|%c%c%c%c %c%c%c%c",
-        data_,
-        info_char_,
-        data_,
-        data_,
-        data_&0x80?'1':'0',
-        data_&0x40?'1':'0',
-        data_&0x20?'1':'0',
-        data_&0x10?'1':'0',
-        data_&0x08?'1':'0',
-        data_&0x04?'1':'0',
-        data_&0x02?'1':'0',
-        data_&0x01?'1':'0'
-        );
-    ImGui::PopFont();
-    ImGui::PushFont(ui_.tiny_font());
-    ImGui::Text("hex asc dec oct binary");
-    ImGui::PopFont();
-    ImGui::Separator();
-    auto i = ui_.explorer().cpu_info().instruction(data_);
-    DisplayInstruction( ui_, i );
-}
-
-void AdrsInspectorPanel::DoDraw()
-{
-    ImGui::PushFont(ui_.large_font());
-    if (label_)
-    {
-        ImGui::Text("%s:", label_->name().c_str());
-        ImGui::SameLine();
-    }
-    ImGui::Text("%04X", data_);
-    ImGui::PopFont();
-    ImGui::Separator();
-    if (label_)
-    {
-        ImGui::Text("%s", label_->name().c_str());
-    }
-
-    for (const auto &ref:xrefs_to_)
-    {
-        auto adrs = ref.from_;
-
-        switch (ref.type_)
-        {
-            case XRef::kJUMP:
-                ImGui::TextColored(ImVec4(244/255.0, 71/255.0, 71/255.0, 1.0f), "%04X:", adrs);
-                break;
-            case XRef::kREF:
-                ImGui::TextColored(ImVec4(71/255.0, 71/255.0, 244/255.0, 1.0f), "%04X:", adrs);
-                break;
-            case XRef::kDATA:
-                ImGui::TextColored(ImVec4(128/255.0, 128/255.0, 128/255.0, 1.0f), "%04X:", adrs);
-                break;
-        }
-
-        if (ref.instruction)
-        {
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(244/255.0, 71/255.0, 71/255.0, 1.0f), "%s", ref.instruction->mnemonic().c_str());
-        }
-        else
-        {
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(128/255.0, 128/255.0, 128/255.0, 1.0f), "DATA");
-        }
-    }
 }
 
 void UI::ShutdownImgUI()
@@ -496,10 +399,3 @@ void UI::ShutdownImgUI()
 }
 
 
-AdrsInspectorPanel::AdrsInspectorPanel( UI &ui, adrs_t data ) : InspectorPanel( ui, data )
-{
-    title_ = "Address";
-    //  The label for this address if any
-    label_ = Annotations::label_from_adrs( data_ );
-    xrefs_to_ = ui.explorer().xrefs().xrefs_to( data_ );
-}

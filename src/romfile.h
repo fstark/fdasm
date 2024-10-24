@@ -16,5 +16,5 @@ public:
     uint16_t get_word(adrs_t adrs) const { return bytes_[adrs] + (bytes_[adrs+1] << 8); }
     uint16_t size() const { return bytes_.size(); }
 
-    bool contains(adrs_t adrs) const { return adrs >= load_adrs_ && (int)(adrs)-load_adrs_ < bytes_.size(); }
+    bool contains(adrs_t adrs) const { return adrs >= load_adrs_ && (size_t)(adrs)-load_adrs_ < bytes_.size(); }
 };

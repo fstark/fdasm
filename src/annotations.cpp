@@ -5,6 +5,7 @@
 #include <map>
 #include <unordered_map>
 #include <string>
+#include <algorithm>
 
 Annotations::Annotations( ROMFile &rom, const std::string &filename )
     : rom_{ rom }
@@ -115,6 +116,23 @@ Label *Annotations::label_from_adrs(adrs_t adrs)
     auto it = sLabelMap.find(adrs);
     if (it != sLabelMap.end())
         return &it->second;
+    return nullptr;
+}
+
+Label *Annotations::label_before_adrs(adrs_t adrs, int limit)
+{
+    // #### Must use a find!
+    for (auto it = sLabels.rbegin(); it != sLabels.rend(); it++)
+    {
+        if (it->start_adrs() <= adrs)
+        {
+            if (adrs-it->start_adrs() <= limit)
+                return &(*it);
+            else
+                return nullptr;
+        }
+    }
+
     return nullptr;
 }
 

@@ -51,6 +51,7 @@ public:
 	RegionType get_region_type(adrs_t adrs);
 
     static Label *label_from_adrs(adrs_t adrs);
+    static Label *label_before_adrs(adrs_t adrs, int limit);
     static const std::vector<Label> &get_labels();
 
         //  Adds a label

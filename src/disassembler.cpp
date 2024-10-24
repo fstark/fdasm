@@ -6,7 +6,7 @@
 
 #define MAX_CODE_LEN 256000
 
-std::vector<Span> CodeEmitter::emit( size_t max_len )
+std::vector<Span> CodeEmitter::emit( size_t )
 {
 	// char buffer[MAX_CODE_LEN+1];
 	// char *p = buffer;
@@ -325,7 +325,7 @@ std::vector<Span> DataEmitter::emit( size_t max_len )
 	return res;
 }
 
-std::vector<Span> DataWEmitter::emit( size_t max_len )
+std::vector<Span> DataWEmitter::emit( size_t )
 {
 	std::vector<Span> res;
 	// char buffer[MAX_CODE_LEN+1];
@@ -340,7 +340,7 @@ std::vector<Span> DataWEmitter::emit( size_t max_len )
 	return res;
 }
 
-std::vector<Span> StrzEmitter::emit( size_t max_len )
+std::vector<Span> StrzEmitter::emit( size_t )
 {
 	std::vector<Span> res;
 	// char buffer[MAX_CODE_LEN+1];
@@ -348,7 +348,6 @@ std::vector<Span> StrzEmitter::emit( size_t max_len )
 
 	// p += snprintf( p, MAX_CODE_LEN, "DB \"");
 	res.push_back( Span::pseudo( "DB" ) );
-	uint8_t c;
 	char buffer[32789];		
 	char *p = buffer;
 	while ((*p++=disassembler_.read_byte())!= 0);
@@ -360,7 +359,7 @@ std::vector<Span> StrzEmitter::emit( size_t max_len )
 	return res;
 }
 
-std::vector<Span> StrF2Emitter::emit( size_t max_len )
+std::vector<Span> StrF2Emitter::emit( size_t )
 {
 	std::vector<Span> res;
 	char buffer[16];
@@ -376,7 +375,7 @@ std::vector<Span> StrF2Emitter::emit( size_t max_len )
 	return res;
 }
 
-std::vector<Span> Str8sEmitter::emit( size_t max_len )
+std::vector<Span> Str8sEmitter::emit( size_t )
 {
 	std::vector<Span> res;
 	char buffer[16];
@@ -490,7 +489,7 @@ void Disassembler::disassemble_label( const Label &l )
 	disassemble_type( l.type(), l.end_adrs() );
 }
 
-std::vector<Line> Disassembler::disassemble()
+Disassembly Disassembler::disassemble()
 {
 	lines_.clear();
 
@@ -499,7 +498,7 @@ std::vector<Line> Disassembler::disassemble()
 		disassemble_label( l );
 	}
 
-	return lines_;
+	return Disassembly( std::move(lines_) );
 }
 
 void Disassembler::dump()

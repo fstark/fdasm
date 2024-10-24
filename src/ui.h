@@ -6,84 +6,11 @@ struct SDL_Window;
 typedef void *SDL_GLContext;
 struct ImFont;
 
-class UI;
+#include "inspector.h"
 
-//  A panel that is shown by the main loop
-class Panel
-{
-
-    protected:
-    bool is_open_ = true;
-    bool is_closable_ = false;
-    UI &ui_;
-    std::string title_;
-    std::string id_;
-
-        //  Override to perform the drawing
-    virtual void DoDraw() = 0;
-public:
-    Panel( UI &ui ) : ui_{ ui }
-    {
-        title_ = "";
-        id_ = "";
-    }
-    virtual ~Panel() {}
-
-    void Draw();
-
-    const std::string name() const { return title_+"##"+id_; }
-
-        //  All windows with this title will be the same
-    void unique( const std::string id = "" ) { id_ = id; }
-
-    bool is_open() const { return is_open_; }
-
-    void set_closable( bool closable ) { is_closable_ = closable; }
-};
-
-//  A panel that *inspects* a specific piece of data
-//  Such panels can be duplicated
-template <class T> class InspectorPanel : public Panel
-{
-protected:
-    T data_;
-public:
-    InspectorPanel( UI &ui, T data ) : Panel( ui ), data_{ data }
-    {
-        title_ = "";
-        id_ = std::to_string( (long)this ); //  #### Another Unique ID would be better
-    }
-};
-
-class ByteInspectorPanel : public InspectorPanel<uint8_t>
-{
-    public:
-    ByteInspectorPanel( UI &ui, uint8_t data ) : InspectorPanel( ui, data )
-    {
-        title_ = "Byte";
-    }
-    void DoDraw() override;
-
-    static void DisplayInstruction( const UI&ui, const Instruction &instruction );
-};
-
-class AdrsInspectorPanel : public InspectorPanel<adrs_t>
-{
-    Label *label_;
-    std::vector<XRef> xrefs_to_;
-    public:
-    AdrsInspectorPanel( UI &ui, adrs_t data );
-    void DoDraw() override;
-};
-
-class CodeInspectorPanel : public InspectorPanel<adrs_t>
-{
-    Label *label_;
-    std::vector<XRef> xrefs_to_;
-    public:
-    CodeInspectorPanel( UI &ui, adrs_t data );
-    void DoDraw() override;
-};
+#include "datainspector.h"
+#include "codeinspector.h"
+#include "adrsinspector.h"
 
 class UI
 {
@@ -98,41 +25,135 @@ class UI
     ImFont *tiny_font_;
     ImFont *large_font_;
 
-    //  If true, show ASCII
-    bool show_ascii_ = false;
 
-    //  The byte inspector
+    //  If true, click follows links
+    bool link_ = false;
+    
+    //  Inspectors
+    std::unique_ptr<Panel> code_inspector_;
     std::unique_ptr<Panel> byte_inspector_;
+    std::unique_ptr<Panel> adrs_inspector_;
+    std::unique_ptr<Panel> data_inspector_panel_;
+    
     std::vector<std::unique_ptr<Panel>> panels_;
 
-    //  Inspect a byte
-    // uint8_t info_byte_ = 0;
-    // void ByteInspector();
+    Disassembly disassembly_;
 
-    //  Inspect an address
-    // adrs_t info_adrs_ = 0;
-    // Label *info_lbl_ = nullptr;
-    void AdrsInspector();
-
-    std::unique_ptr<Panel> adrs_inspector_;
-
-    // std::vector<XRef> xrefs_to_;
-
-    void DrawAddress( const Line &l );  //  Very wrong
-    void DrawByte( uint8_t b, adrs_t adrs );
-    void DrawBytes( const Line &l );
+    // bool hoover_[65536];
+    int hoover_tag_;
+    adrs_t hoover_adrs_;  //  Hoover is single address
 
 public:
-    UI( Explorer &explorer ) : explorer_{ explorer }
+    //  Hoover mecanism
+
+    void hoover( adrs_t adrs, int tag, bool flag )
     {
+        if (flag /* && hoover_tag_==-1*/)
+        {
+            hoover_tag_ = tag;
+            hoover_adrs_ = adrs;
+            // std::clog << "HOOVER  ON " << hoover_adrs_ << " TAG " << tag << "\n";
+        }
+        if (!flag && hoover_tag_==tag && hoover_adrs_==adrs)
+        {
+            // std::clog << "UNHOOVER ON " << hoover_adrs_ << "/" << hoover_tag_ << " BY " << tag << "\n";
+            hoover_tag_ = -1;
+        }
+    }
+
+    bool is_hoover( adrs_t adrs ) const
+    {
+        if (hoover_tag_==-1)
+            return false;
+        // if (adrs==hoover_adrs_)
+        //     std::clog << "HOOVER FOUND ON " << adrs << "\n";
+        return adrs==hoover_adrs_;
+    }
+
+    typedef enum
+    {
+        kDisplayHex,            //  As hex
+        kDisplayAscii,          //  As ASCII
+        kDisplayBinary,         //  As binary
+        kDisplayOctal,          //  As octal
+        kDisplayDecimal,        //  As decimal
+        kDisplayLabel,          //  As a label
+        kDisplayDisplacement    //  As a label with displacement
+    }   eDisplayStyle;
+
+    typedef enum
+    {
+        kInteractNone = 0,             //  No interaction
+        kInteractTooltip = 0x01,       //  Hover display tooltip
+        kInteractInspect = 0x02,        //  Click selects in the inspector 
+        kInteractOpen = 0x04           //  Open a new panel on click
+    }   eInteractions;
+
+
+    eDisplayStyle address_display_style_ = kDisplayHex;
+    eDisplayStyle bytes_display_style_ = kDisplayHex;
+
+    //  If true, show ASCII
+    bool force_ascii_ = false;
+
+    //  If true, display labels+displacement for line addresses
+    bool force_labels_ = false;
+
+    UI( Explorer &explorer ) : explorer_{ explorer }, hoover_tag_( -1 )
+    {
+            //  We disassemble the code
+        disassembly_ = explorer_.disassembler()->disassemble();
+
         InitImgUI();
         // inspect_adrs( 0 );
+        code_inspector_ = std::make_unique<CodeInspectorPanel>( *this, 0 );
+        data_inspector_panel_ = std::make_unique<DataInspectorPanel>( *this );
     }
 
     ~UI()
     {
         ShutdownImgUI();
     }
+
+    static void Select( const char *buffer );
+
+    void DrawAddress( adrs_t adrs, eDisplayStyle display_style, eInteractions interactions );
+    // void DrawAddress( adrs_t adrs );
+    void DrawAddress( const Line &l );
+
+    void DrawByte( uint8_t byte, eDisplayStyle display_style, eInteractions interactions, adrs_t adrs );
+    void DrawByte( uint8_t b, adrs_t adrs );// obsolete
+    void DrawBytes( const Line &l, eDisplayStyle display_style, eInteractions interactions );
+
+    void InspectAdrs( adrs_t adrs, bool hoover )
+    {
+        if (hoover)
+        {
+            adrs_inspector_  = std::make_unique<AdrsInspectorPanel>( *this, adrs );
+            adrs_inspector_->unique();
+        }
+        else
+        {
+            if (!link_)
+            {
+                panels_.push_back( std::make_unique<AdrsInspectorPanel>( *this, adrs ) );
+                panels_.back()->set_closable( true );
+            }
+            else
+            {
+                std::clog<< "Adding panel"  << std::endl;
+                auto cip = std::make_unique<CodeInspectorPanel>( *this, adrs );
+                cip->scroll_to( disassembly_.adrs_to_line( adrs ) );
+                panels_.push_back( std::move(cip) );
+                panels_.back()->set_closable( true );
+            }
+        }
+    }
+
+
+    const std::vector<Line> &lines() const { return disassembly_.lines(); }
+                                                        // Incorrect, should be stored elsewhere
+                                                        //  Probably the explorer
 
     void Run();
 
