@@ -3,6 +3,7 @@
 #include "uicommon.h"
 #include "ui.h"
 #include "byteinspector.h"
+#include "modal.h"
 
 CodeInspectorPanel::CodeInspectorPanel( UI &ui, adrs_t data ) : InspectorPanel( ui, data )
 {
@@ -69,13 +70,16 @@ void CodeInspectorPanel::DoDraw()
     ImGuiListClipper clipper;
     // std::cout << "lines: " << ui_.lines().size() << std::endl;
     // std::cout << "line height: " << ImGui::GetTextLineHeightWithSpacing() << std::endl;
-    clipper.Begin(ui_.lines().size(), ImGui::GetTextLineHeightWithSpacing());
+    // clipper.Begin(ui_.lines().size(), ImGui::GetTextLineHeightWithSpacing());
+    clipper.Begin(ui_.lines().size(), ImGui::GetTextLineHeight());
+
 
 // test
     if (target_line_!=-1)
     {
-        float line_height_with_spacing = ImGui::GetTextLineHeightWithSpacing();
-        float target_y = target_line_ * line_height_with_spacing;
+        // float line_height = ImGui::GetTextLineHeightWithSpacing();
+        float line_height = ImGui::GetTextLineHeight();
+        float target_y = target_line_ * line_height;
         ImGui::SetScrollY(target_y);
         target_line_ = -1;
     }
@@ -86,28 +90,14 @@ void CodeInspectorPanel::DoDraw()
         {
             const auto& line = ui_.lines()[i];
 
-        // Set background color for even lines
-        // if (i % 2 == 0)
-        {
-            // ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.6f, 1.0f, 0.6f, 1.0f)); // Light green background
-            // ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.7f, 1.0f, 0.7f, 1.0f)); // Slightly darker green when hovered
-            // // ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.8f, 1.0f, 0.8f, 1.0f)); // Slightly darker green when active
-
-            // ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.8f, 1.0f, 0.8f, 1.0f)); // Slightly darker green when active
-        // ImGui::Selectable(buff, false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, ImVec2(0, 0));
-        // ImGui::SameLine();
-            ImGui::Separator();
-        }
-
-        // char buff[16];
-        // sprintf( buff, "##%i", i );
-
-        // Use ImGui::Selectable to create a selectable item with the background color
-        // ImGui::Selectable(buff, false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, ImVec2(0, 0));
-
-        // Display line address and text in two columns
-        // First one being constant size
-        // ImGui::SameLine();
+            // Set background color for even lines
+            if (i % 2 == 0)
+            {
+                ImVec2 text_size = ImGui::CalcTextSize("");
+                ImVec2 cursor_pos = ImGui::GetCursorScreenPos();    // left of line
+                cursor_pos.y -= 2;
+                ImGui::GetWindowDrawList()->AddRectFilled(cursor_pos, ImVec2(cursor_pos.x + ImGui::GetWindowWidth(), cursor_pos.y + text_size.y+3), ImGui::GetColorU32(line_color));
+            }
 
             // Draw the address of the current line
             // 4 digits hexadecimal
@@ -120,6 +110,12 @@ void CodeInspectorPanel::DoDraw()
                 
                 ui_.DrawAddress( line.start_adrs_, display, UI::kInteractNone );
                 ui_.hoover( line.start_adrs_, tag+0, ImGui::IsItemHovered() );
+
+
+                if (ImGui::IsItemClicked() && ImGui::GetMouseClickedCount(0)==2)
+                {
+                    ui_.AddPanel( std::make_unique<LabelEditModal>( ui_, line.start_adrs_, "" ) );
+                }
 
                 ImGui::SameLine();
 
@@ -136,6 +132,8 @@ void CodeInspectorPanel::DoDraw()
             }
             else
             {
+                //  Label
+                ImGui::Text( "" );
                 ImGui::SameLine(label_width);
                 if (ui_.is_hoover(line.start_adrs_))
                 {
@@ -145,7 +143,31 @@ void CodeInspectorPanel::DoDraw()
                 else
                     ImGui::TextColored( std_color, "%s:", line.spans()[0].content().c_str() );
                 ui_.hoover( line.start_adrs_, tag+3, ImGui::IsItemHovered() );
-                ImGui::SameLine();
+
+        //  Where the label was drawn
+    ImVec2 line_start = ImGui::GetItemRectMin();
+    ImVec2 line_end = ImGui::GetItemRectMax();
+
+#define SIZE 120
+        //  Go to right end
+    ImGui::SameLine(ImGui::GetWindowWidth() - SIZE); // Where we will draw
+    auto pos = ImGui::GetCursorScreenPos();
+
+    line_start.x = 0;
+    line_end.x = pos.x + SIZE;
+
+    // Check if the mouse is hovering over the entire line
+    if (ImGui::IsMouseHoveringRect(line_start, line_end))
+    {
+        // Add a close button
+        std::string button_id = "X##" + std::to_string(line.start_adrs_);
+        if (ImGui::SmallButton(button_id.c_str()))
+        {
+            ui_.remove_label_if_exists( line.spans()[0].content() );
+        }
+    }
+
+                // ImGui::SameLine();
             }
 
             ImGui::SameLine(adrs_width);

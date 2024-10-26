@@ -1,6 +1,6 @@
 #pragma once
 
-#include "inspector.h"
+#include "panel.h"
 
 //  Inspects all the memory
 class DataInspectorPanel : public Panel

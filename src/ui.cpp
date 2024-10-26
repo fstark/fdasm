@@ -77,6 +77,8 @@ auto string_color = ImVec4(198/255.0, 140/255.0, 116/255.0, 1.0f);
 
 auto select_color = ImVec4(255/255.0, 255/255.0, 255/255.0, 1.0f);
 
+auto line_color = ImVec4(40/255.0, 40/255.0, 40/255.0, 1.0f);
+
 // void UI::DrawAddress( adrs_t adrs )
 // {
 //     //  Draw the Address for the line
@@ -349,8 +351,7 @@ void UI::Run()
         p->Draw();
 
     //  Remove all panels that are not open
-    panels_.erase( std::remove_if( panels_.begin(), panels_.end(), [](const std::unique_ptr<Panel> &p) { return !p->is_open(); } ), panels_.end() );
-
+    close_panels();
 
         // Rendering
         ImGui::Render();
@@ -360,6 +361,15 @@ void UI::Run()
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
+
+        // Execute actions
+        if (remove_label_!="")
+        {
+            explorer_.annotations().remove_label_if_exists( remove_label_ );
+            remove_label_ = "";
+            disassembly_ = explorer_.disassembler()->disassemble();
+            explorer_.annotations().write_regions();
+        }
 
     }
 }

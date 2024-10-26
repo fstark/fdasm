@@ -25,6 +25,8 @@ public:
     adrs_t start_adrs() const { return start_adrs_; }
     adrs_t end_adrs() const { return end_adrs_; }
     Annotations::RegionType type() const { return type_; }
+    void set_type(Annotations::RegionType type) { type_ = type; }
+
     const std::string &name() const { return name_; }
 
     friend class Annotations;

@@ -6,7 +6,7 @@ CXXFLAGS=-O3 --std=c++1z `sdl2-config --cflags` -I../external/imgui -I../externa
 LDFLAGS=-std=c++14 -lSDL2 -lSDL2_image -framework OpenGL
 
 # List of object files
-OBJS= annotations.o cpuinfo.o disassembler.o explorer.o label.o romfile.o ui.o xrefs.o inspector.o adrsinspector.o byteinspector.o codeinspector.o datainspector.o fdasm.o 
+OBJS= annotations.o cpuinfo.o disassembler.o explorer.o label.o romfile.o ui.o xrefs.o panel.o adrsinspector.o byteinspector.o codeinspector.o datainspector.o modal.o fdasm.o 
 
 ../fdasm: ${OBJS}
 	g++ ${OBJS} imgui*.o -o ../fdasm ${LDFLAGS}

@@ -1,4 +1,4 @@
-#include "inspector.h"
+#include "panel.h"
 #include "ui.h"
 
 #include <SDL.h>

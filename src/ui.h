@@ -6,7 +6,7 @@ struct SDL_Window;
 typedef void *SDL_GLContext;
 struct ImFont;
 
-#include "inspector.h"
+#include "panel.h"
 
 #include "datainspector.h"
 #include "codeinspector.h"
@@ -43,9 +43,43 @@ class UI
     int hoover_tag_;
     adrs_t hoover_adrs_;  //  Hoover is single address
 
-public:
-    //  Hoover mecanism
+    //  If not empty, we remove this label after the next draw
+    std::string remove_label_;
 
+public:
+
+    void replace_label( const std::string &label, adrs_t adrs, Annotations::RegionType type )
+    {
+            //  We remove existing lavel at this address
+        Label *lbl = explorer_.annotations().label_from_adrs( adrs );
+        if (lbl)
+        {
+            explorer_.annotations().remove_label_if_exists( lbl->name() );
+        }
+            //  If name is not empty, we add a new label
+        if (!label.empty())
+        {
+            explorer_.annotations().remove_label_if_exists( label );
+            explorer_.annotations().add_label( label, adrs, type );
+        }
+            //  We rebuild the disassembly
+        disassembly_ = explorer_.disassembler()->disassemble();
+        explorer_.annotations().write_regions();
+    }
+
+    void remove_label_if_exists( const std::string &label )
+    {
+        remove_label_ = label;
+    }
+
+    void set_label_type( const std::string &label, Annotations::RegionType new_type )
+    {
+        auto lbl = Annotations::label_from_name( label );
+        lbl->set_type(new_type);
+        disassembly_ = explorer_.disassembler()->disassemble();
+    }
+
+    //  Hoover mecanism
     void hoover( adrs_t adrs, int tag, bool flag )
     {
         if (flag /* && hoover_tag_==-1*/)
@@ -125,6 +159,11 @@ public:
     void DrawByte( uint8_t b, adrs_t adrs );// obsolete
     void DrawBytes( const Line &l, eDisplayStyle display_style, eInteractions interactions );
 
+    void AddPanel( std::unique_ptr<Panel> panel )
+    {
+        panels_.push_back( std::move(panel) );
+    }
+
     void InspectAdrs( adrs_t adrs, bool hoover )
     {
         if (hoover)
@@ -162,8 +201,8 @@ public:
     ImFont *large_font() const { return large_font_; }
     ImFont *tiny_font() const { return tiny_font_; }
     const Explorer &explorer() const { return explorer_; }
-    void remove_panel( Panel *panel )
+    void close_panels()
     {
-        panels_.erase( std::remove_if( panels_.begin(), panels_.end(), [panel](const std::unique_ptr<Panel> &p) { return p.get() == panel; } ), panels_.end() );
+        panels_.erase( std::remove_if( panels_.begin(), panels_.end(), [](const std::unique_ptr<Panel> &p) { return !p->is_open(); } ), panels_.end() );
     }  
 };

@@ -8,12 +8,12 @@
 #include <algorithm>
 
 Annotations::Annotations( ROMFile &rom, const std::string &filename )
-    : rom_{ rom }
+    : rom_{ rom }, filename_{ filename }
 {
     regions_.resize(rom_.size());
 
     set_region( 0, rom_.size()-1, kCODE );
-    read_regions( filename );
+    read_regions( filename_ );
 }
 
 static std::vector<Label> sLabels;
@@ -63,6 +63,42 @@ void Annotations::read_regions( const std::string &filename )
     labels_changed();
 }
 
+int Annotations::write_regions( const std::string &filename ) const
+{
+    FILE *file = fopen( filename.c_str(), "w" );
+    if (file == NULL)
+    {
+        printf( "Failed to open file: %s\n", filename.c_str() );
+        return -1;
+    }
+
+    for (const auto &label: sLabels)
+    {
+        std::string type = "UNKNOWN";
+        switch (label.type())
+        {
+            case kCODE: type = "CODE"; break;
+            case kSTRZ: type = "STRZ"; break;
+            case kDATAW: type = "DATAW"; break;
+            case kSTR8S: type = "STR8S"; break;
+            case kDATA: type = "DATA"; break;
+            case kSTRF2: type = "STRF2"; break;
+            case kUNKNOWN: type = "UNKNOWN"; break;
+            case kCOUNT: type = "ERROR"; break;
+        }
+        fprintf( file, "%04X %s %s\n", label.start_adrs(), type.c_str(), label.name().c_str() );
+    }
+
+    fclose(file);
+
+    return 0;
+}
+
+int Annotations::write_regions() const
+{
+    return write_regions(filename_);
+}
+
 void Annotations::labels_changed()
 {
     // Sorts the labels by address
@@ -84,6 +120,8 @@ void Annotations::labels_changed()
         sLabels.back().set_end_adrs(0x7fff);
 }
 
+size_t Annotations::label_count() const { return sLabels.size(); }
+
 void Annotations::add_label( const std::string &name, adrs_t adrs, RegionType type )
 {
     Label label(adrs, name, type);
@@ -95,6 +133,16 @@ void Annotations::add_labels( const std::vector<Label> &labels )
 {
     sLabels.insert(sLabels.end(), labels.begin(), labels.end());
     labels_changed();
+}
+
+void Annotations::remove_label_if_exists( const std::string &name )
+{
+    auto it = std::remove_if(sLabels.begin(), sLabels.end(), [&name](const Label &label) { return label.name() == name; });
+    if (it != sLabels.end())
+    {
+        sLabels.erase(it, sLabels.end());
+        labels_changed();
+    }
 }
 
 Annotations::RegionType Annotations::get_region_type(adrs_t adrs)
@@ -139,4 +187,14 @@ Label *Annotations::label_before_adrs(adrs_t adrs, int limit)
 const std::vector<Label> &Annotations::get_labels()
 {
     return sLabels;
+}
+
+Label *Annotations::label_from_name( const std::string &name )
+{
+    for (auto &label: sLabels)
+    {
+        if (label.name() == name)
+            return &label;
+    }
+    return nullptr;
 }

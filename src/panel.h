@@ -43,6 +43,8 @@ public:
 
     bool is_open() const { return is_open_; }
 
+    void close() { is_open_ = false; }
+
     void set_closable( bool closable ) { is_closable_ = closable; }
 };
 

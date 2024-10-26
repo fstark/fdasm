@@ -30,6 +30,7 @@ public:
 class Annotations
 {
     const ROMFile &rom_;
+    const std::string filename_;
 
     void labels_changed();
 
@@ -53,12 +54,22 @@ public:
     static Label *label_from_adrs(adrs_t adrs);
     static Label *label_before_adrs(adrs_t adrs, int limit);
     static const std::vector<Label> &get_labels();
+    static Label *label_from_name( const std::string &name ); // unsure if good idea. maybe never let Labels leak and treat only names
 
         //  Adds a label
     void add_label( const std::string &name, adrs_t adrs, RegionType type );
 
         //  Adds several labels
     void add_labels( const std::vector<Label> &labels );
+
+        //  Removes a label
+    void remove_label_if_exists( const std::string &name );
+
+        //  Write the region file
+    int write_regions() const;
+
+        //  Label count
+    size_t label_count() const;
 
 private:
     std::vector<RegionType> regions_;
@@ -71,5 +82,5 @@ private:
     }
 
     void read_regions( const std::string &filename );
-
+    int write_regions( const std::string &filename ) const;
 };

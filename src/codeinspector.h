@@ -1,6 +1,6 @@
 #pragma once
 
-#include "inspector.h"
+#include "panel.h"
 
 class CodeInspectorPanel : public InspectorPanel<adrs_t>
 {

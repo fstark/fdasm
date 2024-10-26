@@ -27,3 +27,5 @@ extern ImVec4 mnemonic_color;
 extern ImVec4 string_color;
 
 extern ImVec4 select_color;
+
+extern ImVec4 line_color;
