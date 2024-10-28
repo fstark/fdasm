@@ -1,23 +1,47 @@
-# -Wextra -Werror -pedantic 
-# CXXFLAGS=-std=c++14 -Wall -O3
-# CXXFLAGS=-g -std=c++14 -Wall -Wextra -Wpedantic -O0 -I ../external/imgui
-# CF2=-O3 --std=c++1z `sdl2-config --cflags` -I../external/imgui -I../external/imgui/backends 
-CXXFLAGS=-O3 --std=c++1z `sdl2-config --cflags` -I../external/imgui -I../external/imgui/backends  -I. -Imodel -Iui
-LDFLAGS=-std=c++14 -lSDL2 -lSDL2_image -framework OpenGL
+# Define the object directory
+OBJDIR = obj
+
+# Define the compiler and flags
+CXX = g++
+CXXFLAGS = -std=c++14 -Wall -O3 `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
+LDFLAGS = -std=c++14 -lSDL2 -lSDL2_image -framework OpenGL
+
+# List of source directories
+SRCDIRS = ui model
+
+# List of source files
+SRCS = $(wildcard $(addsuffix /*.cpp, $(SRCDIRS))) external/imgui/backends/imgui_impl_sdl2.cpp
 
 # List of object files
-OBJS= model/annotations.o model/cpuinfo.o model/disassembler.o model/explorer.o model/label.o model/romfile.o ui/ui.o model/xrefs.o ui/panel.o ui/adrsinspector.o ui/byteinspector.o ui/codeinspector.o ui/datainspector.o ui/modal.o fdasm.o model/comment.o
+OBJS = $(patsubst %.cpp, $(OBJDIR)/%.o, $(SRCS))
 
-../fdasm: ${OBJS}
-	g++ ${OBJS} imgui/imgui*.o -o ../fdasm ${LDFLAGS}
+# Target executable
+TARGET = ../fdasm
 
-test: ../fdasm
-	../fdasm M100rom.bin /M100rom.fda
+# Default target
+all: $(TARGET)
 
-# Rules to build object files
-%.o: %.cpp
-	g++ -c ${CXXFLAGS} -MMD -MP $< -o $@
+# Rule to link the target executable
+$(TARGET): $(OBJS)
+	$(CXX) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
+# Rule to compile source files into object files
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Create the object directory if it doesn't exist
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+	mkdir -p $(OBJDIR)/ui
+	mkdir -p $(OBJDIR)/model
+	
+# Clean rule to remove object files and the target executable
+clean:
+	rm -f $(TARGET) $(OBJS)
+	rm -rf $(OBJDIR)
+
+# Phony targets
+.PHONY: all clean
 
 imgui_objs:
 	c++ ${CXXFLAGS} -c ../external/imgui/backends/imgui_impl_sdl2.cpp -o imgui/imgui_impl_sdl2.o
@@ -27,9 +51,3 @@ imgui_objs:
 	c++ ${CXXFLAGS} -c ../external/imgui/imgui_draw.cpp -o imgui/imgui_draw.o
 	c++ ${CXXFLAGS} -c ../external/imgui/imgui_tables.cpp -o imgui/imgui_tables.o
 	c++ ${CXXFLAGS} -c ../external/imgui/imgui_widgets.cpp -o imgui/imgui_widgets.o
-
-clean:
-	rm -f fdasm ${OBJS} *.d
-
-# Include the dependency files
--include $(OBJS:.o=.d)

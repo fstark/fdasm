@@ -48,6 +48,18 @@ Data view:
 
 # TODO
 
+- Cleanup
+    - Style
+        - public before private
+        - no direct access to members from outside the implementation
+        - remove most header inline code
+        - snake_case methods
+    - Changes
+        - Regions/Labels/Annotations. Make a decision on names
+        - Annotation's sLabels and sLabelMap: wtf?
+        - Label * should be removed and use only names?
+
+
 - Section inspector
     - Change section name
     - Change section type (instr, data bytes, words, strings, etc)
