@@ -1,5 +1,5 @@
 # Define the object directory
-OBJDIR = obj
+OBJDIR = ../obj
 
 # Define the compiler and flags
 CXX = g++
@@ -29,7 +29,7 @@ $(TARGET): $(OBJS)
 
 # Rule to compile source files into object files
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c -MMD -MP $< -o $@ 
 
 # Create the object directory if it doesn't exist
 $(OBJDIR):
@@ -38,6 +38,9 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)/model
 	mkdir -p $(OBJDIR)/external/imgui/backends
 
+# Include the dependency files
+-include $(OBJS:.o=.d)
+
 # Clean rule to remove object files and the target executable
 clean:
 	rm -f $(TARGET) $(OBJS)
@@ -45,12 +48,3 @@ clean:
 
 # Phony targets
 .PHONY: all clean
-
-imgui_objs:
-	c++ ${CXXFLAGS} -c ../external/imgui/backends/imgui_impl_sdl2.cpp -o imgui/imgui_impl_sdl2.o
-	c++ ${CXXFLAGS} -c ../external/imgui/backends/imgui_impl_opengl3.cpp -o imgui/imgui_impl_opengl3.o
-	c++ ${CXXFLAGS} -c ../external/imgui/imgui.cpp -o imgui/imgui.o
-	c++ ${CXXFLAGS} -c ../external/imgui/imgui_demo.cpp -o imgui/imgui_demo.o
-	c++ ${CXXFLAGS} -c ../external/imgui/imgui_draw.cpp -o imgui/imgui_draw.o
-	c++ ${CXXFLAGS} -c ../external/imgui/imgui_tables.cpp -o imgui/imgui_tables.o
-	c++ ${CXXFLAGS} -c ../external/imgui/imgui_widgets.cpp -o imgui/imgui_widgets.o
