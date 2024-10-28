@@ -8,25 +8,6 @@
 
 class Label;
 
-class Comment
-{
-    adrs_t adrs_;
-    std::string comment_;
-    bool automatic_;
-
-public:
-    Comment( adrs_t adrs, const std::string &comment, bool automatic ) :
-        adrs_{ adrs },
-        comment_{ comment },
-        automatic_{ automatic }
-    {
-    }
-
-    adrs_t adrs() const { return adrs_; }
-    const std::string &comment() const { return comment_; }
-    bool automatic() const { return automatic_; }
-};
-
 class Annotations
 {
     const ROMFile &rom_;

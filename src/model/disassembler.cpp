@@ -343,16 +343,13 @@ std::vector<Span> DataWEmitter::emit( size_t )
 std::vector<Span> StrzEmitter::emit( size_t )
 {
 	std::vector<Span> res;
-	// char buffer[MAX_CODE_LEN+1];
-	// char *p = buffer;
 
-	// p += snprintf( p, MAX_CODE_LEN, "DB \"");
 	res.push_back( Span::pseudo( "DB" ) );
 	char buffer[32789];		
 	char *p = buffer;
 	while ((*p++=disassembler_.read_byte())!= 0);
-		// p += snprintf( p, MAX_CODE_LEN, "%c", c);
-	// p += snprintf( p, MAX_CODE_LEN, "\",0");
+
+		//	Incorrect, some characters may not be printable
 	res.push_back( Span::string( buffer  ) );
 	res.push_back( Span::byte( 0 ) );		// #### Should be formated in decimal 0
 
