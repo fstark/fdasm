@@ -8,4 +8,3 @@
 #else
 #include <SDL_opengl.h>
 #endif
-

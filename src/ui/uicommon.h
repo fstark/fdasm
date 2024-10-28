@@ -1,8 +1,8 @@
 #pragma once
 
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl2.h"
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -11,7 +11,6 @@
 #else
 #include <SDL_opengl.h>
 #endif
-
 
 //  #### Bad
 extern ImVec4 dbg_color;

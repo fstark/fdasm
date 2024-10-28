@@ -13,7 +13,8 @@ SRCDIRS = ui model
 IMGUISRC = external/imgui/backends/imgui_impl_sdl2.cpp external/imgui/backends/imgui_impl_opengl3.cpp external/imgui/imgui.cpp external/imgui/imgui_demo.cpp external/imgui/imgui_draw.cpp external/imgui/imgui_tables.cpp external/imgui/imgui_widgets.cpp
 
 # List of source files
-SRCS = $(wildcard $(addsuffix /*.cpp, $(SRCDIRS))) $(IMGUISRC) fdasm.cpp
+FDASMSRC = $(wildcard $(addsuffix /*.cpp, $(SRCDIRS))) fdasm.cpp
+SRCS = $(FDASMSRC) $(IMGUISRC)
 
 # List of object files
 OBJS = $(patsubst %.cpp, $(OBJDIR)/%.o, $(SRCS))
@@ -47,5 +48,8 @@ clean:
 	rm -f $(TARGET) $(OBJS)
 	rm -rf $(OBJDIR)
 
+format:
+	clang-format -i $(FDASMSRC) `find ui model -name "*.h"`
+
 # Phony targets
-.PHONY: all clean
+.PHONY: all clean format

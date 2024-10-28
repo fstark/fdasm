@@ -9,19 +9,19 @@
 class Comment
 {
 public:
-    Comment( adrs_t adrs, const std::string &text, bool automatic ) :
-        adrs_{ adrs },
-        text_{ text },
-        automatic_{ automatic }
-    {
-    }
+	Comment(adrs_t adrs, const std::string& text, bool automatic)
+	    : adrs_{ adrs }
+	    , text_{ text }
+	    , automatic_{ automatic }
+	{
+	}
 
-    adrs_t adrs() const { return adrs_; }
-    const std::string &text() const { return text_; }
-    bool automatic() const { return automatic_; }
+	adrs_t adrs() const { return adrs_; }
+	const std::string& text() const { return text_; }
+	bool automatic() const { return automatic_; }
+
 private:
-    adrs_t adrs_;
-    std::string text_;
-    bool automatic_;
+	adrs_t adrs_;
+	std::string text_;
+	bool automatic_;
 };
-
