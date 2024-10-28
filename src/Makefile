@@ -3,7 +3,8 @@ OBJDIR = ../obj
 
 # Define the compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++14 -Wall -O3 `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
+CXXFLAGS = -Wextra -Werror -pedantic 
+CXXFLAGS += -std=c++14 -Wall -O3 `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
 LDFLAGS = -std=c++14 -lSDL2 -lSDL2_image -framework OpenGL
 
 # List of source directories

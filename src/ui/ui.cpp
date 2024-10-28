@@ -105,7 +105,7 @@ void UI::Select( const char *buffer )
 
 //  Draws an address with specific style
 //  and handle interactions
-void UI::DrawAddress( adrs_t adrs, eDisplayStyle display_style, eInteractions interactions )
+void UI::DrawAddress( adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */ )
 {
     char buffer[256];
 
@@ -155,7 +155,7 @@ void UI::DrawAddress( adrs_t adrs, eDisplayStyle display_style, eInteractions in
 }
 
 //  #### Should pass an optional address for interaction
-void UI::DrawByte( uint8_t byte, eDisplayStyle display_style, eInteractions interactions, adrs_t adrs )
+void UI::DrawByte( uint8_t byte, eDisplayStyle display_style, eInteractions /* interactions */, adrs_t adrs )
 {
     char buffer[256];
 

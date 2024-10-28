@@ -177,7 +177,6 @@ void CodeInspectorPanel::DoDraw()
             for (const auto &span:line.spans())
             {
                 auto color = std_color;
-                bool hack = false;
                 bool is_mnem = false;
                 bool is_adrs = false;
                 switch (span.get_type())

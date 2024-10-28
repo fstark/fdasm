@@ -26,7 +26,7 @@ class LabelEditModal : public Modal
     char name_buffer_[128];
 
 public:
-    LabelEditModal( UI &ui, adrs_t adrs, const std::string &label ) : Modal( ui ), adrs_{ adrs }
+    LabelEditModal( UI &ui, adrs_t adrs, const std::string &/* label */ ) : Modal( ui ), adrs_{ adrs }
     {
         title_ = "Edit Label";
         name_buffer_[0] = 0;
