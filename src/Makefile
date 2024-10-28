@@ -9,8 +9,10 @@ LDFLAGS = -std=c++14 -lSDL2 -lSDL2_image -framework OpenGL
 # List of source directories
 SRCDIRS = ui model
 
+IMGUISRC = external/imgui/backends/imgui_impl_sdl2.cpp external/imgui/backends/imgui_impl_opengl3.cpp external/imgui/imgui.cpp external/imgui/imgui_demo.cpp external/imgui/imgui_draw.cpp external/imgui/imgui_tables.cpp external/imgui/imgui_widgets.cpp
+
 # List of source files
-SRCS = $(wildcard $(addsuffix /*.cpp, $(SRCDIRS))) external/imgui/backends/imgui_impl_sdl2.cpp
+SRCS = $(wildcard $(addsuffix /*.cpp, $(SRCDIRS))) $(IMGUISRC) fdasm.cpp
 
 # List of object files
 OBJS = $(patsubst %.cpp, $(OBJDIR)/%.o, $(SRCS))
@@ -34,7 +36,8 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 	mkdir -p $(OBJDIR)/ui
 	mkdir -p $(OBJDIR)/model
-	
+	mkdir -p $(OBJDIR)/external/imgui/backends
+
 # Clean rule to remove object files and the target executable
 clean:
 	rm -f $(TARGET) $(OBJS)
