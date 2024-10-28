@@ -1,6 +1,6 @@
 #pragma once
 
-#include "panel.h"
+#include "inspector.h"
 
 class ByteInspectorPanel : public InspectorPanel<uint8_t>
 {

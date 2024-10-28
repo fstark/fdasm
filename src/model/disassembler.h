@@ -273,20 +273,6 @@ public:
 //	(so we don't scan the vector<Line> for content)
 class Disassembler
 {
-	const std::vector<uint8_t> bytes_;
-	adrs_t current_ = 0;
-	adrs_t dest_adrs_;
-
-	std::shared_ptr<Annotations> rom_content_;
-
-	std::unique_ptr<Emitter> _emitters[Annotations::kCOUNT];
-
-	std::vector<Line> lines_;
-
-	Line disassemble_one_instruction(Annotations::RegionType type, adrs_t end_adrs);
-	void disassemble_type(Annotations::RegionType type, adrs_t end_adrs);
-	void disassemble_label(const Label& l);
-
 public:
 	Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<Annotations> rom_content);
 
@@ -308,4 +294,21 @@ public:
 	adrs_t get_offset() const { return dest_adrs_; }
 
 	void dump();
+
+private:
+	const std::vector<uint8_t> bytes_;
+	adrs_t current_ = 0;
+	adrs_t dest_adrs_;
+
+	std::shared_ptr<Annotations> rom_content_;
+
+	std::unique_ptr<Emitter> _emitters[Annotations::kCOUNT];
+
+	std::vector<Line> lines_;
+
+	Line disassemble_one_instruction(Annotations::RegionType type, adrs_t end_adrs);
+	void disassemble_type(Annotations::RegionType type, adrs_t end_adrs);
+	void disassemble_label(const Label& l);
+
+
 };

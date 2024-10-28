@@ -31,7 +31,7 @@ void UI::InitImgUI()
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+	SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI); // NOLINT
 	window                       = SDL_CreateWindow("8085 Disassembler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
 	gl_context                   = SDL_GL_CreateContext(window);
 	SDL_GL_MakeCurrent(window, gl_context);
@@ -57,9 +57,10 @@ void UI::InitImgUI()
 	ImGui::CreateContext();
 
 	// Set the font size
-	io.Fonts->AddFontFromFileTTF("external/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
-	tiny_font_  = io.Fonts->AddFontFromFileTTF("external/imgui/misc/fonts/ProggyClean.ttf", 26.0f / 3);
-	large_font_ = io.Fonts->AddFontFromFileTTF("external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
+    //  #### TODO: Make this configurable/smarter
+	io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
+	tiny_font_  = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f / 3);
+	large_font_ = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
 }
 
 auto dbg_color = ImVec4(0 / 255.0, 255 / 255.0, 0 / 255.0, 1.0f);
@@ -86,11 +87,11 @@ auto line_color = ImVec4(40 / 255.0, 40 / 255.0, 40 / 255.0, 1.0f);
 //     ImGui::TextColored(adrs_color, "%s", buffer ); // Display address
 //     if (ImGui::IsItemHovered())
 //     {
-//         InspectAdrs( adrs, true );
+//         inspect_adrs( adrs, true );
 //     }
 //     if (ImGui::IsItemClicked())
 //     {
-//         InspectAdrs( adrs, false );
+//         inspect_adrs( adrs, false );
 //     }
 //     ImGui::SameLine();
 // }
@@ -137,7 +138,7 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 			else
 				snprintf(buffer, 256, "%s+%d", lbl->name().c_str(), adrs - lbl->start_adrs());
 			while (strlen(buffer) < 8 + 1 + 2)
-				strcat(buffer, " ");
+                strlcat(buffer, " ", sizeof(buffer));
 		}
 		break;
 		default:
@@ -203,11 +204,11 @@ void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* in
 
 	// if (ImGui::IsItemHovered())
 	// {
-	//     InspectAdrs( adrs, true );
+	//     inspect_adrs( adrs, true );
 	// }
 	// if (ImGui::IsItemClicked())
 	// {
-	//     InspectAdrs( adrs, false );
+	//     inspect_adrs( adrs, false );
 	// }
 	ImGui::SameLine();
 }
@@ -367,7 +368,7 @@ void UI::Run()
 			explorer_.annotations().remove_label_if_exists(remove_label_);
 			remove_label_ = "";
 			disassembly_  = explorer_.disassembler()->disassemble();
-			explorer_.annotations().write_regions();
+			(void)explorer_.annotations().write_regions();
 		}
 	}
 }

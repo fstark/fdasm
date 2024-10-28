@@ -1,12 +1,9 @@
 #pragma once
 
-#include "panel.h"
+#include "inspector.h"
 
 class Modal : public Panel
 {
-protected:
-	bool first_open_ = true;
-
 public:
 	Modal(UI& ui)
 	    : Panel(ui)
@@ -17,15 +14,13 @@ public:
 	void DoDraw() override;
 	virtual void DoDrawContent() = 0;
 	virtual void Apply()         = 0;
+
+protected:
+	bool first_open_ = true;
 };
 
 class LabelEditModal : public Modal
 {
-	adrs_t adrs_;
-	Annotations::RegionType label_type_;
-
-	char name_buffer_[128];
-
 public:
 	LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */)
 	    : Modal(ui)
@@ -44,4 +39,9 @@ public:
 
 	void DoDrawContent() override;
 	void Apply() override;
+
+private:
+	adrs_t adrs_;
+	Annotations::RegionType label_type_;
+	char name_buffer_[128];
 };

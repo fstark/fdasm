@@ -12,6 +12,10 @@ CodeInspectorPanel::CodeInspectorPanel(UI& ui, adrs_t data)
 	has_resize = true;
 }
 
+void CodeInspectorPanel::scroll_to_line(int line) { target_line_ = line; }
+
+void CodeInspectorPanel::scroll_to_adrs(int adrs) { scroll_to_line(ui_.disassembly().adrs_to_line(adrs)); }
+
 void CodeInspectorPanel::DoDraw()
 {
 	// if (ImGui::CollapsingHeader("Display Options"))
@@ -110,9 +114,15 @@ void CodeInspectorPanel::DoDraw()
 				ui_.DrawAddress(line.start_adrs_, display, UI::kInteractNone);
 				ui_.hoover(line.start_adrs_, tag + 0, ImGui::IsItemHovered());
 
-				if (ImGui::IsItemClicked() && ImGui::GetMouseClickedCount(0) == 2)
+				if (ImGui::IsItemClicked())
 				{
-					ui_.AddPanel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, ""));
+					if (ImGui::GetMouseClickedCount(0) == 1)
+						ui_.update_adrs_panel(line.start_adrs_);
+
+					if (ImGui::GetMouseClickedCount(0) == 2)
+					{
+						ui_.AddPanel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, ""));
+					}
 				}
 
 				ImGui::SameLine();
@@ -125,6 +135,8 @@ void CodeInspectorPanel::DoDraw()
 				for (int i = 0; i != line.byte_count(); i++)
 				{
 					ui_.DrawByte(line.get_byte(i), display, UI::kInteractNone, line.start_adrs_ + i);
+					if (ImGui::IsItemClicked())
+						ui_.update_adrs_panel(line.start_adrs_ + i);
 					ui_.hoover(line.start_adrs_ + i, tag + 1, ImGui::IsItemHovered());
 				}
 			}
@@ -201,7 +213,7 @@ void CodeInspectorPanel::DoDraw()
 						ui_.hoover(span.adrs(), tag + 2, ImGui::IsItemHovered());
 						if (ImGui::IsItemClicked())
 						{
-							ui_.InspectAdrs(span.adrs(), false);
+							ui_.inspect_adrs(span.adrs(), false);
 						}
 					}
 					else
@@ -220,7 +232,7 @@ void CodeInspectorPanel::DoDraw()
 						// }
 						// if (is_adrs && ImGui::IsItemClicked())
 						// {
-						//     ui_.InspectAdrs( span.adrs(), false );
+						//     ui_.inspect_adrs( span.adrs(), false );
 						// }
 					}
 					ImGui::SameLine();

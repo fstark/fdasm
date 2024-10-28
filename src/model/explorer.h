@@ -10,12 +10,6 @@
 
 class Explorer
 {
-	CPUInfo cpu_info_;
-	ROMFile rom_contents_;
-	Annotations annotations_;
-	Disassembler disassembler_;
-	XRefs xrefs_;
-
 public:
 	Explorer(
 	    const std::string& cpuinfo,
@@ -77,4 +71,13 @@ public:
 	const CPUInfo& cpu_info() const { return cpu_info_; }
 	const XRefs& xrefs() const { return xrefs_; }
 	Annotations& annotations() { return annotations_; }
+
+private:
+	CPUInfo cpu_info_;
+	ROMFile rom_contents_;
+	Annotations annotations_;
+	Disassembler disassembler_;
+	XRefs xrefs_;
+
+
 };

@@ -6,13 +6,6 @@
 
 class Label
 {
-	adrs_t start_adrs_;
-	adrs_t end_adrs_; //  Automatically set by Annotations::labels_changed()
-	std::string name_;
-	Annotations::RegionType type_;
-
-	void set_end_adrs(adrs_t end_adrs) { end_adrs_ = end_adrs; }
-
 public:
 	Label(adrs_t start_adrs, const std::string& name, Annotations::RegionType type)
 	    : start_adrs_{ start_adrs }
@@ -30,4 +23,13 @@ public:
 	const std::string& name() const { return name_; }
 
 	friend class Annotations;
+
+private:
+	adrs_t start_adrs_;
+	adrs_t end_adrs_; //  Automatically set by Annotations::labels_changed()
+	std::string name_;
+	Annotations::RegionType type_;
+
+	void set_end_adrs(adrs_t end_adrs) { end_adrs_ = end_adrs; }
+
 };

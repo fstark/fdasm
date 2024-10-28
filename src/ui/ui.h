@@ -6,45 +6,12 @@ struct SDL_Window;
 typedef void* SDL_GLContext;
 struct ImFont;
 
-#include "panel.h"
-
 #include "adrsinspector.h"
 #include "codeinspector.h"
 #include "datainspector.h"
 
 class UI
 {
-	Explorer& explorer_;
-
-	void InitImgUI();
-	void ShutdownImgUI();
-
-	SDL_Window* window = NULL;
-	SDL_GLContext gl_context;
-
-	ImFont* tiny_font_;
-	ImFont* large_font_;
-
-	//  If true, click follows links
-	bool link_ = false;
-
-	//  Inspectors
-	std::unique_ptr<Panel> code_inspector_;
-	std::unique_ptr<Panel> byte_inspector_;
-	std::unique_ptr<Panel> adrs_inspector_;
-	std::unique_ptr<Panel> data_inspector_panel_;
-
-	std::vector<std::unique_ptr<Panel>> panels_;
-
-	Disassembly disassembly_;
-
-	// bool hoover_[65536];
-	int hoover_tag_;
-	adrs_t hoover_adrs_; //  Hoover is single address
-
-	//  If not empty, we remove this label after the next draw
-	std::string remove_label_;
-
 public:
 	void replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type)
 	{
@@ -62,7 +29,7 @@ public:
 		}
 		//  We rebuild the disassembly
 		disassembly_ = explorer_.disassembler()->disassemble();
-		explorer_.annotations().write_regions();
+		(void)explorer_.annotations().write_regions();
 	}
 
 	void remove_label_if_exists(const std::string& label)
@@ -163,34 +130,50 @@ public:
 		panels_.push_back(std::move(panel));
 	}
 
-	void InspectAdrs(adrs_t adrs, bool hoover)
+	void update_adrs_panel( adrs_t adrs )
 	{
-		if (hoover)
-		{
-			adrs_inspector_ = std::make_unique<AdrsInspectorPanel>(*this, adrs);
-			adrs_inspector_->unique();
-		}
-		else
-		{
-			if (!link_)
-			{
-				panels_.push_back(std::make_unique<AdrsInspectorPanel>(*this, adrs));
-				panels_.back()->set_closable(true);
-			}
-			else
-			{
-				std::clog << "Adding panel" << std::endl;
-				auto cip = std::make_unique<CodeInspectorPanel>(*this, adrs);
-				cip->scroll_to(disassembly_.adrs_to_line(adrs));
-				panels_.push_back(std::move(cip));
-				panels_.back()->set_closable(true);
-			}
-		}
+		adrs_inspector_ = std::make_unique<AdrsInspectorPanel>(*this, adrs);
+		adrs_inspector_->unique();
+	}
+
+	void update_code_panel( adrs_t adrs )
+	{
+		// code_inspector_ = std::make_unique<CodeInspectorPanel>(*this, 0);
+		code_inspector_->scroll_to_adrs(adrs);
+		// code_inspector_->unique();
+	}
+
+	void new_disassembly_panel( adrs_t adrs )
+	{
+		auto cip = std::make_unique<CodeInspectorPanel>(*this, adrs);
+		cip->scroll_to_adrs(adrs);
+		panels_.push_back(std::move(cip));
+		panels_.back()->set_closable(true);
+	}
+
+	void inspect_adrs(adrs_t adrs, bool /* hoover */)
+	{
+		update_adrs_panel( adrs );
+
+		if (link_)
+		 	new_disassembly_panel( adrs );
+
+		// if (!link_)
+		// {
+		// 	panels_.push_back(std::make_unique<AdrsInspectorPanel>(*this, adrs));
+		// 	panels_.back()->set_closable(true);
+		// }
+		// else
+		// {
+		// 	new_disassembly_panel( adrs );
+		// }
 	}
 
 	const std::vector<Line>& lines() const { return disassembly_.lines(); }
 	// Incorrect, should be stored elsewhere
 	//  Probably the explorer
+
+	const Disassembly& disassembly() const { return disassembly_; }
 
 	void Run();
 
@@ -204,4 +187,37 @@ public:
 		                  { return !p->is_open(); }),
 		    panels_.end());
 	}
+
+private:
+	Explorer& explorer_;
+
+	void InitImgUI();
+	void ShutdownImgUI();
+
+	SDL_Window* window = NULL;
+	SDL_GLContext gl_context;
+
+	ImFont* tiny_font_;
+	ImFont* large_font_;
+
+	//  If true, click follows links
+	bool link_ = false;
+
+	//  Inspectors
+	std::unique_ptr<CodeInspectorPanel> code_inspector_;
+	std::unique_ptr<Panel> byte_inspector_;
+	std::unique_ptr<Panel> adrs_inspector_;
+	std::unique_ptr<Panel> data_inspector_panel_;
+
+	std::vector<std::unique_ptr<Panel>> panels_;
+
+	Disassembly disassembly_;
+
+	// bool hoover_[65536];
+	int hoover_tag_;
+	adrs_t hoover_adrs_; //  Hoover is single address
+
+	//  If not empty, we remove this label after the next draw
+	std::string remove_label_;
+
 };

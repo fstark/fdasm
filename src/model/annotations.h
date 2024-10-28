@@ -10,11 +10,6 @@ class Label;
 
 class Annotations
 {
-	const ROMFile& rom_;
-	const std::string filename_;
-
-	void labels_changed();
-
 public:
 	typedef enum
 	{
@@ -47,7 +42,7 @@ public:
 	void remove_label_if_exists(const std::string& name);
 
 	//  Write the region file
-	int write_regions() const;
+	[[nodiscard]] int write_regions() const;
 
 	//  Label count
 	size_t label_count() const;
@@ -62,6 +57,11 @@ private:
 			regions_[adrs - rom_.load_adrs()] = type;
 	}
 
-	void read_regions(const std::string& filename);
-	int write_regions(const std::string& filename) const;
+	[[nodiscard]] int read_regions(const std::string& filename);
+	[[nodiscard]] int write_regions(const std::string& filename) const;
+
+	const ROMFile& rom_;
+	const std::string filename_;
+
+	void labels_changed();
 };

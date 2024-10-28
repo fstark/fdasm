@@ -48,6 +48,11 @@ void AdrsInspectorPanel::DoDraw()
 				break;
 		}
 
+		if (ImGui::IsItemClicked())
+		{
+			ui_.update_code_panel(adrs);
+		}
+
 		if (ref.instruction)
 		{
 			ImGui::SameLine();

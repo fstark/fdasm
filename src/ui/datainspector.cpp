@@ -35,6 +35,9 @@ void DataInspectorPanel::DoDraw()
 				display = UI::kDisplayDisplacement;
 
 			ui_.DrawAddress(adrs, display, UI::kInteractNone);
+			if (ImGui::IsItemClicked())
+				ui_.update_adrs_panel(adrs);
+
 			ui_.hoover(adrs, tag + 0, ImGui::IsItemHovered());
 
 			ImGui::SameLine(0, 0);
@@ -48,6 +51,8 @@ void DataInspectorPanel::DoDraw()
 			for (int i = 0; i != 16; i++)
 			{
 				ui_.DrawByte(ui_.explorer().rom().get(adrs + i), display, UI::kInteractNone, adrs + i);
+				if (ImGui::IsItemClicked())
+					ui_.update_adrs_panel(adrs+i);
 				ui_.hoover(adrs + i, tag + 1, ImGui::IsItemHovered());
 			}
 			ImGui::Text("");

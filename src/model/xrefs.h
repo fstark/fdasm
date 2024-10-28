@@ -28,59 +28,6 @@ public:
 
 class XRefs
 {
-	const ROMFile& rom_;      //  The ROM we cross reference
-	const CPUInfo& cpu_info_; //  Information about instructions and their relation to addresses
-	// const Annotations &annotations_;      //  The annotations helps to identify regions of the ROM
-
-	std::vector<XRef> references_;
-
-	//  True if the address has an instruction
-	//  (we do not want data ref from the next byte)
-	std::array<bool, 65536> has_instr_;
-
-	//  Create references from a given address
-private:
-	std::vector<XRef> references_from(adrs_t adrs)
-	{
-		std::vector<XRef> result;
-		//  We may be jumping to somewhere
-		auto& i = cpu_info_.instruction(rom_.get(adrs));
-		//  Jmp or Call
-		if (i.is_jump())
-		{
-			XRef ref;
-			ref.from_ = adrs;
-			ref.to_   = rom_.get_word(adrs + 1);
-			ref.type_ = XRef::kJUMP;
-			//            ref.is_local = annotations_.get_region_type(adrs) == annotations_.get_region_type(ref.to_);
-			ref.instruction = &i;
-			result.push_back(ref);
-			has_instr_[adrs] = true;
-		}
-		//  We may be loading an address
-		if (i.is_ref())
-		{
-			XRef ref;
-			ref.from_ = adrs;
-			ref.to_   = rom_.get_word(adrs + 1);
-			ref.type_ = XRef::kREF;
-			//            ref.is_local = annotations_.get_region_type(adrs) == annotations_.get_region_type(ref.to_);
-			ref.instruction = &i;
-			result.push_back(ref);
-			has_instr_[adrs] = true;
-		}
-		//  Just a reference
-		if (adrs >= 1 && !has_instr_[adrs - 1])
-		{
-			XRef ref;
-			ref.from_       = adrs;
-			ref.to_         = rom_.get_word(adrs);
-			ref.type_       = XRef::kDATA;
-			ref.instruction = nullptr;
-			result.push_back(ref);
-		}
-		return result;
-	}
 
 public:
 	XRefs(const ROMFile& rom, const CPUInfo& cpu_info /*, const Annotations &annotations */)
@@ -112,5 +59,60 @@ public:
 	const std::vector<XRef>& xrefs() const
 	{
 		return references_;
+	}
+
+
+private:
+	const ROMFile& rom_;      //  The ROM we cross reference
+	const CPUInfo& cpu_info_; //  Information about instructions and their relation to addresses
+	// const Annotations &annotations_;      //  The annotations helps to identify regions of the ROM
+
+	std::vector<XRef> references_;
+
+	//  True if the address has an instruction
+	//  (we do not want data ref from the next byte)
+	std::array<bool, 65536> has_instr_;
+
+	//  Create references from a given address
+	std::vector<XRef> references_from(adrs_t adrs)
+	{
+		std::vector<XRef> result;
+		//  We may be jumping to somewhere
+		auto& i = cpu_info_.instruction(rom_.get(adrs));
+		//  Jmp or Call
+		if (i.is_jump() && rom_.contains(adrs + 2))
+		{
+			XRef ref;
+			ref.from_ = adrs;
+			ref.to_   = rom_.get_word(adrs + 1);
+			ref.type_ = XRef::kJUMP;
+			//            ref.is_local = annotations_.get_region_type(adrs) == annotations_.get_region_type(ref.to_);
+			ref.instruction = &i;
+			result.push_back(ref);
+			has_instr_[adrs] = true;
+		}
+		//  We may be loading an address
+		if (i.is_ref() && rom_.contains(adrs + 2))
+		{
+			XRef ref;
+			ref.from_ = adrs;
+			ref.to_   = rom_.get_word(adrs + 1);
+			ref.type_ = XRef::kREF;
+			//            ref.is_local = annotations_.get_region_type(adrs) == annotations_.get_region_type(ref.to_);
+			ref.instruction = &i;
+			result.push_back(ref);
+			has_instr_[adrs] = true;
+		}
+		//  Just a reference
+		if (adrs >= 1 && !has_instr_[adrs - 1] && rom_.contains(adrs + 1))
+		{
+			XRef ref;
+			ref.from_       = adrs;
+			ref.to_         = rom_.get_word(adrs);
+			ref.type_       = XRef::kDATA;
+			ref.instruction = nullptr;
+			result.push_back(ref);
+		}
+		return result;
 	}
 };

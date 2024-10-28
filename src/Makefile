@@ -4,8 +4,9 @@ OBJDIR = ../obj
 # Define the compiler and flags
 CXX = g++
 CXXFLAGS = -Wextra -Werror -pedantic 
-CXXFLAGS += -std=c++14 -Wall -O3 `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
-LDFLAGS = -std=c++14 -lSDL2 -lSDL2_image -framework OpenGL
+CXXFLAGS += -std=c++2a -Wall -O3 `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
+LDFLAGS = -std=c++2a -lSDL2 -lSDL2_image -framework OpenGL
+CLANGTIDY = /usr/local/opt/llvm/bin/clang-tidy
 
 # List of source directories
 SRCDIRS = ui model
@@ -48,8 +49,17 @@ clean:
 	rm -f $(TARGET) $(OBJS)
 	rm -rf $(OBJDIR)
 
+# Format target to run clang-format on the specified files
 format:
 	clang-format -i $(FDASMSRC) `find ui model -name "*.h"`
+
+# Generate compile_commands.json using Bear
+compdb:
+	bear -- make
+
+# Run clang-tidy on fdasm source files
+tidy:
+	$(CLANGTIDY) -p . $(FDASMSRC)
 
 # Phony targets
 .PHONY: all clean format

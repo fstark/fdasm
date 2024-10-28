@@ -12,6 +12,7 @@ CPUInfo::CPUInfo(const std::string filename)
 	if (file == NULL)
 	{
 		std::cerr << "Failed to open file: " << filename << std::endl;
+		throw std::runtime_error("Failed to open CPU definition file");
 		return;
 	}
 

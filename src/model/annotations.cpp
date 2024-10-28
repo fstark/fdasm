@@ -14,19 +14,23 @@ Annotations::Annotations(ROMFile& rom, const std::string& filename)
 	regions_.resize(rom_.size());
 
 	set_region(0, rom_.size() - 1, kCODE);
-	read_regions(filename_);
+	if (read_regions(filename_)==-1)
+	{
+		fprintf( stderr, "Failed to read regions file: %s\n", filename_.c_str());
+		throw std::runtime_error("Failed to read regions file");
+	}
 }
 
 static std::vector<Label> sLabels;
 static std::unordered_map<adrs_t, Label> sLabelMap;
 
-void Annotations::read_regions(const std::string& filename)
+int Annotations::read_regions(const std::string& filename)
 {
 	FILE* file = fopen(filename.c_str(), "r");
 	if (file == NULL)
 	{
-		printf("Failed to open file: %s\n", filename.c_str());
-		return;
+		fprintf( stderr, "Failed to open file: %s\n", filename.c_str());
+		return -1;
 	}
 
 	char line[256];
@@ -40,6 +44,11 @@ void Annotations::read_regions(const std::string& filename)
 		int n;
 		if ((n = sscanf(line, "%X %s %s", &adrs, type, label)))
 		{
+			if (n!=3)
+			{
+				fprintf( stderr, "Error reading region line: [%s]\n", line );
+				continue;
+			}
 			// fprintf( stderr, "     %x %x %s\n", start, end, type );
 			Annotations::RegionType RegionType = Annotations::kUNKNOWN;
 			if (strcmp(type, "CODE") == 0)
@@ -62,6 +71,8 @@ void Annotations::read_regions(const std::string& filename)
 	fclose(file);
 
 	labels_changed();
+
+	return 0;
 }
 
 int Annotations::write_regions(const std::string& filename) const
@@ -69,7 +80,7 @@ int Annotations::write_regions(const std::string& filename) const
 	FILE* file = fopen(filename.c_str(), "w");
 	if (file == NULL)
 	{
-		printf("Failed to open file: %s\n", filename.c_str());
+		fprintf( stderr, "Failed to open file: %s\n", filename.c_str());
 		return -1;
 	}
 

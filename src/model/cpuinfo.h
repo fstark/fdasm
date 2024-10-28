@@ -6,14 +6,6 @@
 
 class Instruction
 {
-	uint8_t opcode_;
-	std::string mnemonic_;
-	std::string description_;
-	std::string flags_;
-	std::string effect_;
-	bool is_jump_;
-	bool is_ref_;
-
 public:
 	Instruction(uint8_t opcode, const std::string& mnemonic, const std::string& description, const std::string& flags, const std::string& effect)
 	    : opcode_{ opcode }
@@ -38,16 +30,26 @@ public:
 	bool is_ref() const { return is_ref_; }
 
 	friend class CPUInfo;
+
+private:
+	uint8_t opcode_;
+	std::string mnemonic_;
+	std::string description_;
+	std::string flags_;
+	std::string effect_;
+	bool is_jump_;
+	bool is_ref_;
+
 };
 
 class CPUInfo
 {
-	std::vector<Instruction> instructions_;
-
-	std::vector<Instruction*> jumps_;
-
 public:
 	CPUInfo(const std::string filename);
 	const Instruction& instruction(uint8_t opcode) const { return instructions_[opcode]; }
 	const std::vector<Instruction*>& jumps() const { return jumps_; }
+
+private:
+	std::vector<Instruction> instructions_;
+	std::vector<Instruction*> jumps_;
 };
