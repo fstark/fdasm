@@ -1,5 +1,7 @@
 #pragma once
 
+#define IMGUI_IMPL_OPENGL_LOADER_GLAD
+
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
@@ -28,3 +30,9 @@ extern ImVec4 string_color;
 extern ImVec4 select_color;
 
 extern ImVec4 line_color;
+
+extern ImVec4 data_ref_color;
+extern ImVec4 bg_select_color;
+
+void paint_line(ImU32 color);
+void paint_element( const char *str, ImU32 color);

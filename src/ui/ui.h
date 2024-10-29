@@ -9,10 +9,39 @@ struct ImFont;
 #include "adrsinspector.h"
 #include "codeinspector.h"
 #include "datainspector.h"
+#include "byteinspector.h"
 
+#include "uicommon.h"
+
+//	This class represents the UI, aka the whole application
 class UI
 {
 public:
+	UI(Explorer& explorer)
+	    : explorer_{ explorer }
+	    , hoover_tag_(-1)
+	{
+		//  We disassemble the code
+		disassembly_ = explorer_.disassembler()->disassemble();
+
+		InitImgUI();
+
+		//	We create the main panels
+		code_inspector_       = std::make_unique<CodeInspectorPanel>(*this, 0);
+		code_inspector_->set_unique();
+		data_inspector_panel_ = std::make_unique<DataInspectorPanel>(*this);
+		data_inspector_panel_->set_unique();
+		adrs_inspector_ = std::make_unique<AdrsInspectorPanel>(*this, 0);
+		adrs_inspector_->set_unique();
+        byte_inspector_ = std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(0) );
+		byte_inspector_->set_unique();
+	}
+
+	~UI()
+	{
+		ShutdownImgUI();
+	}
+
 	void replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type)
 	{
 		//  We remove existing lavel at this address
@@ -97,27 +126,11 @@ public:
 	//  If true, display labels+displacement for line addresses
 	bool force_labels_ = false;
 
-	UI(Explorer& explorer)
-	    : explorer_{ explorer }
-	    , hoover_tag_(-1)
-	{
-		//  We disassemble the code
-		disassembly_ = explorer_.disassembler()->disassemble();
-
-		InitImgUI();
-		// inspect_adrs( 0 );
-		code_inspector_       = std::make_unique<CodeInspectorPanel>(*this, 0);
-		data_inspector_panel_ = std::make_unique<DataInspectorPanel>(*this);
-	}
-
-	~UI()
-	{
-		ShutdownImgUI();
-	}
-
 	static void Select(const char* buffer);
 
 	void DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions interactions);
+	void DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions interactions, const ImVec4& color);
+
 	// void DrawAddress( adrs_t adrs );
 	void DrawAddress(const Line& l);
 
@@ -132,15 +145,22 @@ public:
 
 	void update_adrs_panel( adrs_t adrs )
 	{
-		adrs_inspector_ = std::make_unique<AdrsInspectorPanel>(*this, adrs);
-		adrs_inspector_->unique();
+		adrs_inspector_->set_data(adrs);
+	}
+
+	void update_byte_panel( uint8_t b )
+	{
+		byte_inspector_->set_data(b);
 	}
 
 	void update_code_panel( adrs_t adrs )
 	{
-		// code_inspector_ = std::make_unique<CodeInspectorPanel>(*this, 0);
-		code_inspector_->scroll_to_adrs(adrs);
-		// code_inspector_->unique();
+		code_inspector_->set_data(adrs);
+	}
+
+	void update_data_panel( adrs_t adrs )
+	{
+		data_inspector_panel_->set_data(adrs);
 	}
 
 	void new_disassembly_panel( adrs_t adrs )
@@ -205,9 +225,9 @@ private:
 
 	//  Inspectors
 	std::unique_ptr<CodeInspectorPanel> code_inspector_;
-	std::unique_ptr<Panel> byte_inspector_;
-	std::unique_ptr<Panel> adrs_inspector_;
-	std::unique_ptr<Panel> data_inspector_panel_;
+	std::unique_ptr<ByteInspectorPanel> byte_inspector_;
+	std::unique_ptr<AdrsInspectorPanel> adrs_inspector_;
+	std::unique_ptr<DataInspectorPanel> data_inspector_panel_;
 
 	std::vector<std::unique_ptr<Panel>> panels_;
 

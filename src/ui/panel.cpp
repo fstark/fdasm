@@ -1,10 +1,31 @@
 #include "panel.h"
-#include "ui.h"
 
-#include <SDL.h>
-#include <SDL_image.h>
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <SDL_opengles2.h>
-#else
-#include <SDL_opengl.h>
-#endif
+#include "uicommon.h"
+
+void Panel::Draw()
+{
+    ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.2f, 0.3f, 0.4f, 1.0f)); // Example color
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.3f, 0.4f, 0.5f, 1.0f)); // Example color
+    ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, ImVec4(0.1f, 0.2f, 0.3f, 1.0f)); // Example color
+
+
+	bool* is_open_ptr = nullptr;
+	if (is_closable_)
+		is_open_ptr = &is_open_;
+
+	if (has_resize)
+	{
+		ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
+		ImGui::Begin(name().c_str(), is_open_ptr);
+	}
+	else
+		ImGui::Begin(name().c_str(), is_open_ptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+
+	// std::clog << "Drawing " << name() << std::endl;
+
+	DoDraw();
+
+	ImGui::End();
+
+    ImGui::PopStyleColor(3);
+}

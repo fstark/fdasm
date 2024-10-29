@@ -48,6 +48,10 @@ Data view:
 
 # TODO
 
+- Make code a data panel at an address
+- History in data panels
+- Scroll to line should have a 5 lines gap
+- Xrefs from code located in data sections should be less trusted than xrefs from code sections [DONE]
 - Cleanup
     - Style
         - public before private

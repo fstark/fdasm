@@ -28,7 +28,7 @@ public:
 	const std::string name() const { return title_ + "##" + id_; }
 
 	//  All windows with this title will be the same
-	void unique(const std::string id = "") { id_ = id; }
+	void set_unique(const std::string id = "") { id_ = id; }
 
 	bool is_open() const { return is_open_; }
 
@@ -41,8 +41,8 @@ protected:
 	bool is_closable_ = false;
 	bool has_resize   = false;
 	UI& ui_;
-	std::string title_;
-	std::string id_;
+	std::string title_;		//	The title of the panel
+	std::string id_;		//	A disctinct ID for every panel, so panels of the same class don't draw inside each other
 
 	int tag; //  Unique tag, used to manage global hoover
 

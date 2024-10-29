@@ -16,33 +16,33 @@
 	ImGui::PopTextWrapPos();
 }
 
-void ByteInspectorPanel::DoDraw()
+void ByteInspectorPanel::DoDrawData()
 {
 	// Display the byte info in a large font
 
-	char info_char_ = data_ & 0x7f;
+	char info_char_ = data() & 0x7f;
 	if (info_char_ < 32 || info_char_ > 126)
 		info_char_ = ' ';
 
 	ImGui::PushFont(ui_.large_font());
 	ImGui::Text("%02X|%c|%3d|%03o|%c%c%c%c %c%c%c%c",
-	    data_,
+	    data(),
 	    info_char_,
-	    data_,
-	    data_,
-	    data_ & 0x80 ? '1' : '0',
-	    data_ & 0x40 ? '1' : '0',
-	    data_ & 0x20 ? '1' : '0',
-	    data_ & 0x10 ? '1' : '0',
-	    data_ & 0x08 ? '1' : '0',
-	    data_ & 0x04 ? '1' : '0',
-	    data_ & 0x02 ? '1' : '0',
-	    data_ & 0x01 ? '1' : '0');
+	    data(),
+	    data(),
+	    data() & 0x80 ? '1' : '0',
+	    data() & 0x40 ? '1' : '0',
+	    data() & 0x20 ? '1' : '0',
+	    data() & 0x10 ? '1' : '0',
+	    data() & 0x08 ? '1' : '0',
+	    data() & 0x04 ? '1' : '0',
+	    data() & 0x02 ? '1' : '0',
+	    data() & 0x01 ? '1' : '0');
 	ImGui::PopFont();
 	ImGui::PushFont(ui_.tiny_font());
 	ImGui::Text("hex asc dec oct binary");
 	ImGui::PopFont();
 	ImGui::Separator();
-	auto i = ui_.explorer().cpu_info().instruction(data_);
+	auto i = ui_.explorer().cpu_info().instruction(data());
 	DisplayInstruction(ui_, i);
 }

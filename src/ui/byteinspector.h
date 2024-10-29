@@ -10,7 +10,7 @@ public:
 	{
 		title_ = "Byte";
 	}
-	void DoDraw() override;
+	void DoDrawData() override;
 
 	static void DisplayInstruction(const UI& ui, const Instruction& instruction);
 };

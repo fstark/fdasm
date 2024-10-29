@@ -12,11 +12,16 @@ CodeInspectorPanel::CodeInspectorPanel(UI& ui, adrs_t data)
 	has_resize = true;
 }
 
+void CodeInspectorPanel::data_changed()
+{
+	scroll_to_adrs(data());	
+}
+
 void CodeInspectorPanel::scroll_to_line(int line) { target_line_ = line; }
 
 void CodeInspectorPanel::scroll_to_adrs(int adrs) { scroll_to_line(ui_.disassembly().adrs_to_line(adrs)); }
 
-void CodeInspectorPanel::DoDraw()
+void CodeInspectorPanel::DoDrawData()
 {
 	// if (ImGui::CollapsingHeader("Display Options"))
 	// {
@@ -82,6 +87,9 @@ void CodeInspectorPanel::DoDraw()
 	{
 		// float line_height = ImGui::GetTextLineHeightWithSpacing();
 		float line_height = ImGui::GetTextLineHeight();
+		target_line_ -= 5;
+		if (target_line_ < 0)
+			target_line_ = 0;
 		float target_y    = target_line_ * line_height;
 		ImGui::SetScrollY(target_y);
 		target_line_ = -1;
@@ -96,16 +104,20 @@ void CodeInspectorPanel::DoDraw()
 			// Set background color for even lines
 			if (i % 2 == 0)
 			{
-				ImVec2 text_size  = ImGui::CalcTextSize("");
-				ImVec2 cursor_pos = ImGui::GetCursorScreenPos(); // left of line
-				cursor_pos.y -= 2;
-				ImGui::GetWindowDrawList()->AddRectFilled(cursor_pos, ImVec2(cursor_pos.x + ImGui::GetWindowWidth(), cursor_pos.y + text_size.y + 3), ImGui::GetColorU32(line_color));
+				paint_line( ImGui::GetColorU32(line_color) );
 			}
 
 			// Draw the address of the current line
 			// 4 digits hexadecimal
 			if (!line.is_empty())
 			{
+
+				//	If the line is selected, paint it
+				if (line.start_adrs_<=data() && data()<=line.end_adrs_)
+				{
+					paint_line( ImGui::GetColorU32(bg_select_color) );
+				}
+
 				//  Address of the current instruction (column 1)
 				auto display = ui_.address_display_style_;
 				if (ui_.force_labels_)
@@ -117,7 +129,11 @@ void CodeInspectorPanel::DoDraw()
 				if (ImGui::IsItemClicked())
 				{
 					if (ImGui::GetMouseClickedCount(0) == 1)
+					{
 						ui_.update_adrs_panel(line.start_adrs_);
+						ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs_));
+						ui_.update_data_panel(line.start_adrs_);
+					}
 
 					if (ImGui::GetMouseClickedCount(0) == 2)
 					{
@@ -136,7 +152,18 @@ void CodeInspectorPanel::DoDraw()
 				{
 					ui_.DrawByte(line.get_byte(i), display, UI::kInteractNone, line.start_adrs_ + i);
 					if (ImGui::IsItemClicked())
-						ui_.update_adrs_panel(line.start_adrs_ + i);
+					{
+						if (ImGui::GetMouseClickedCount(0) == 1)
+						{
+							ui_.update_adrs_panel(line.start_adrs_ + i);
+							ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs_ + i));
+							ui_.update_data_panel(line.start_adrs_ + i);
+						}
+						if (ImGui::GetMouseClickedCount(0) == 2)
+						{
+							ui_.AddPanel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_+i, ""));
+						}
+					}
 					ui_.hoover(line.start_adrs_ + i, tag + 1, ImGui::IsItemHovered());
 				}
 			}
@@ -214,6 +241,7 @@ void CodeInspectorPanel::DoDraw()
 						if (ImGui::IsItemClicked())
 						{
 							ui_.inspect_adrs(span.adrs(), false);
+							ui_.update_data_panel(span.adrs());
 						}
 					}
 					else

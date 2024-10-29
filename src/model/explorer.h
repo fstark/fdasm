@@ -19,7 +19,7 @@ public:
 	    , rom_contents_{ romfile, 0 }
 	    , annotations_{ rom_contents_, fdafile }
 	    , disassembler_{ rom_contents_.bytes(), 0, std::make_shared<Annotations>(annotations_) }
-	    , xrefs_{ rom_contents_, cpu_info_ /*, annotations_ */ }
+	    , xrefs_{ rom_contents_, cpu_info_, annotations_ }
 	{
 		if (annotations_.label_count() == 0)
 		{

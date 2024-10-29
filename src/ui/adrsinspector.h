@@ -9,7 +9,10 @@ class AdrsInspectorPanel : public InspectorPanel<adrs_t>
 {
 public:
 	AdrsInspectorPanel(UI& ui, adrs_t data);
-	void DoDraw() override;
+	void DoDrawData() override;
+
+protected:
+	void data_changed() override;
 
 private:
 	Label* label_;

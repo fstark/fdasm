@@ -63,22 +63,6 @@ void UI::InitImgUI()
 	large_font_ = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
 }
 
-auto dbg_color = ImVec4(0 / 255.0, 255 / 255.0, 0 / 255.0, 1.0f);
-
-auto adrs_color        = ImVec4(244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f);
-auto byte_color        = ImVec4(71 / 255.0, 244 / 255.0, 71 / 255.0, 1.0f);
-auto byte_select_color = ImVec4(35 / 255.0, 122 / 255.0, 35 / 255.0, 1.0f);
-auto data_color        = ImVec4(0.8f, 0.8f, 0.1f, 1.0f);
-
-auto std_color        = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
-auto std_select_color = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
-auto mnemonic_color   = ImVec4(84 / 255.0, 147 / 255.0, 201 / 255.0, 1.0f);
-auto string_color     = ImVec4(198 / 255.0, 140 / 255.0, 116 / 255.0, 1.0f);
-
-auto select_color = ImVec4(255 / 255.0, 255 / 255.0, 255 / 255.0, 1.0f);
-
-auto line_color = ImVec4(40 / 255.0, 40 / 255.0, 40 / 255.0, 1.0f);
-
 // void UI::DrawAddress( adrs_t adrs )
 // {
 //     //  Draw the Address for the line
@@ -105,7 +89,7 @@ void UI::Select(const char* buffer)
 
 //  Draws an address with specific style
 //  and handle interactions
-void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */)
+void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */, const ImVec4& color)
 {
 	char buffer[256];
 
@@ -151,7 +135,12 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 		Select(buffer);
 	}
 
-	ImGui::TextColored(adrs_color, "%s", buffer); // Display address
+	ImGui::TextColored(color, "%s", buffer); // Display address
+}
+
+void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */ )
+{
+	DrawAddress(adrs, display_style, kInteractNone, adrs_color);
 }
 
 //  #### Should pass an optional address for interaction
@@ -289,6 +278,7 @@ void UI::Run()
 	int done = 0;
 
 	ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
 
 	while (!done)
 	{
@@ -324,6 +314,8 @@ void UI::Run()
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
+        // Create a docking space
+        ImGui::DockSpaceOverViewport(0,ImGui::GetMainViewport());
 
 		//  The main window
 		code_inspector_->Draw();
@@ -373,26 +365,6 @@ void UI::Run()
 	}
 }
 
-void Panel::Draw()
-{
-	//  Window with 320, not resizable
-	ImGui::SetNextWindowSize(ImVec2(320, 200), ImGuiCond_FirstUseEver);
-
-	bool* is_open_ptr = nullptr;
-	if (is_closable_)
-		is_open_ptr = &is_open_;
-
-	if (has_resize)
-		ImGui::Begin(name().c_str(), is_open_ptr);
-	else
-		ImGui::Begin(name().c_str(), is_open_ptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
-
-	// std::clog << "Drawing " << name() << std::endl;
-
-	DoDraw();
-
-	ImGui::End();
-}
 
 void UI::ShutdownImgUI()
 {

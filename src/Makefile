@@ -3,8 +3,8 @@ OBJDIR = ../obj
 
 # Define the compiler and flags
 CXX = g++
-CXXFLAGS = -Wextra -Werror -pedantic 
-CXXFLAGS += -std=c++2a -Wall -O3 `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
+CXXFLAGS = -g -Wall -Wextra -Werror -pedantic 
+CXXFLAGS += -std=c++2a `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
 LDFLAGS = -std=c++2a -lSDL2 -lSDL2_image -framework OpenGL
 CLANGTIDY = /usr/local/opt/llvm/bin/clang-tidy
 

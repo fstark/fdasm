@@ -4,13 +4,18 @@
 
 #include "ui.h"
 DataInspectorPanel::DataInspectorPanel(UI& ui)
-    : Panel(ui)
+    : InspectorPanel(ui,0)
 {
 	title_     = "Data";
 	has_resize = true;
 }
 
-void DataInspectorPanel::DoDraw()
+void DataInspectorPanel::data_changed()
+{
+	scroll_to_adrs( data() );
+}
+
+void DataInspectorPanel::DoDrawData()
 {
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;
@@ -19,6 +24,9 @@ void DataInspectorPanel::DoDraw()
 	if (target_line_ != -1)
 	{
 		float line_height_with_spacing = ImGui::GetTextLineHeightWithSpacing();
+		target_line_ -= 5;
+		if (target_line_ < 0)
+			target_line_ = 0;
 		float target_y                 = target_line_ * line_height_with_spacing;
 		ImGui::SetScrollY(target_y);
 		target_line_ = -1;
@@ -36,7 +44,11 @@ void DataInspectorPanel::DoDraw()
 
 			ui_.DrawAddress(adrs, display, UI::kInteractNone);
 			if (ImGui::IsItemClicked())
+			{
 				ui_.update_adrs_panel(adrs);
+				ui_.update_byte_panel(ui_.explorer().rom().get(adrs));
+				ui_.update_code_panel(adrs);
+			}
 
 			ui_.hoover(adrs, tag + 0, ImGui::IsItemHovered());
 
@@ -50,9 +62,20 @@ void DataInspectorPanel::DoDraw()
 
 			for (int i = 0; i != 16; i++)
 			{
+				//	If the line is selected, paint it
+				if (adrs + i==data())
+				{
+					paint_element( "00", ImGui::GetColorU32(bg_select_color) );
+				}
+
 				ui_.DrawByte(ui_.explorer().rom().get(adrs + i), display, UI::kInteractNone, adrs + i);
+
 				if (ImGui::IsItemClicked())
+				{
 					ui_.update_adrs_panel(adrs+i);
+					ui_.update_byte_panel(ui_.explorer().rom().get(adrs+i));
+					ui_.update_code_panel(adrs+i);
+				}
 				ui_.hoover(adrs + i, tag + 1, ImGui::IsItemHovered());
 			}
 			ImGui::Text("");

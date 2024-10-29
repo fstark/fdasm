@@ -25,7 +25,7 @@ public:
 
 	Annotations(ROMFile& rom, const std::string& filename);
 
-	RegionType get_region_type(adrs_t adrs);
+	RegionType get_region_type(adrs_t adrs) const;
 
 	static Label* label_from_adrs(adrs_t adrs);
 	static Label* label_before_adrs(adrs_t adrs, int limit);

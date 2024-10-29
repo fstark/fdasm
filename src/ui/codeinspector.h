@@ -6,10 +6,12 @@ class CodeInspectorPanel : public InspectorPanel<adrs_t>
 {
 public:
 	CodeInspectorPanel(UI& ui, adrs_t data);
-	void DoDraw() override;
+	void DoDrawData() override;
 	void scroll_to_line(int line);
 	void scroll_to_adrs(int adrs);
 
+protected:
+	void data_changed() override;
 
 private:
 	// Label *label_; future

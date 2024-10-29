@@ -159,7 +159,7 @@ void Annotations::remove_label_if_exists(const std::string& name)
 	}
 }
 
-Annotations::RegionType Annotations::get_region_type(adrs_t adrs)
+Annotations::RegionType Annotations::get_region_type(adrs_t adrs) const
 {
 	// Find in the sLabels sorted array
 	// the last one that is less than adrs
