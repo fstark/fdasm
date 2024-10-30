@@ -19,7 +19,7 @@ void DataInspectorPanel::DoDrawData()
 {
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;
-	clipper.Begin(32768 / 16, ImGui::GetTextLineHeightWithSpacing());
+	clipper.Begin(ui_.explorer().rom().size()/ 16, ImGui::GetTextLineHeightWithSpacing());
 
 	if (target_line_ != -1)
 	{
@@ -36,7 +36,7 @@ void DataInspectorPanel::DoDrawData()
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			adrs_t adrs = i * 16;
+			adrs_t adrs = i * 16 + ui_.explorer().rom().load_adrs();
 
 			auto display = UI::kDisplayHex;
 			if (ui_.force_labels_)

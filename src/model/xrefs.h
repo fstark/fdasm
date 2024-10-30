@@ -3,7 +3,7 @@
 #include "annotations.h"
 #include "cpuinfo.h"
 #include "common.h"
-#include "romfile.h"
+#include "rom.h"
 #include <array>
 
 struct XRef
@@ -31,13 +31,13 @@ class XRefs
 {
 
 public:
-	XRefs(const ROMFile& rom, const CPUInfo& cpu_info, const Annotations &annotations )
+	XRefs(const Rom& rom, const CPUInfo& cpu_info, const Annotations &annotations )
 	    : rom_{ rom }
 	    , cpu_info_{ cpu_info }
 		, annotations_{ annotations }
 	// annotations_{ annotations }
 	{
-		for (adrs_t adrs = 0; adrs < rom.size(); adrs++)
+		for (adrs_t adrs = rom.load_adrs(); adrs <= rom.last_adrs(); adrs++)
 		{
 			auto refs = references_from(adrs);
 			for (const auto& ref : refs)
@@ -64,7 +64,7 @@ public:
 	}
 
 private:
-	const ROMFile& rom_;      //  The ROM we cross reference
+	const Rom& rom_;      //  The ROM we cross reference
 	const CPUInfo& cpu_info_; //  Information about instructions and their relation to addresses
 	const Annotations &annotations_;      //  The annotations helps to identify regions of the ROM
 

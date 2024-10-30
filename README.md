@@ -48,13 +48,14 @@ Data view:
 
 # TODO
 
-- Make code a data panel at an address
-- History in data panels
-- Scroll to line should have a 5 lines gap
+- Make silent labels
+- Make code a data panel at an address [DONE]
+- History in data panels [DONE]
+- Scroll to line should have a 5 lines gap [DONE]
 - Xrefs from code located in data sections should be less trusted than xrefs from code sections [DONE]
 - Cleanup
     - Style
-        - public before private
+        - public before private [DONE]
         - no direct access to members from outside the implementation
         - remove most header inline code
         - snake_case methods

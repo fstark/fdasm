@@ -27,13 +27,13 @@ public:
 		InitImgUI();
 
 		//	We create the main panels
-		code_inspector_       = std::make_unique<CodeInspectorPanel>(*this, 0);
+		code_inspector_       = std::make_unique<CodeInspectorPanel>(*this, explorer_.rom().load_adrs());
 		code_inspector_->set_unique();
 		data_inspector_panel_ = std::make_unique<DataInspectorPanel>(*this);
 		data_inspector_panel_->set_unique();
-		adrs_inspector_ = std::make_unique<AdrsInspectorPanel>(*this, 0);
+		adrs_inspector_ = std::make_unique<AdrsInspectorPanel>(*this, explorer_.rom().load_adrs());
 		adrs_inspector_->set_unique();
-        byte_inspector_ = std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(0) );
+        byte_inspector_ = std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(explorer_.rom().load_adrs()) );
 		byte_inspector_->set_unique();
 	}
 
@@ -76,15 +76,19 @@ public:
 	//  Hoover mecanism
 	void hoover(adrs_t adrs, int tag, bool flag)
 	{
+			//	The address is alrady hovered (there may be several hover spots with the same tag in the same window)
+		if (flag && hoover_tag_!=-1 && hoover_adrs_==adrs)
+			return ;
+
 		if (flag /* && hoover_tag_==-1*/)
 		{
 			hoover_tag_  = tag;
 			hoover_adrs_ = adrs;
-			// std::clog << "HOOVER  ON " << hoover_adrs_ << " TAG " << tag << "\n";
+			std::clog << "HOOVER  ON " << hoover_adrs_ << " TAG " << tag << "\n";
 		}
 		if (!flag && hoover_tag_ == tag && hoover_adrs_ == adrs)
 		{
-			// std::clog << "UNHOOVER ON " << hoover_adrs_ << "/" << hoover_tag_ << " BY " << tag << "\n";
+			std::clog << "UNHOOVER ON " << hoover_adrs_ << "/" << hoover_tag_ << " BY " << tag << "\n";
 			hoover_tag_ = -1;
 		}
 	}

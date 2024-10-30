@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.h"
-#include "romfile.h"
+#include "rom.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -23,7 +23,7 @@ public:
 		kCOUNT
 	} RegionType;
 
-	Annotations(ROMFile& rom, const std::string& filename);
+	Annotations(Rom& rom, const std::string& filename);
 
 	RegionType get_region_type(adrs_t adrs) const;
 
@@ -60,7 +60,7 @@ private:
 	[[nodiscard]] int read_regions(const std::string& filename);
 	[[nodiscard]] int write_regions(const std::string& filename) const;
 
-	const ROMFile& rom_;
+	const Rom& rom_;
 	const std::string filename_;
 
 	void labels_changed();

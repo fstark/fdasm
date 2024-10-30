@@ -3,6 +3,7 @@
 #include "common.h"
 #include <memory>
 #include <vector>
+#include "rom.h"
 
 using namespace std::literals::string_literals;
 
@@ -196,7 +197,10 @@ class Line
 {
 	bool empty_ = true;
 
-	const std::vector<uint8_t>& bytes_; // I don't think we want this (only the offsets)
+	// const std::vector<uint8_t>& bytes_; // I don't think we want this (only the offsets)
+
+	const Rom& rom_;	// #### This is temporary. Lines should probably copy the bytes they need
+							// (and only the ones they need)
 
 public:
 	adrs_t start_adrs_;
@@ -204,20 +208,20 @@ public:
 
 	std::vector<Span> content_;
 
-	uint8_t get_byte(int offset) const { return bytes_[start_adrs_ + offset]; } // #### issue with ROM OFFSET
+	uint8_t get_byte(int offset) const { return rom_.get(start_adrs_ + offset); }
 	int byte_count() const { return end_adrs_ - start_adrs_ + 1; }
 
-	Line(const std::vector<uint8_t>& bytes, adrs_t start_adrs, adrs_t end_adrs)
+	Line(const Rom &rom, adrs_t start_adrs, adrs_t end_adrs)
 	    : empty_{ false }
-	    , bytes_{ bytes }
+	    , rom_{ rom }
 	    , start_adrs_{ start_adrs }
 	    , end_adrs_{ end_adrs }
 	{
 	}
 
-	Line(const std::vector<uint8_t>& bytes, adrs_t start_adrs)
+	Line(const Rom& rom, adrs_t start_adrs)
 	    : empty_{ true }
-	    , bytes_{ bytes }
+	    , rom_{ rom }
 	    , start_adrs_{ start_adrs }
 	    , end_adrs_{ start_adrs } // #### Or -1
 	{
@@ -274,16 +278,15 @@ public:
 class Disassembler
 {
 public:
-	Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<Annotations> rom_content);
+	Disassembler(const Rom &rom, std::shared_ptr<Annotations> rom_content);
 
-	~Disassembler()
-	{
-		std::clog << "Adieu, cruel world!" << std::endl;
-	}
+	~Disassembler() {}
 
 	Disassembly disassemble();
 
 	uint8_t read_byte();
+
+	bool finished() const { return current_ > rom_.last_adrs(); }
 
 	void unread() { --current_; }
 
@@ -291,16 +294,13 @@ public:
 
 	adrs_t adrs() const { return current_; }
 
-	adrs_t get_offset() const { return dest_adrs_; }
-
 	void dump();
 
 private:
-	const std::vector<uint8_t> bytes_;
+	const Rom &rom_;
 	adrs_t current_ = 0;
-	adrs_t dest_adrs_;
 
-	std::shared_ptr<Annotations> rom_content_;
+	std::shared_ptr<Annotations> annotations_;
 
 	std::unique_ptr<Emitter> _emitters[Annotations::kCOUNT];
 

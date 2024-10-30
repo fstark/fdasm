@@ -165,6 +165,14 @@ void CodeInspectorPanel::DoDrawData()
 						}
 					}
 					ui_.hoover(line.start_adrs_ + i, tag + 1, ImGui::IsItemHovered());
+
+					if (i==6)
+					{
+						ImGui::SameLine();
+						ImGui::Text("...");
+						break;
+					}
+
 				}
 			}
 			else

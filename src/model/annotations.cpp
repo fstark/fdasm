@@ -7,13 +7,13 @@
 #include <string>
 #include <unordered_map>
 
-Annotations::Annotations(ROMFile& rom, const std::string& filename)
+Annotations::Annotations(Rom& rom, const std::string& filename)
     : rom_{ rom }
     , filename_{ filename }
 {
 	regions_.resize(rom_.size());
 
-	set_region(0, rom_.size() - 1, kCODE);
+	set_region(rom.load_adrs(), rom_.last_adrs(), kCODE);
 	if (read_regions(filename_)==-1)
 	{
 		fprintf( stderr, "Failed to read regions file: %s\n", filename_.c_str());
@@ -130,7 +130,7 @@ void Annotations::labels_changed()
 	}
 
 	if (!sLabels.empty())
-		sLabels.back().set_end_adrs(0x7fff);
+		sLabels.back().set_end_adrs(rom_.last_adrs());
 }
 
 size_t Annotations::label_count() const { return sLabels.size(); }

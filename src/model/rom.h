@@ -4,13 +4,14 @@
 #include <vector>
 
 //	A ROM file loaded into memory
-class ROMFile
+class Rom
 {
 public:
-	ROMFile(const std::string& rom_file, adrs_t load_adrs);
+	Rom(const std::string& rom_file, adrs_t load_adrs);
 	const std::vector<uint8_t>& bytes() const { return bytes_; }
 	adrs_t load_adrs() const { return load_adrs_; }
-	
+	adrs_t last_adrs() const { return load_adrs_ + bytes_.size() - 1; }
+
 	//	Get 1 byte
 	uint8_t get(adrs_t adrs) const { check(adrs); return bytes_[adrs-load_adrs_]; }
 	uint16_t get_word(adrs_t adrs) const { return get(adrs) + (get(adrs + 1) << 8); }
@@ -25,8 +26,8 @@ private:
 	{
 		if (!contains(adrs))
 		{
-			fprintf( stderr, "ROMFile: address %04X out of bounds\n", adrs );
-			throw std::runtime_error("ROMFile: address out of bounds");
+			fprintf( stderr, "Rom: address %04X out of bounds\n", adrs );
+			throw std::runtime_error("Rom: address out of bounds");
 		}
 	}
 };

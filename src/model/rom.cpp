@@ -1,10 +1,10 @@
-#include "romfile.h"
+#include "rom.h"
 
 #include <fstream>
 #include <iostream>
 #include <string>
 
-ROMFile::ROMFile(const std::string& rom_file, adrs_t load_adrs)
+Rom::Rom(const std::string& rom_file, adrs_t load_adrs)
     : load_adrs_{ load_adrs }
 {
 	std::ifstream file(rom_file, std::ios::binary);

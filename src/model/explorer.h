@@ -5,7 +5,7 @@
 #include "cpuinfo.h"
 #include "disassembler.h"
 #include "label.h"
-#include "romfile.h"
+#include "rom.h"
 #include "xrefs.h"
 
 class Explorer
@@ -13,21 +13,24 @@ class Explorer
 public:
 	Explorer(
 	    const std::string& cpuinfo,
-	    const std::string& romfile,
+	    const std::string& Rom,
+		adrs_t load_adrs,
 	    const std::string& fdafile)
 	    : cpu_info_{ cpuinfo }
-	    , rom_contents_{ romfile, 0 }
+	    , rom_contents_{ Rom, load_adrs }
 	    , annotations_{ rom_contents_, fdafile }
-	    , disassembler_{ rom_contents_.bytes(), 0, std::make_shared<Annotations>(annotations_) }
+	    , disassembler_{ rom_contents_, std::make_shared<Annotations>(annotations_) }
 	    , xrefs_{ rom_contents_, cpu_info_, annotations_ }
 	{
 		if (annotations_.label_count() == 0)
 		{
 			//  Generates all the labels from xrefs
 			std::vector<bool> code;
-			code.resize(rom_contents_.size());
+			// code.resize(rom_contents_.size());
+			code.resize( 65536 );
 			std::vector<bool> data;
-			data.resize(rom_contents_.size());
+			// data.resize(rom_contents_.size());
+			data.resize( 65536);
 			for (const auto& xref : xrefs_.xrefs())
 			{
 				if (rom_contents_.contains(xref.to_))
@@ -40,7 +43,7 @@ public:
 			}
 
 			std::vector<Label> labels;
-			for (adrs_t adrs = 0; adrs < rom_contents_.size(); adrs++)
+			for (adrs_t adrs = rom_contents_.load_adrs(); adrs <= rom_contents_.last_adrs(); adrs++)
 			{
 				if (code[adrs])
 				{
@@ -61,20 +64,26 @@ public:
 			std::clog << "Labels: " << labels.size() << std::endl;
 
 			annotations_.add_labels(labels);
+
+			//	If we don't have a label for LOAD, we add one
+			if (!annotations_.label_from_adrs(rom_contents_.load_adrs()))
+			{
+				annotations_.add_label("LOAD", rom_contents_.load_adrs(), Annotations::kCODE);
+			}
 		}
 	}
 
 	// #### Nope
 	Disassembler* disassembler() { return &disassembler_; }
 
-	const ROMFile& rom() const { return rom_contents_; }
+	const Rom& rom() const { return rom_contents_; }
 	const CPUInfo& cpu_info() const { return cpu_info_; }
 	const XRefs& xrefs() const { return xrefs_; }
 	Annotations& annotations() { return annotations_; }
 
 private:
 	CPUInfo cpu_info_;
-	ROMFile rom_contents_;
+	Rom rom_contents_;
 	Annotations annotations_;
 	Disassembler disassembler_;
 	XRefs xrefs_;

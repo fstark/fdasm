@@ -67,7 +67,7 @@ std::vector<Span> CodeEmitter::emit(size_t)
 				static const char* instr_2b[] = { "SHLD", "LHLD", "STA", "LDA" };
 				return {
 					Span::mnemonic(instr_2b[y - 4]),
-					Span::adrs(disassembler_.read_word() + disassembler_.get_offset())
+					Span::adrs(disassembler_.read_word())
 				};
 			}
 		}
@@ -320,6 +320,46 @@ std::vector<Span> DataWEmitter::emit(size_t)
 	return res;
 }
 
+static void escape_char( char *&p, int c )
+{
+	if (c == 0x0a)
+	{
+		*p++ = '\\';
+		*p++ = 'n';
+	}
+	else if (c == 0x0d)
+	{
+		*p++ = '\\';
+		*p++ = 'r';
+	}
+	else if (c == 0x09)
+	{
+		*p++ = '\\';
+		*p++ = 't';
+	}
+	else if (c == 0x22)
+	{
+		*p++ = '\\';
+		*p++ = '"';
+	}
+	else if (c == 0x5c)
+	{
+		*p++ = '\\';
+		*p++ = '\\';
+	}
+	else if (c < 0x20 || c > 0x7f)
+	{
+		*p++ = '\\';
+		*p++ = 'x';
+		*p++ = "0123456789ABCDEF"[c >> 4];
+		*p++ = "0123456789ABCDEF"[c & 0x0f];
+	}
+	else
+	{
+		*p++ = c;
+	}
+}
+
 std::vector<Span> StrzEmitter::emit(size_t)
 {
 	std::vector<Span> res;
@@ -327,7 +367,16 @@ std::vector<Span> StrzEmitter::emit(size_t)
 	res.push_back(Span::pseudo("DB"));
 	char buffer[32789];
 	char* p = buffer;
-	while ((*p++ = disassembler_.read_byte()) != 0);
+	while (!disassembler_.finished())
+	{
+		uint8_t c = disassembler_.read_byte();
+		if (c == 0)
+			break;
+
+		escape_char( p, c );
+	}
+
+	*p++ = 0;
 
 	//	Incorrect, some characters may not be printable
 	res.push_back(Span::string(buffer));
@@ -380,10 +429,9 @@ std::vector<Span> Str8sEmitter::emit(size_t)
 	return res;
 }
 
-Disassembler::Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::shared_ptr<Annotations> rom_content)
-    : bytes_(bytes)
-    , dest_adrs_(adrs)
-    , rom_content_(rom_content)
+Disassembler::Disassembler(const Rom &rom, std::shared_ptr<Annotations> rom_content)
+    : rom_(rom)
+    , annotations_(rom_content)
     , _emitters{
 	    std::make_unique<CodeEmitter>(*this),
 	    std::make_unique<CodeEmitter>(*this),
@@ -398,13 +446,12 @@ Disassembler::Disassembler(const std::vector<uint8_t>& bytes, adrs_t adrs, std::
 
 uint8_t Disassembler::read_byte()
 {
-	assert(current_ < bytes_.size());
-	return bytes_[current_++];
+	return rom_.get(current_++);
 }
 
 uint16_t Disassembler::read_word()
 {
-	uint16_t word = bytes_[current_] | (bytes_[current_ + 1] << 8);
+	uint16_t word = rom_.get_word( current_ );
 	current_ += 2;
 	return word;
 }
@@ -442,7 +489,7 @@ Line Disassembler::disassemble_one_instruction(Annotations::RegionType type, adr
 		return disassemble_one_instruction(Annotations::kDATA, end_adrs);
 	}
 
-	Line l{ bytes_, adrs, end };
+	Line l{ rom_, adrs, end };
 	l.set_spans(spans);
 
 	return l;
@@ -459,7 +506,7 @@ void Disassembler::disassemble_type(Annotations::RegionType type, adrs_t end_adr
 
 void Disassembler::disassemble_label(const Label& l)
 {
-	Line label{ bytes_, l.start_adrs() };
+	Line label{ rom_, l.start_adrs() };
 	std::vector<Span> label_spans = { Span::label(l.name().c_str()) };
 	label.set_spans(label_spans);
 	lines_.push_back(label);
@@ -472,7 +519,7 @@ Disassembly Disassembler::disassemble()
 {
 	lines_.clear();
 
-	for (auto& l : rom_content_->get_labels())
+	for (auto& l : annotations_->get_labels())
 	{
 		disassemble_label(l);
 	}
@@ -484,6 +531,5 @@ void Disassembler::dump()
 {
 	std::clog << "Dumping disassembler state" << (void*)this << std::endl;
 	std::clog << "Current address: " << current_ << std::endl;
-	std::clog << "Destination address: " << dest_adrs_ << std::endl;
-	std::clog << "Data size: " << bytes_.size() << std::endl;
+	std::clog << "Data size: " << rom_.size() << std::endl;
 }

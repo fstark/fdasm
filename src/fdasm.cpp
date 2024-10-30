@@ -12,8 +12,11 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	const char* rom_file = "M100rom.bin";
-	const char* fda_file = "M100rom.fda";
+	// const char *rom_file = "M100rom.bin";
+	// const char *fda_file = "M100rom.fda";
+
+	const char *rom_file = "vdb-80.rom";
+	const char *fda_file = "vdb-80.fda";
 
 	if (argc == 3)
 	{
@@ -21,7 +24,7 @@ int main(int argc, char* argv[])
 		fda_file = argv[2];
 	}
 
-	Explorer explorer("8085.txt", rom_file, fda_file);
+	Explorer explorer("8085.txt", rom_file, 0xd800, fda_file);
 
 	// Annotations rom_contents( fda_file );
 	// Disassembler *disassembler = load_rom( rom_file, rom_contents );
