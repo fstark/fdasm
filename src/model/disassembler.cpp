@@ -429,9 +429,9 @@ std::vector<Span> Str8sEmitter::emit(size_t)
 	return res;
 }
 
-Disassembler::Disassembler(const Rom &rom, std::shared_ptr<Annotations> rom_content)
+Disassembler::Disassembler(const Rom &rom, const Annotations &annotations)
     : rom_(rom)
-    , annotations_(rom_content)
+    , annotations_(annotations)
     , _emitters{
 	    std::make_unique<CodeEmitter>(*this),
 	    std::make_unique<CodeEmitter>(*this),
@@ -519,7 +519,7 @@ Disassembly Disassembler::disassemble()
 {
 	lines_.clear();
 
-	for (auto& l : annotations_->get_labels())
+	for (const auto& l : annotations_.get_labels())
 	{
 		disassemble_label(l);
 	}

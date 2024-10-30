@@ -21,7 +21,7 @@ void CodeInspectorPanel::scroll_to_line(int line) { target_line_ = line; }
 
 void CodeInspectorPanel::scroll_to_adrs(int adrs) { scroll_to_line(ui_.disassembly().adrs_to_line(adrs)); }
 
-void CodeInspectorPanel::DoDrawData()
+void CodeInspectorPanel::do_draw_data()
 {
 	// if (ImGui::CollapsingHeader("Display Options"))
 	// {
@@ -137,7 +137,7 @@ void CodeInspectorPanel::DoDrawData()
 
 					if (ImGui::GetMouseClickedCount(0) == 2)
 					{
-						ui_.AddPanel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, ""));
+						ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, ""));
 					}
 				}
 
@@ -153,18 +153,30 @@ void CodeInspectorPanel::DoDrawData()
 					ui_.DrawByte(line.get_byte(i), display, UI::kInteractNone, line.start_adrs_ + i);
 					if (ImGui::IsItemClicked())
 					{
+							//	Update panels to go at this address
 						if (ImGui::GetMouseClickedCount(0) == 1)
 						{
 							ui_.update_adrs_panel(line.start_adrs_ + i);
 							ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs_ + i));
 							ui_.update_data_panel(line.start_adrs_ + i);
 						}
+							//	Edition of label inside the list of bytes
 						if (ImGui::GetMouseClickedCount(0) == 2)
 						{
-							ui_.AddPanel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_+i, ""));
+							ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_+i, ""));
 						}
 					}
+						//	Hoover to set the hoover address
 					ui_.hoover(line.start_adrs_ + i, tag + 1, ImGui::IsItemHovered());
+
+						//  The BYTE tooltip on bytes of the instruction/DB
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::BeginTooltip();
+						auto v = ui_.explorer().rom().get(line.start_adrs_+i);
+						ByteInspectorPanel::DisplayInstruction(ui_, ui_.explorer().cpu_info().instruction(v));
+						ImGui::EndTooltip();
+					}
 
 					if (i==6)
 					{
@@ -182,7 +194,7 @@ void CodeInspectorPanel::DoDrawData()
 				ImGui::SameLine(label_width);
 				if (ui_.is_hoover(line.start_adrs_))
 				{
-					UI::Select(line.spans()[0].content().c_str());
+					UI::DrawSelectRect(line.spans()[0].content().c_str());
 					ImGui::TextColored(std_select_color, "%s:", line.spans()[0].content().c_str());
 				}
 				else
@@ -250,6 +262,7 @@ void CodeInspectorPanel::DoDrawData()
 						{
 							ui_.inspect_adrs(span.adrs(), false);
 							ui_.update_data_panel(span.adrs());
+							ui_.update_code_panel(span.adrs());	//	We move within the code
 						}
 					}
 					else
@@ -273,7 +286,26 @@ void CodeInspectorPanel::DoDrawData()
 					}
 					ImGui::SameLine();
 				}
-			ImGui::Text("");
+			
+			//	Comments (Column 4)
+			const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs_);
+			if (comment)
+			{
+				ImGui::SameLine();
+				ImGui::TextColored(comment_color, "; %s", comment->text().c_str());
+			}
+			else
+			{
+				//  Haaack
+				ImGui::SameLine();
+				ImGui::Text("                 ");
+			}
+			if (ImGui::IsItemClicked())
+			{
+				ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs_));
+			}
+
+			// ImGui::Text("");
 
 			// Pop the style color for even lines
 			// if (i % 2 == 0)

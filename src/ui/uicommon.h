@@ -33,6 +33,7 @@ extern ImVec4 line_color;
 
 extern ImVec4 data_ref_color;
 extern ImVec4 bg_select_color;
+extern ImVec4 comment_color;
 
 void paint_line(ImU32 color);
 void paint_element( const char *str, ImU32 color);

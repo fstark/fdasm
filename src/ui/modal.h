@@ -11,9 +11,9 @@ public:
 		title_ = "";
 	}
 
-	void DoDraw() override;
-	virtual void DoDrawContent() = 0;
-	virtual void Apply()         = 0;
+	void do_draw() override;
+	virtual void do_draw_content() = 0;
+	virtual void apply()         = 0;
 
 protected:
 	bool first_open_ = true;
@@ -22,26 +22,24 @@ protected:
 class LabelEditModal : public Modal
 {
 public:
-	LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */)
-	    : Modal(ui)
-	    , adrs_{ adrs }
-	{
-		title_          = "Edit Label";
-		name_buffer_[0] = 0;
-		Label* lbl      = Annotations::label_from_adrs(adrs);
-		label_type_     = Annotations::kCODE;
-		if (lbl)
-		{
-			snprintf(name_buffer_, 128, "%s", lbl->name().c_str());
-			label_type_ = lbl->type();
-		}
-	}
-
-	void DoDrawContent() override;
-	void Apply() override;
+	LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */);
+	void do_draw_content() override;
+	void apply() override;
 
 private:
 	adrs_t adrs_;
 	Annotations::RegionType label_type_;
 	char name_buffer_[128];
+};
+
+class CommentEditModal : public Modal
+{
+public:
+	CommentEditModal(UI& ui, adrs_t adrs );
+	void do_draw_content() override;
+	void apply() override;
+
+private:
+	adrs_t adrs_;
+	char comment_buffer_[1024];
 };

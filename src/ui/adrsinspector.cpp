@@ -11,26 +11,26 @@ AdrsInspectorPanel::AdrsInspectorPanel(UI& ui, adrs_t d)
 
 void AdrsInspectorPanel::data_changed()
 {
-	//  The label for this address if any
-	label_    = Annotations::label_from_adrs(data());
 	xrefs_to_ = ui_.explorer().xrefs().xrefs_to(data());
 }
 
 
-void AdrsInspectorPanel::DoDrawData()
+void AdrsInspectorPanel::do_draw_data()
 {
+	Label *label = ui_.explorer().annotations().label_from_adrs(data());
+
 	ImGui::PushFont(ui_.large_font());
-	if (label_)
+	if (label)
 	{
-		ImGui::Text("%s:", label_->name().c_str());
+		ImGui::Text("%s:", label->name().c_str());
 		ImGui::SameLine();
 	}
 	ImGui::Text("%04X", data());
 	ImGui::PopFont();
 	ImGui::Separator();
-	if (label_)
+	if (label)
 	{
-		ImGui::Text("%s", label_->name().c_str());
+		ImGui::Text("%s", label->name().c_str());
 	}
 
 	for (const auto& ref : xrefs_to_)

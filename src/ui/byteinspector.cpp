@@ -16,7 +16,7 @@
 	ImGui::PopTextWrapPos();
 }
 
-void ByteInspectorPanel::DoDrawData()
+void ByteInspectorPanel::do_draw_data()
 {
 	// Display the byte info in a large font
 

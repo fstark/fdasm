@@ -12,19 +12,17 @@ Annotations::Annotations(Rom& rom, const std::string& filename)
     , filename_{ filename }
 {
 	regions_.resize(rom_.size());
+	comments_.resize(65536);
 
 	set_region(rom.load_adrs(), rom_.last_adrs(), kCODE);
-	if (read_regions(filename_)==-1)
+	if (read_annotations(filename_)==-1)
 	{
 		fprintf( stderr, "Failed to read regions file: %s\n", filename_.c_str());
 		throw std::runtime_error("Failed to read regions file");
 	}
 }
 
-static std::vector<Label> sLabels;
-static std::unordered_map<adrs_t, Label> sLabelMap;
-
-int Annotations::read_regions(const std::string& filename)
+int Annotations::read_annotations(const std::string& filename)
 {
 	FILE* file = fopen(filename.c_str(), "r");
 	if (file == NULL)
@@ -44,6 +42,21 @@ int Annotations::read_regions(const std::string& filename)
 		int n;
 		if ((n = sscanf(line, "%X %s %s", &adrs, type, label)))
 		{
+			if (n>=2 && !strcmp(type, "COMMENT"))
+			{
+				//	Read the comment (ADRS COMM "comment")
+				char comment[256];	//	#### Overflow
+				n = sscanf(line, "%X COMMENT \"%[^\"]\"", &adrs, comment);
+				if (n!=2)
+				{
+					fprintf( stderr, "Error reading comment line: [%s]\n", line );
+					continue;
+				}
+
+				all_comments_.emplace_back( adrs, comment, true );
+				continue;
+			}
+
 			if (n!=3)
 			{
 				fprintf( stderr, "Error reading region line: [%s]\n", line );
@@ -64,18 +77,19 @@ int Annotations::read_regions(const std::string& filename)
 			else if (strcmp(type, "STRF2") == 0)
 				RegionType = Annotations::kSTRF2;
 
-			sLabels.push_back({ static_cast<adrs_t>(adrs), label, RegionType });
+			all_labels_.push_back({ static_cast<adrs_t>(adrs), label, RegionType });
 		}
 	}
 
 	fclose(file);
 
+	comments_changed();
 	labels_changed();
 
 	return 0;
 }
 
-int Annotations::write_regions(const std::string& filename) const
+int Annotations::write_annotations(const std::string& filename) const
 {
 	FILE* file = fopen(filename.c_str(), "w");
 	if (file == NULL)
@@ -84,7 +98,7 @@ int Annotations::write_regions(const std::string& filename) const
 		return -1;
 	}
 
-	for (const auto& label : sLabels)
+	for (const auto& label : all_labels_)
 	{
 		std::string type = "UNKNOWN";
 		switch (label.type())
@@ -101,70 +115,109 @@ int Annotations::write_regions(const std::string& filename) const
 		fprintf(file, "%04X %s %s\n", label.start_adrs(), type.c_str(), label.name().c_str());
 	}
 
+	//	Write the comments
+	for (const auto& comment : all_comments_)
+	{
+		fprintf(file, "%04X COMMENT \"%s\"\n", comment.adrs(), comment.text().c_str());
+	}
+
 	fclose(file);
 
 	return 0;
 }
 
-int Annotations::write_regions() const
+int Annotations::write_annotations() const
 {
-	return write_regions(filename_);
+	std::clog << "Writing annotations to " << filename_ << std::endl;
+	return write_annotations(filename_);
 }
 
 void Annotations::labels_changed()
 {
 	// Sorts the labels by address
-	std::sort(sLabels.begin(), sLabels.end(), [](const Label& a, const Label& b)
+	std::sort(all_labels_.begin(), all_labels_.end(), [](const Label& a, const Label& b)
 	    { return a.start_adrs() < b.start_adrs(); });
 
-	sLabelMap.clear();
-	for (const auto& label : sLabels)
+	labels_map_.clear();
+	for (const auto& label : all_labels_)
 	{
-		sLabelMap.emplace(label.start_adrs(), label);
+		labels_map_.emplace(label.start_adrs(), label);
 	}
 
 	//  Sets the end address of each label
-	for (size_t i = 0; i + 1 < sLabels.size(); i++)
+	for (size_t i = 0; i + 1 < all_labels_.size(); i++)
 	{
-		sLabels[i].set_end_adrs(sLabels[i + 1].start_adrs() - 1);
+		all_labels_[i].set_end_adrs(all_labels_[i + 1].start_adrs() - 1);
 	}
 
-	if (!sLabels.empty())
-		sLabels.back().set_end_adrs(rom_.last_adrs());
+	if (!all_labels_.empty())
+		all_labels_.back().set_end_adrs(rom_.last_adrs());
 }
 
-size_t Annotations::label_count() const { return sLabels.size(); }
+void Annotations::replace_comment( adrs_t line, const std::string &comment )
+{
+	//	Remove the existing comment
+	for (auto it = all_comments_.begin(); it != all_comments_.end(); ++it)
+	{
+		if (it->adrs() == line)
+		{
+			all_comments_.erase(it);
+			break;
+		}
+	}
+
+	//	Add the new comment
+	if (!comment.empty())
+		all_comments_.emplace_back( line, comment, true );
+
+	comments_changed();
+}
+
+void Annotations::comments_changed()
+{
+	//	Clear the comments_ vector
+	comments_.clear();
+	comments_.resize(65536);
+
+	//	Repopulate the comments_ vector
+	for (const auto& comment : all_comments_)
+	{
+		comments_[comment.adrs()] = &comment;
+	}
+}
+
+size_t Annotations::label_count() const { return all_labels_.size(); }
 
 void Annotations::add_label(const std::string& name, adrs_t adrs, RegionType type)
 {
 	Label label(adrs, name, type);
-	sLabels.push_back(label);
+	all_labels_.push_back(label);
 	labels_changed();
 }
 
 void Annotations::add_labels(const std::vector<Label>& labels)
 {
-	sLabels.insert(sLabels.end(), labels.begin(), labels.end());
+	all_labels_.insert(all_labels_.end(), labels.begin(), labels.end());
 	labels_changed();
 }
 
 void Annotations::remove_label_if_exists(const std::string& name)
 {
-	auto it = std::remove_if(sLabels.begin(), sLabels.end(), [&name](const Label& label)
+	auto it = std::remove_if(all_labels_.begin(), all_labels_.end(), [&name](const Label& label)
 	    { return label.name() == name; });
-	if (it != sLabels.end())
+	if (it != all_labels_.end())
 	{
-		sLabels.erase(it, sLabels.end());
+		all_labels_.erase(it, all_labels_.end());
 		labels_changed();
 	}
 }
 
 Annotations::RegionType Annotations::get_region_type(adrs_t adrs) const
 {
-	// Find in the sLabels sorted array
+	// Find in the all_labels_ sorted array
 	// the last one that is less than adrs
 
-	for (auto it = sLabels.rbegin(); it != sLabels.rend(); it++)
+	for (auto it = all_labels_.rbegin(); it != all_labels_.rend(); it++)
 	{
 		if (it->start_adrs() <= adrs)
 			return it->type();
@@ -175,8 +228,8 @@ Annotations::RegionType Annotations::get_region_type(adrs_t adrs) const
 
 Label* Annotations::label_from_adrs(adrs_t adrs)
 {
-	auto it = sLabelMap.find(adrs);
-	if (it != sLabelMap.end())
+	auto it = labels_map_.find(adrs);
+	if (it != labels_map_.end())
 		return &it->second;
 	return nullptr;
 }
@@ -184,7 +237,7 @@ Label* Annotations::label_from_adrs(adrs_t adrs)
 Label* Annotations::label_before_adrs(adrs_t adrs, int limit)
 {
 	// #### Must use a find!
-	for (auto it = sLabels.rbegin(); it != sLabels.rend(); it++)
+	for (auto it = all_labels_.rbegin(); it != all_labels_.rend(); it++)
 	{
 		if (it->start_adrs() <= adrs)
 		{
@@ -198,14 +251,9 @@ Label* Annotations::label_before_adrs(adrs_t adrs, int limit)
 	return nullptr;
 }
 
-const std::vector<Label>& Annotations::get_labels()
-{
-	return sLabels;
-}
-
 Label* Annotations::label_from_name(const std::string& name)
 {
-	for (auto& label : sLabels)
+	for (auto& label : all_labels_)
 	{
 		if (label.name() == name)
 			return &label;

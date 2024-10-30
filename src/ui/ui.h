@@ -19,12 +19,11 @@ class UI
 public:
 	UI(Explorer& explorer)
 	    : explorer_{ explorer }
-	    , hoover_tag_(-1)
 	{
 		//  We disassemble the code
 		disassembly_ = explorer_.disassembler()->disassemble();
 
-		InitImgUI();
+		init_imgui();
 
 		//	We create the main panels
 		code_inspector_       = std::make_unique<CodeInspectorPanel>(*this, explorer_.rom().load_adrs());
@@ -39,67 +38,57 @@ public:
 
 	~UI()
 	{
-		ShutdownImgUI();
+		shutdown_imgui();
 	}
 
-	void replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type)
-	{
-		//  We remove existing lavel at this address
-		Label* lbl = explorer_.annotations().label_from_adrs(adrs);
-		if (lbl)
-		{
-			explorer_.annotations().remove_label_if_exists(lbl->name());
-		}
-		//  If name is not empty, we add a new label
-		if (!label.empty())
-		{
-			explorer_.annotations().remove_label_if_exists(label);
-			explorer_.annotations().add_label(label, adrs, type);
-		}
-		//  We rebuild the disassembly
-		disassembly_ = explorer_.disassembler()->disassemble();
-		(void)explorer_.annotations().write_regions();
-	}
+	void replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type);
 
 	void remove_label_if_exists(const std::string& label)
 	{
 		remove_label_ = label;
+		(void)explorer_.annotations().write_annotations();
 	}
 
 	void set_label_type(const std::string& label, Annotations::RegionType new_type)
 	{
-		auto lbl = Annotations::label_from_name(label);
+		auto lbl = explorer().annotations().label_from_name(label);
 		lbl->set_type(new_type);
-		disassembly_ = explorer_.disassembler()->disassemble();
+		disassembly_ = explorer().disassembler()->disassemble();
+		(void)explorer_.annotations().write_annotations();
 	}
 
-	//  Hoover mecanism
-	void hoover(adrs_t adrs, int tag, bool flag)
+	void replace_comment( adrs_t line, const std::string &comment )
 	{
-			//	The address is alrady hovered (there may be several hover spots with the same tag in the same window)
-		if (flag && hoover_tag_!=-1 && hoover_adrs_==adrs)
-			return ;
+		explorer_.annotations().replace_comment( line, comment );
+		(void)explorer_.annotations().write_annotations();
+	}
 
-		if (flag /* && hoover_tag_==-1*/)
+	bool hoover_ = false;
+	adrs_t hoover_adrs_ = 0;
+
+	bool new_hoover_ = false;
+	adrs_t new_hoover_adrs_ = 0;
+
+	//  Hoover mecanism
+	void hoover(adrs_t adrs, int , bool flag)
+	{
+		if (flag)
 		{
-			hoover_tag_  = tag;
-			hoover_adrs_ = adrs;
-			std::clog << "HOOVER  ON " << hoover_adrs_ << " TAG " << tag << "\n";
-		}
-		if (!flag && hoover_tag_ == tag && hoover_adrs_ == adrs)
-		{
-			std::clog << "UNHOOVER ON " << hoover_adrs_ << "/" << hoover_tag_ << " BY " << tag << "\n";
-			hoover_tag_ = -1;
+			new_hoover_ = true;
+			new_hoover_adrs_ = adrs;
 		}
 	}
 
 	bool is_hoover(adrs_t adrs) const
 	{
-		if (hoover_tag_ == -1)
-			return false;
-		// if (adrs==hoover_adrs_)
-		//     std::clog << "HOOVER FOUND ON " << adrs << "\n";
-		return adrs == hoover_adrs_;
+		return hoover_ && adrs==hoover_adrs_;
+	}
+
+	void hoover_start_frame()
+	{
+		hoover_ = new_hoover_;
+		hoover_adrs_ = new_hoover_adrs_;
+		new_hoover_ = false;
 	}
 
 	typedef enum
@@ -130,7 +119,7 @@ public:
 	//  If true, display labels+displacement for line addresses
 	bool force_labels_ = false;
 
-	static void Select(const char* buffer);
+	static void DrawSelectRect(const char* buffer);
 
 	void DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions interactions);
 	void DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions interactions, const ImVec4& color);
@@ -142,7 +131,7 @@ public:
 	void DrawByte(uint8_t b, adrs_t adrs); // obsolete
 	void DrawBytes(const Line& l, eDisplayStyle display_style, eInteractions interactions);
 
-	void AddPanel(std::unique_ptr<Panel> panel)
+	void add_panel(std::unique_ptr<Panel> panel)
 	{
 		panels_.push_back(std::move(panel));
 	}
@@ -199,12 +188,13 @@ public:
 
 	const Disassembly& disassembly() const { return disassembly_; }
 
-	void Run();
+	void run();
 
 	//  Theme support
 	ImFont* large_font() const { return large_font_; }
 	ImFont* tiny_font() const { return tiny_font_; }
 	const Explorer& explorer() const { return explorer_; }
+	Explorer& explorer() { return explorer_; }
 	void close_panels()
 	{
 		panels_.erase(std::remove_if(panels_.begin(), panels_.end(), [](const std::unique_ptr<Panel>& p)
@@ -215,8 +205,8 @@ public:
 private:
 	Explorer& explorer_;
 
-	void InitImgUI();
-	void ShutdownImgUI();
+	void init_imgui();
+	void shutdown_imgui();
 
 	SDL_Window* window = NULL;
 	SDL_GLContext gl_context;
@@ -236,10 +226,6 @@ private:
 	std::vector<std::unique_ptr<Panel>> panels_;
 
 	Disassembly disassembly_;
-
-	// bool hoover_[65536];
-	int hoover_tag_;
-	adrs_t hoover_adrs_; //  Hoover is single address
 
 	//  If not empty, we remove this label after the next draw
 	std::string remove_label_;

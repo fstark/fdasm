@@ -2,7 +2,7 @@
 
 #include "uicommon.h"
 
-void Modal::DoDraw()
+void Modal::do_draw()
 {
 
 	ImGui::OpenPopup(title_.c_str());
@@ -13,14 +13,14 @@ void Modal::DoDraw()
 
 	if (ImGui::BeginPopupModal(title_.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		DoDrawContent();
+		do_draw_content();
 		first_open_ = false;
 	}
 
 	if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_KeypadEnter)))
 	{
 		ImGui::CloseCurrentPopup();
-		Apply();
+		apply();
 		close();
 	}
 	ImGui::SameLine();
@@ -34,7 +34,24 @@ void Modal::DoDraw()
 
 #include "ui.h"
 
-void LabelEditModal::DoDrawContent()
+
+LabelEditModal::LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */)
+	: Modal(ui)
+	, adrs_{ adrs }
+{
+	title_          = "Edit Label";
+	name_buffer_[0] = 0;
+	Label* lbl      = ui_.explorer().annotations().label_from_adrs(adrs);
+	label_type_     = Annotations::kCODE;
+	if (lbl)
+	{
+		snprintf(name_buffer_, 128, "%s", lbl->name().c_str());
+		label_type_ = lbl->type();
+	}
+}
+
+
+void LabelEditModal::do_draw_content()
 {
 	// Add a text field for inputting a name
 	ImGui::Text("Label name:");
@@ -53,7 +70,7 @@ void LabelEditModal::DoDrawContent()
 		static int item_current = 0;
 
 		// Get current label type
-		auto lbl = Annotations::label_from_adrs(adrs_);
+		auto lbl = ui_.explorer().annotations().label_from_adrs(adrs_);
 		if (lbl)
 		{
 			for (int i = 0; i < IM_ARRAYSIZE(map); i++)
@@ -70,10 +87,43 @@ void LabelEditModal::DoDrawContent()
 		label_type_ = (Annotations::RegionType)map[item_current];
 	}
 	ImGui::PopItemWidth();
-	ImGui::SameLine();
 }
 
-void LabelEditModal::Apply()
+void LabelEditModal::apply()
 {
 	ui_.replace_label(name_buffer_, adrs_, label_type_);
+}
+
+
+
+
+
+CommentEditModal::CommentEditModal(UI& ui, adrs_t adrs)
+	: Modal(ui)
+	, adrs_{ adrs }
+{
+	title_          = "Add/Edit/Remove Comment";
+	comment_buffer_[0] = 0;
+	const Comment* comment = ui_.explorer().annotations().comment_from_adrs(adrs);
+
+	if (comment)
+	{
+		snprintf(comment_buffer_, 1024, "%s", comment->text().c_str());
+	}
+}
+
+
+void CommentEditModal::do_draw_content()
+{
+	// Add a text field for inputting a name
+	ImGui::Text("Comment:");
+	ImGui::SameLine();
+	if (first_open_)
+		ImGui::SetKeyboardFocusHere();
+	ImGui::InputText("##name", comment_buffer_, IM_ARRAYSIZE(comment_buffer_));
+}
+
+void CommentEditModal::apply()
+{
+	ui_.replace_comment(adrs_, comment_buffer_);
 }

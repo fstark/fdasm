@@ -23,7 +23,7 @@ public:
 	}
 	virtual ~Panel() {}
 
-	void Draw();
+	void draw();
 
 	const std::string name() const { return title_ + "##" + id_; }
 
@@ -47,6 +47,6 @@ protected:
 	int tag; //  Unique tag, used to manage global hoover
 
 	//  Override to perform the drawing
-	virtual void DoDraw() = 0;
+	virtual void do_draw() = 0;
 };
 

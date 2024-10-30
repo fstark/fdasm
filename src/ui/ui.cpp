@@ -10,7 +10,7 @@
 #include "byteinspector.h"
 #include "uicommon.h"
 
-void UI::InitImgUI()
+void UI::init_imgui()
 {
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER | IMG_INIT_PNG) != 0)
@@ -63,6 +63,26 @@ void UI::InitImgUI()
 	large_font_ = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
 }
 
+void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type)
+{
+	//  We remove existing lavel at this address
+	Label* lbl = explorer_.annotations().label_from_adrs(adrs);
+	if (lbl)
+	{
+		explorer_.annotations().remove_label_if_exists(lbl->name());
+	}
+	//  If name is not empty, we add a new label
+	if (!label.empty())
+	{
+		explorer_.annotations().remove_label_if_exists(label);
+		explorer_.annotations().add_label(label, adrs, type);
+	}
+	//  We rebuild the disassembly
+	disassembly_ = explorer_.disassembler()->disassemble();
+	(void)explorer_.annotations().write_annotations();
+}
+
+
 // void UI::DrawAddress( adrs_t adrs )
 // {
 //     //  Draw the Address for the line
@@ -80,7 +100,7 @@ void UI::InitImgUI()
 //     ImGui::SameLine();
 // }
 
-void UI::Select(const char* buffer)
+void UI::DrawSelectRect(const char* buffer)
 {
 	ImVec2 text_size  = ImGui::CalcTextSize(buffer);
 	ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
@@ -103,7 +123,7 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 			break;
 		case kDisplayLabel:
 		{
-			auto lbl = Annotations::label_from_adrs(adrs);
+			auto lbl = explorer().annotations().label_from_adrs(adrs);
 			if (lbl)
 				snprintf(buffer, 256, "%s", lbl->name().c_str());
 			else
@@ -112,7 +132,7 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 		break;
 		case kDisplayDisplacement:
 		{
-			auto lbl = Annotations::label_before_adrs(adrs, 99);
+			auto lbl = explorer().annotations().label_before_adrs(adrs, 99);
 			if (!lbl)
 				snprintf(buffer, 256, "%04x       ", adrs);
 			else if (lbl->start_adrs() == adrs)
@@ -132,7 +152,7 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 
 	if (is_hoover(adrs))
 	{
-		Select(buffer);
+		DrawSelectRect(buffer);
 	}
 
 	ImGui::TextColored(color, "%s", buffer); // Display address
@@ -185,7 +205,7 @@ void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* in
 
 	if (is_hoover(adrs))
 	{
-		UI::Select(buffer);
+		UI::DrawSelectRect(buffer);
 		ImGui::TextColored(byte_select_color, "%s", buffer);
 	}
 	else
@@ -273,7 +293,7 @@ void UI::DrawBytes(const Line& l, eDisplayStyle display_style, eInteractions int
 	}
 }
 
-void UI::Run()
+void UI::run()
 {
 	int done = 0;
 
@@ -313,34 +333,37 @@ void UI::Run()
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
+
+		hoover_start_frame();
+
 		ImGui::NewFrame();
         // Create a docking space
         ImGui::DockSpaceOverViewport(0,ImGui::GetMainViewport());
 
 		//  The main window
-		code_inspector_->Draw();
+		code_inspector_->draw();
 
 		// Show demo ImgUI window
 		ImGui::ShowDemoWindow();
 
 		//  Byte info if needed
 		if (byte_inspector_)
-			byte_inspector_->Draw();
+			byte_inspector_->draw();
 
 		//  Address info if needed
 		if (adrs_inspector_)
-			adrs_inspector_->Draw();
+			adrs_inspector_->draw();
 
 		//  Data inspector
 		if (data_inspector_panel_)
-			data_inspector_panel_->Draw();
+			data_inspector_panel_->draw();
 
 		std::vector<Panel*> to_draw;
 		for (const auto& p : panels_)
 			to_draw.push_back(p.get());
 
 		for (const auto p : to_draw)
-			p->Draw();
+			p->draw();
 
 		//  Remove all panels that are not open
 		close_panels();
@@ -360,13 +383,13 @@ void UI::Run()
 			explorer_.annotations().remove_label_if_exists(remove_label_);
 			remove_label_ = "";
 			disassembly_  = explorer_.disassembler()->disassemble();
-			(void)explorer_.annotations().write_regions();
+			(void)explorer_.annotations().write_annotations();
 		}
 	}
 }
 
 
-void UI::ShutdownImgUI()
+void UI::shutdown_imgui()
 {
 	// Cleanup
 	ImGui_ImplOpenGL3_Shutdown();

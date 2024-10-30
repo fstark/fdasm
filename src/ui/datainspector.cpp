@@ -15,7 +15,7 @@ void DataInspectorPanel::data_changed()
 	scroll_to_adrs( data() );
 }
 
-void DataInspectorPanel::DoDrawData()
+void DataInspectorPanel::do_draw_data()
 {
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;

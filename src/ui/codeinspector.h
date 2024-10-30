@@ -2,11 +2,13 @@
 
 #include "inspector.h"
 
+class Comment;
+
 class CodeInspectorPanel : public InspectorPanel<adrs_t>
 {
 public:
 	CodeInspectorPanel(UI& ui, adrs_t data);
-	void DoDrawData() override;
+	void do_draw_data() override;
 	void scroll_to_line(int line);
 	void scroll_to_adrs(int adrs);
 
@@ -16,5 +18,5 @@ protected:
 private:
 	// Label *label_; future
 	std::vector<XRef> xrefs_to_;
-	int target_line_ = -1; //  The line to scroll to (if !=-1)
+	int target_line_ = -1; 				//  The line to scroll to (if !=-1)
 };

@@ -2,7 +2,7 @@
 
 #include "uicommon.h"
 
-void Panel::Draw()
+void Panel::draw()
 {
     ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.2f, 0.3f, 0.4f, 1.0f)); // Example color
     ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.3f, 0.4f, 0.5f, 1.0f)); // Example color
@@ -23,7 +23,7 @@ void Panel::Draw()
 
 	// std::clog << "Drawing " << name() << std::endl;
 
-	DoDraw();
+	do_draw();
 
 	ImGui::End();
 

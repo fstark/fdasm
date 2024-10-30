@@ -278,7 +278,7 @@ public:
 class Disassembler
 {
 public:
-	Disassembler(const Rom &rom, std::shared_ptr<Annotations> rom_content);
+	Disassembler(const Rom &rom, const Annotations &rom_content);
 
 	~Disassembler() {}
 
@@ -300,7 +300,7 @@ private:
 	const Rom &rom_;
 	adrs_t current_ = 0;
 
-	std::shared_ptr<Annotations> annotations_;
+	const Annotations &annotations_;
 
 	std::unique_ptr<Emitter> _emitters[Annotations::kCOUNT];
 

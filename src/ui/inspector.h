@@ -29,9 +29,9 @@ public:
 protected:
 	virtual void data_changed() {}
 
-	virtual void DoDraw() override;
+	virtual void do_draw() override;
 
-	virtual void DoDrawData() = 0;
+	virtual void do_draw_data() = 0;
 
 private:
 	std::vector<T> datas_;
@@ -63,7 +63,7 @@ void InspectorPanel<T>::set_data( T d )
 #include "uicommon.h"
 
 template <class T>
-void InspectorPanel<T>::DoDraw()
+void InspectorPanel<T>::do_draw()
 {
 	//	A left and right button to navigate the data
 	if (ImGui::ArrowButton("left", ImGuiDir_Left))
@@ -74,5 +74,5 @@ void InspectorPanel<T>::DoDraw()
 	if (ImGui::ArrowButton("right", ImGuiDir_Right))
 		next();
 
-	DoDrawData();
+	do_draw_data();
 }

@@ -13,7 +13,7 @@ public:
 	}
 
 protected:
-	void DoDrawData() override;
+	void do_draw_data() override;
 
 	void data_changed() override;
 

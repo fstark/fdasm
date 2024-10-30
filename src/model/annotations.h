@@ -7,7 +7,11 @@
 #include <vector>
 
 class Label;
+class Comment;
+#include "comment.h"
 
+//	Annotations are stuff about the ROM that are managed by the user
+//	Annotations are used to create the right disassembly
 class Annotations
 {
 public:
@@ -25,12 +29,16 @@ public:
 
 	Annotations(Rom& rom, const std::string& filename);
 
-	RegionType get_region_type(adrs_t adrs) const;
+	//  Write the annotations in an .fda
+	[[nodiscard]] int write_annotations() const;
 
-	static Label* label_from_adrs(adrs_t adrs);
-	static Label* label_before_adrs(adrs_t adrs, int limit);
-	static const std::vector<Label>& get_labels();
-	static Label* label_from_name(const std::string& name); // unsure if good idea. maybe never let Labels leak and treat only names
+	//  Label management (#### move to separate class)
+	//  Label count
+	size_t label_count() const;
+	Label* label_from_adrs(adrs_t adrs);
+	Label* label_before_adrs(adrs_t adrs, int limit);
+	const std::vector<Label>& get_labels() const { return all_labels_; }
+	Label* label_from_name(const std::string& name); // unsure if good idea. maybe never let Labels leak and treat only names
 
 	//  Adds a label
 	void add_label(const std::string& name, adrs_t adrs, RegionType type);
@@ -41,13 +49,32 @@ public:
 	//  Removes a label
 	void remove_label_if_exists(const std::string& name);
 
-	//  Write the region file
-	[[nodiscard]] int write_regions() const;
+	//	Get the "type" of a given address
+	RegionType get_region_type(adrs_t adrs) const;
 
-	//  Label count
-	size_t label_count() const;
+
+	//  Comment management
+
+	//  Get a comment
+	const Comment* comment_from_adrs(adrs_t adrs) const { return comments_[adrs]; }
+
+	void replace_comment( adrs_t line, const std::string &comment );
 
 private:
+		//	The list of labels
+	std::vector<Label> all_labels_;
+
+		//	The adrs <=> label map (could also be a simpler vector, would help for the label_before_adrs)
+	std::unordered_map<adrs_t, Label> labels_map_;
+
+		//	The list of all comments
+	std::vector<Comment> all_comments_;
+
+		//	The adrs <=> comments
+	std::vector<const Comment*> comments_;
+
+
+		//	The region of each byte
 	std::vector<RegionType> regions_;
 
 	void set_region(adrs_t start, adrs_t end, Annotations::RegionType type)
@@ -57,11 +84,12 @@ private:
 			regions_[adrs - rom_.load_adrs()] = type;
 	}
 
-	[[nodiscard]] int read_regions(const std::string& filename);
-	[[nodiscard]] int write_regions(const std::string& filename) const;
+	[[nodiscard]] int read_annotations(const std::string& filename);
+	[[nodiscard]] int write_annotations(const std::string& filename) const;
 
 	const Rom& rom_;
 	const std::string filename_;
 
 	void labels_changed();
+	void comments_changed();
 };

@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 	// Disassembler *disassembler = load_rom( rom_file, rom_contents );
 
 	UI ui(explorer);
-	ui.Run();
+	ui.run();
 
 	return 0;
 }

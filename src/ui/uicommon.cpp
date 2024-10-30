@@ -20,6 +20,7 @@ auto data_ref_color = ImVec4( 0.3f, 0.3f, 0.3f, 1.0f );
 
 auto bg_select_color = ImVec4( 0.2f, 0.2f, 0.6f, 1.0f );
 
+auto comment_color = ImVec4( 0.5f, 0.5f, 0.5f, 1.0f );
 
 void paint_line(ImU32 color)
 {

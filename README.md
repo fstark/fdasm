@@ -61,7 +61,7 @@ Data view:
         - snake_case methods
     - Changes
         - Regions/Labels/Annotations. Make a decision on names
-        - Annotation's sLabels and sLabelMap: wtf?
+        - Annotation's all_labels_ and labels_map_: wtf?
         - Label * should be removed and use only names?
 
 
