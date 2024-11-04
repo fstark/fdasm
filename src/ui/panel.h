@@ -23,6 +23,16 @@ public:
 	}
 	virtual ~Panel() {}
 
+	// copy assignment operator
+	Panel& operator=(const Panel& other)
+	{
+		if (this != &other)
+		{
+			title_ = other.title_;
+		}
+		return *this;
+	}
+
 	void draw();
 
 	const std::string name() const { return title_ + "##" + id_; }

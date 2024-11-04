@@ -36,8 +36,13 @@
         },
         {
             "label": "build and run",
-            "dependsOn": ["build", "run"],
-            "problemMatcher": []
+            "dependsOn": ["build"],
+            "problemMatcher": [],
+            "type": "shell",
+            "command": "./fdasm",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
         }
     ]
 }

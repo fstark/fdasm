@@ -2,6 +2,8 @@
 
 #include "panel.h"
 
+#include "ui.h"
+
 //  A panel that *inspects* a specific piece of data
 //  TODO: Such panels could have some sort of history to move accross different data
 template <class T>
@@ -13,7 +15,7 @@ public:
 	    , datas_{ data }
 	{
 		title_ = "";
-		id_    = std::to_string((long)this); //  #### Another Unique ID would be better
+		generate_id();
 
 		data_changed();
 	}
@@ -26,6 +28,8 @@ public:
 
 	void set_data( T data );
 
+	void set_has_history(bool has_history) { has_history_ = has_history; }
+
 protected:
 	virtual void data_changed() {}
 
@@ -33,9 +37,13 @@ protected:
 
 	virtual void do_draw_data() = 0;
 
+	virtual std::unique_ptr<InspectorPanel<T>> duplicate() const = 0;
+
 private:
 	std::vector<T> datas_;
 	int index_ = 0;
+	bool has_history_ = true;
+	void generate_id() { id_ = std::to_string((long)this); }	// #### Not great
 };
 
 template <class T>
@@ -65,14 +73,31 @@ void InspectorPanel<T>::set_data( T d )
 template <class T>
 void InspectorPanel<T>::do_draw()
 {
-	//	A left and right button to navigate the data
-	if (ImGui::ArrowButton("left", ImGuiDir_Left))
-		prev();
-	ImGui::SameLine();
-	ImGui::Text("%d/%d", index() + 1, count());
-	ImGui::SameLine();
-	if (ImGui::ArrowButton("right", ImGuiDir_Right))
-		next();
+	if (has_history_)
+	{
+		//	A left and right button to navigate the data
+		if (ImGui::ArrowButton("left", ImGuiDir_Left))
+			prev();
+		ImGui::SameLine();
+		ImGui::Text("%d/%d", index() + 1, count());
+		ImGui::SameLine();
+		if (ImGui::ArrowButton("right", ImGuiDir_Right))
+			next();
+
+		//	Eject duplicates the window
+		ImGui::SameLine();
+		if (ImGui::Button(ICON_FA_EJECT))
+		{
+			//	Unfortunately, we need support from each subclass to create the correct instance
+			std::unique_ptr<InspectorPanel<T>> dup = duplicate();
+			if (dup)
+			{
+				dup->set_closable(true);
+				dup->data_changed();
+				ui_.add_panel(std::move(dup));
+			}
+		}
+	}
 
 	do_draw_data();
 }

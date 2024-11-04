@@ -14,6 +14,8 @@ public:
 protected:
 	void data_changed() override;
 
+	std::unique_ptr<InspectorPanel<adrs_t>> duplicate() const override { return std::make_unique<AdrsInspectorPanel>(ui_,data()); }
+
 private:
 	std::vector<XRef> xrefs_to_;
 };

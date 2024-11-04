@@ -7,8 +7,99 @@
 #include <memory>
 #include <stdio.h>
 
-#include "byteinspector.h"
 #include "uicommon.h"
+
+#include "byteinspector.h"
+#include "codeinspector.h"
+#include "datainspector.h"
+#include "adrsinspector.h"
+
+#include "labelspanel.h"
+
+UI::UI(Explorer& explorer)
+	: explorer_{ explorer }
+{
+	//  We disassemble the code
+	disassembly_ = explorer_.disassembler()->disassemble();
+
+	init_imgui();
+
+	//	We create the main panels
+	code_inspector_       = std::make_unique<CodeInspectorPanel>(*this, explorer_.rom().load_adrs());
+	code_inspector_->set_unique();
+	data_inspector_panel_ = std::make_unique<DataInspectorPanel>(*this);
+	data_inspector_panel_->set_unique();
+	adrs_inspector_ = std::make_unique<AdrsInspectorPanel>(*this, explorer_.rom().load_adrs());
+	adrs_inspector_->set_unique();
+	byte_inspector_ = std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(explorer_.rom().load_adrs()) );
+	byte_inspector_->set_unique();
+	labels_panel_ = std::make_unique<LabelsPanel>(*this);
+	labels_panel_->set_unique();
+}
+
+UI::~UI()
+{
+	shutdown_imgui();
+}
+
+void UI::close_panels()
+{
+	panels_.erase(std::remove_if(panels_.begin(), panels_.end(), [](const std::unique_ptr<Panel>& p)
+						{ return !p->is_open(); }),
+		panels_.end());
+}
+
+void UI::add_panel(std::unique_ptr<Panel> panel)
+{
+	panels_.push_back(std::move(panel));
+}
+
+void UI::update_adrs_panel( adrs_t adrs )
+{
+	adrs_inspector_->set_data(adrs);
+}
+
+void UI::update_byte_panel( uint8_t b )
+{
+	byte_inspector_->set_data(b);
+}
+
+void UI::update_code_panel( adrs_t adrs )
+{
+	code_inspector_->set_data(adrs);
+}
+
+void UI::update_data_panel( adrs_t adrs )
+{
+	data_inspector_panel_->set_data(adrs);
+}
+
+void UI::new_disassembly_panel( adrs_t adrs )
+{
+	auto cip = std::make_unique<CodeInspectorPanel>(*this, adrs);
+	cip->scroll_to_adrs(adrs);
+	panels_.push_back(std::move(cip));
+	panels_.back()->set_closable(true);
+}
+
+void UI::inspect_adrs(adrs_t adrs, bool /* hoover */)
+{
+	update_adrs_panel( adrs );
+
+	if (link_)
+		new_disassembly_panel( adrs );
+
+	// if (!link_)
+	// {
+	// 	panels_.push_back(std::make_unique<AdrsInspectorPanel>(*this, adrs));
+	// 	panels_.back()->set_closable(true);
+	// }
+	// else
+	// {
+	// 	new_disassembly_panel( adrs );
+	// }
+}
+
 
 void UI::init_imgui()
 {
@@ -59,8 +150,16 @@ void UI::init_imgui()
 	// Set the font size
     //  #### TODO: Make this configurable/smarter
 	io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
+	ImFontConfig config;
+	config.MergeMode = true;
+	config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+	io.Fonts->AddFontFromFileTTF("src/fontawesome-free-solid-900.otf", 12.0f, &config, icon_ranges);
+
 	tiny_font_  = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f / 3);
 	large_font_ = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
+
+	// icon_font_ = io.Fonts->AddFontFromFileTTF( "src/fontawesome-free-solid-900.otf", 13.0f );
 }
 
 void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type)
@@ -100,11 +199,21 @@ void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::Regio
 //     ImGui::SameLine();
 // }
 
-void UI::DrawSelectRect(const char* buffer)
+void UI::DrawSelectRect(const char* buffer, ImU32 color )
 {
 	ImVec2 text_size  = ImGui::CalcTextSize(buffer);
 	ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
-	ImGui::GetWindowDrawList()->AddRectFilled(cursor_pos, ImVec2(cursor_pos.x + text_size.x, cursor_pos.y + text_size.y), ImGui::GetColorU32(select_color));
+	ImGui::GetWindowDrawList()->AddRectFilled(cursor_pos, ImVec2(cursor_pos.x + text_size.x, cursor_pos.y + text_size.y), color);
+}
+
+void UI::DrawSelectRect(const char* buffer, ImVec4 color )
+{
+	DrawSelectRect( buffer, ImGui::GetColorU32(color));
+}
+
+void UI::DrawSelectRect(const char* buffer)
+{
+	DrawSelectRect( buffer, select_color);
 }
 
 //  Draws an address with specific style
@@ -163,45 +272,12 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 	DrawAddress(adrs, display_style, kInteractNone, adrs_color);
 }
 
-//  #### Should pass an optional address for interaction
+//  #### Should pass an optional address for interaction?
 void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* interactions */, adrs_t adrs)
 {
 	char buffer[256];
 
-	switch (display_style)
-	{
-		case kDisplayHex:
-			snprintf(buffer, 256, "%02x", byte);
-			break;
-		case kDisplayAscii:
-		{
-			uint8_t c = byte & 0x7f;
-			if (c < 32 || c > 127)
-				c = ' ';
-			snprintf(buffer, 3, "%c ", c);
-			break;
-		}
-		case kDisplayBinary:
-			snprintf(buffer, 256, "%c%c%c%c%c%c%c%c",
-			    byte & 0x80 ? '1' : '0',
-			    byte & 0x40 ? '1' : '0',
-			    byte & 0x20 ? '1' : '0',
-			    byte & 0x10 ? '1' : '0',
-			    byte & 0x08 ? '1' : '0',
-			    byte & 0x04 ? '1' : '0',
-			    byte & 0x02 ? '1' : '0',
-			    byte & 0x01 ? '1' : '0');
-			break;
-		case kDisplayOctal:
-			snprintf(buffer, 256, "%03o", byte);
-			break;
-		case kDisplayDecimal:
-			snprintf(buffer, 256, "%3d", byte);
-			break;
-		default:
-			snprintf(buffer, 256, "??");
-			break;
-	}
+	format_byte( buffer, byte, display_style );
 
 	if (is_hoover(adrs))
 	{
@@ -211,86 +287,7 @@ void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* in
 	else
 		ImGui::TextColored(byte_color, "%s", buffer);
 
-	// if (ImGui::IsItemHovered())
-	// {
-	//     inspect_adrs( adrs, true );
-	// }
-	// if (ImGui::IsItemClicked())
-	// {
-	//     inspect_adrs( adrs, false );
-	// }
 	ImGui::SameLine();
-}
-
-/*
-// obsolete
-void UI::DrawByte( uint8_t b, adrs_t adrs )
-{
-    char buffer[3];
-
-        //  How to display the byte
-    if (force_ascii_)
-    {
-        uint8_t c = b&0x7f;
-        if (c<32 || c>127)
-            c = ' ';
-        snprintf( buffer, 3, "%c ", c);
-    }
-    else
-        snprintf( buffer, 3, "%02x", b );
-
-
-    auto color = byte_color;
-    if (hoover_[adrs])
-    {
-        color = select_color;
-        
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Slightly darker green when active
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Slightly darker green when active
-        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Slightly darker green when active
-        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Slightly darker green when active
-    }
-
-    ImGui::TextColored(color, "%s", buffer ); // Display byte
-
-    if (hoover_[adrs])
-    {
-        ImGui::PopStyleColor( 4 );        
-    }
-
-    if (ImGui::IsItemHovered())
-    {
-        // hover
-        // std::clog << "Item hovered: " << adrs << std::endl;
-        // Display a message within the ImGui window when the item is hovered
-        // ImGui::BeginTooltip();
-        // ImGui::Text("Item hovered: %02x", b);
-        // ImGui::EndTooltip();
-        hoover_[adrs] = true;
-
-        //  Show the byte inspector
-        byte_inspector_ = std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(adrs) );
-        byte_inspector_->unique();
-    }
-    else
-        hoover_[adrs] = false;
-
-    if (ImGui::IsItemClicked())
-    {
-        panels_.push_back( std::make_unique<ByteInspectorPanel>( *this, explorer_.rom().get(adrs) ) );
-        panels_.back()->set_closable( true );
-    }
-
-    ImGui::SameLine();
-}
-*/
-
-void UI::DrawBytes(const Line& l, eDisplayStyle display_style, eInteractions interactions)
-{
-	for (int i = 0; i != l.byte_count(); i++)
-	{
-		DrawByte(l.get_byte(i), display_style, interactions, l.start_adrs_ + i);
-	}
 }
 
 void UI::run()
@@ -357,6 +354,10 @@ void UI::run()
 		//  Data inspector
 		if (data_inspector_panel_)
 			data_inspector_panel_->draw();
+
+		//	Labels
+		if (labels_panel_)
+			labels_panel_->draw();
 
 		std::vector<Panel*> to_draw;
 		for (const auto& p : panels_)

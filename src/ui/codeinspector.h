@@ -15,8 +15,18 @@ public:
 protected:
 	void data_changed() override;
 
+	//	#### Lacks auto-scrolling
+	//	Maybe capture the top-line at each frame and copy it?
+	std::unique_ptr<InspectorPanel<adrs_t>> duplicate() const override
+	{
+		auto res = std::make_unique<CodeInspectorPanel>(ui_,data());
+		*res = *this;
+		return res;
+	}
+
 private:
-	// Label *label_; future
-	std::vector<XRef> xrefs_to_;
 	int target_line_ = -1; 				//  The line to scroll to (if !=-1)
+
+	eDisplayStyle address_display_style_ = kDisplayHex;
+	eDisplayStyle bytes_display_style_   = kDisplayHex;
 };

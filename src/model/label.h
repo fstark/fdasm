@@ -15,6 +15,7 @@ public:
 	{
 	}
 
+	adrs_t adrs() const { return start_adrs_; }
 	adrs_t start_adrs() const { return start_adrs_; }
 	adrs_t end_adrs() const { return end_adrs_; }
 	Annotations::RegionType type() const { return type_; }

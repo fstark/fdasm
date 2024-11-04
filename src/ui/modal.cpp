@@ -20,8 +20,8 @@ void Modal::do_draw()
 	if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_KeypadEnter)))
 	{
 		ImGui::CloseCurrentPopup();
-		apply();
-		close();
+		if (apply())
+			close();
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Cancel", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
@@ -35,9 +35,10 @@ void Modal::do_draw()
 #include "ui.h"
 
 
-LabelEditModal::LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */)
+LabelEditModal::LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */, bool edit_adrs)
 	: Modal(ui)
 	, adrs_{ adrs }
+	, edit_adrs_{ edit_adrs }
 {
 	title_          = "Edit Label";
 	name_buffer_[0] = 0;
@@ -48,11 +49,22 @@ LabelEditModal::LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label 
 		snprintf(name_buffer_, 128, "%s", lbl->name().c_str());
 		label_type_ = lbl->type();
 	}
+	if (name_buffer_[0]==0)
+	{	//	No name, we invent ours
+		snprintf( name_buffer_, 128, "D%04X", adrs );
+	}
 }
 
 
 void LabelEditModal::do_draw_content()
 {
+	if (edit_adrs_)
+	{
+		ImGui::Text("Address: ");
+		ImGui::SameLine();
+		ImGui::InputText("##adrs", adrs_buffer_, IM_ARRAYSIZE(adrs_buffer_));
+	}
+
 	// Add a text field for inputting a name
 	ImGui::Text("Label name:");
 	ImGui::SameLine();
@@ -89,9 +101,25 @@ void LabelEditModal::do_draw_content()
 	ImGui::PopItemWidth();
 }
 
-void LabelEditModal::apply()
+bool LabelEditModal::apply()
 {
+	//	We look if the label already exists at a different address
+	Label* lbl = ui_.explorer().annotations().label_from_name(name_buffer_);
+	if (lbl && lbl->adrs() != adrs_)
+	{
+		// Append a random number to the label
+		char buffer[128];
+		snprintf(buffer, 128, "%s_%d", name_buffer_, rand() % 1000);
+		snprintf(name_buffer_, 128, "%s", buffer);
+
+		lbl = ui_.explorer().annotations().label_from_name(name_buffer_);
+		if (lbl)
+			return false;
+	}
+
 	ui_.replace_label(name_buffer_, adrs_, label_type_);
+
+	return true;
 }
 
 
@@ -123,7 +151,8 @@ void CommentEditModal::do_draw_content()
 	ImGui::InputText("##name", comment_buffer_, IM_ARRAYSIZE(comment_buffer_));
 }
 
-void CommentEditModal::apply()
+bool CommentEditModal::apply()
 {
 	ui_.replace_comment(adrs_, comment_buffer_);
+	return true;
 }

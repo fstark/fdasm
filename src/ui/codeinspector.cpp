@@ -23,24 +23,21 @@ void CodeInspectorPanel::scroll_to_adrs(int adrs) { scroll_to_line(ui_.disassemb
 
 void CodeInspectorPanel::do_draw_data()
 {
-	// if (ImGui::CollapsingHeader("Display Options"))
-	// {
-	//     // Add buttons for "ASCII" and "Labels"
-	//     ImGui::Checkbox("ASCII",&ui_.force_ascii_);
-	//     ImGui::SameLine();
-	//     ImGui::Checkbox("Labels",&ui_.force_labels_);
-	// }
+	ImGui::SameLine();
 
 	ImGui::PushItemWidth(80);
 
 	{
+		ImGui::Text("Adrs:");
+		ImGui::SameLine();
+
 		const char* items[]     = { "Hex", "Decimal", "Labels" };
-		static int map[]        = { UI::kDisplayHex, UI::kDisplayDecimal, UI::kDisplayDisplacement };
+		static int map[]        = { kDisplayHex, kDisplayDecimal, kDisplayDisplacement };
 		static int item_current = 0;
 		// find the current item from address_display_style_ (#### Can do C++ way)
 		for (int i = 0; i < IM_ARRAYSIZE(map); i++)
 		{
-			if (map[i] == ui_.address_display_style_)
+			if (map[i] == address_display_style_)
 			{
 				item_current = i;
 				break;
@@ -48,16 +45,19 @@ void CodeInspectorPanel::do_draw_data()
 		}
 		ImGui::Combo("##AdrsCol1", &item_current, items, IM_ARRAYSIZE(items));
 		// Stores new display style
-		ui_.address_display_style_ = (UI::eDisplayStyle)map[item_current];
+		address_display_style_ = (eDisplayStyle)map[item_current];
 	}
 	ImGui::SameLine();
 	{
+		ImGui::Text("Data:");
+		ImGui::SameLine();
+
 		const char* items[]     = { "Hex", "Ascii", "Decimal", "Binary", "Octal" };
-		static int map[]        = { UI::kDisplayHex, UI::kDisplayAscii, UI::kDisplayDecimal, UI::kDisplayBinary, UI::kDisplayOctal };
+		static int map[]        = { kDisplayHex, kDisplayAscii, kDisplayDecimal, kDisplayBinary, kDisplayOctal };
 		static int item_current = 0;
 		for (int i = 0; i < IM_ARRAYSIZE(map); i++)
 		{
-			if (map[i] == ui_.bytes_display_style_)
+			if (map[i] == bytes_display_style_)
 			{
 				item_current = i;
 				break;
@@ -65,7 +65,7 @@ void CodeInspectorPanel::do_draw_data()
 		}
 		ImGui::Combo("##AdrsCol2", &item_current, items, IM_ARRAYSIZE(items));
 		// Stores new display style
-		ui_.bytes_display_style_ = (UI::eDisplayStyle)map[item_current];
+		bytes_display_style_ = (eDisplayStyle)map[item_current];
 	}
 	ImGui::PopItemWidth();
 
@@ -73,7 +73,7 @@ void CodeInspectorPanel::do_draw_data()
 	float char_width = ImGui::CalcTextSize("A").x;
 	// 4 bytes + ':' + 8*2 bytes + 7 sep = 28 + 2 margins
 	float adrs_width  = 30 * char_width;
-	float label_width = 21 * char_width;
+	float label_width = 16 * char_width;
 
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;
@@ -119,9 +119,9 @@ void CodeInspectorPanel::do_draw_data()
 				}
 
 				//  Address of the current instruction (column 1)
-				auto display = ui_.address_display_style_;
+				auto display = address_display_style_;
 				if (ui_.force_labels_)
-					display = UI::kDisplayDisplacement;
+					display = kDisplayDisplacement;
 
 				ui_.DrawAddress(line.start_adrs_, display, UI::kInteractNone);
 				ui_.hoover(line.start_adrs_, tag + 0, ImGui::IsItemHovered());
@@ -137,16 +137,16 @@ void CodeInspectorPanel::do_draw_data()
 
 					if (ImGui::GetMouseClickedCount(0) == 2)
 					{
-						ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, ""));
+						ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, "",false));
 					}
 				}
 
 				ImGui::SameLine();
 
 				//  Bytes of the current instruction (column 2)
-				display = ui_.bytes_display_style_;
+				display = bytes_display_style_;
 				if (ui_.force_ascii_)
-					display = UI::kDisplayAscii;
+					display = kDisplayAscii;
 
 				for (int i = 0; i != line.byte_count(); i++)
 				{
@@ -163,7 +163,7 @@ void CodeInspectorPanel::do_draw_data()
 							//	Edition of label inside the list of bytes
 						if (ImGui::GetMouseClickedCount(0) == 2)
 						{
-							ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_+i, ""));
+							ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_+i, "",false));
 						}
 					}
 						//	Hoover to set the hoover address
@@ -192,6 +192,14 @@ void CodeInspectorPanel::do_draw_data()
 				//  Label
 				ImGui::Text("");
 				ImGui::SameLine(label_width);
+
+				std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs_);
+				if (small_icon_button(button_id.c_str()))
+				{
+					ui_.remove_label_if_exists(line.spans()[0].content());
+				}
+				ImGui::SameLine(0,0);
+
 				if (ui_.is_hoover(line.start_adrs_))
 				{
 					UI::DrawSelectRect(line.spans()[0].content().c_str());
@@ -202,27 +210,17 @@ void CodeInspectorPanel::do_draw_data()
 				ui_.hoover(line.start_adrs_, tag + 3, ImGui::IsItemHovered());
 
 				//  Where the label was drawn
-				ImVec2 line_start = ImGui::GetItemRectMin();
-				ImVec2 line_end   = ImGui::GetItemRectMax();
+				// ImVec2 line_start = ImGui::GetItemRectMin();
+				// ImVec2 line_end   = ImGui::GetItemRectMax();
 
-#define SIZE 120
-				//  Go to right end
-				ImGui::SameLine(ImGui::GetWindowWidth() - SIZE); // Where we will draw
-				auto pos = ImGui::GetCursorScreenPos();
+// #define SIZE 120
+// 				//  Go to right end
+// 				ImGui::SameLine(ImGui::GetWindowWidth() - SIZE); // Where we will draw
+// 				auto pos = ImGui::GetCursorScreenPos();
 
-				line_start.x = 0;
-				line_end.x   = pos.x + SIZE;
+// 				line_start.x = 0;
+// 				line_end.x   = pos.x + SIZE;
 
-				// Check if the mouse is hovering over the entire line
-				if (ImGui::IsMouseHoveringRect(line_start, line_end))
-				{
-					// Add a close button
-					std::string button_id = "X##" + std::to_string(line.start_adrs_);
-					if (ImGui::SmallButton(button_id.c_str()))
-					{
-						ui_.remove_label_if_exists(line.spans()[0].content());
-					}
-				}
 
 				// ImGui::SameLine();
 			}
@@ -256,7 +254,7 @@ void CodeInspectorPanel::do_draw_data()
 
 					if (is_adrs)
 					{
-						ui_.DrawAddress(span.adrs(), UI::kDisplayDisplacement, UI::kInteractNone);
+						ui_.DrawAddress(span.adrs(), kDisplayDisplacement, UI::kInteractNone);
 						ui_.hoover(span.adrs(), tag + 2, ImGui::IsItemHovered());
 						if (ImGui::IsItemClicked())
 						{
@@ -291,13 +289,13 @@ void CodeInspectorPanel::do_draw_data()
 			const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs_);
 			if (comment)
 			{
-				ImGui::SameLine();
+				ImGui::SameLine(350);
 				ImGui::TextColored(comment_color, "; %s", comment->text().c_str());
 			}
 			else
 			{
 				//  Haaack
-				ImGui::SameLine();
+				ImGui::SameLine(350);
 				ImGui::Text("                 ");
 			}
 			if (ImGui::IsItemClicked())

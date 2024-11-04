@@ -10,7 +10,16 @@ public:
 	{
 		title_ = "Byte";
 	}
-	void do_draw_data() override;
 
 	static void DisplayInstruction(const UI& ui, const Instruction& instruction);
+
+protected:
+	void do_draw_data() override;
+
+	std::unique_ptr<InspectorPanel<uint8_t>> duplicate() const override
+	{
+		auto res = std::make_unique<ByteInspectorPanel>(ui_,data());
+		res->set_has_history(false);
+		return res;
+	}
 };

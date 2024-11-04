@@ -46,8 +46,18 @@ Data view:
     A toolbar with all the modes
     A direct entry of an address (or label)
 
+# BUGS
+
+- [Data] Sync of the "Data Window" with the disassembly view is not working properly
+- [Code] Disassembly should not attempt to scroll to address out of ROM (may display the differently)
+- [Adrs] OP46 (for instance) does not appear in the window (but should as it is referenced from df54)
+- [Code] Jumping to an address from a duplicated window moves the main window
+
 # TODO
 
+- Data display modes
+- Data filter (search for bytes/words)
+- Autoscroll to address when duplicating a panel
 - Make silent labels
 - Make code a data panel at an address [DONE]
 - History in data panels [DONE]
@@ -58,11 +68,11 @@ Data view:
         - public before private [DONE]
         - no direct access to members from outside the implementation
         - remove most header inline code
-        - snake_case methods
+        - snake_case methods [DONE]
     - Changes
         - Regions/Labels/Annotations. Make a decision on names
-        - Annotation's all_labels_ and labels_map_: wtf?
-        - Label * should be removed and use only names?
+        - Annotation's all_labels_ and labels_map_: wtf? [DONE]
+        - Label * should be removed and use only names? [DONE] (mostly?)
 
 
 - Section inspector
@@ -83,7 +93,7 @@ Data view:
     - Bytes
     - Addresses
 - Add comment
-    - User comments
+    - User comments [DONE]
     - Way to display "system" comments (user comments from target address)
 - Labels
     - Think about local labels (have name but are only valid between 2 global labels)

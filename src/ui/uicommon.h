@@ -6,6 +6,8 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
 
+#include "IconsFontAwesome6.h"
+
 #include <SDL.h>
 #include <SDL_image.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -28,12 +30,31 @@ extern ImVec4 mnemonic_color;
 extern ImVec4 string_color;
 
 extern ImVec4 select_color;
+extern ImVec4 select_color2;
 
 extern ImVec4 line_color;
 
 extern ImVec4 data_ref_color;
 extern ImVec4 bg_select_color;
 extern ImVec4 comment_color;
+extern ImVec4 comment_light_color;
+extern ImVec4 info_color;           //  Color for an non-vital information
 
 void paint_line(ImU32 color);
 void paint_element( const char *str, ImU32 color);
+
+typedef enum
+{
+    kDisplayHex,         //  As hex
+    kDisplayAscii,       //  As ASCII
+    kDisplayBinary,      //  As binary
+    kDisplayOctal,       //  As octal
+    kDisplayDecimal,     //  As decimal
+    kDisplayLabel,       //  As a label
+    kDisplayDisplacement //  As a label with displacement
+} eDisplayStyle;
+
+void format_byte( char *buffer, uint8_t byte, eDisplayStyle display_style );
+
+//  A small button with a singlt icon
+bool small_icon_button(const char* label);

@@ -506,13 +506,31 @@ void Disassembler::disassemble_type(Annotations::RegionType type, adrs_t end_adr
 
 void Disassembler::disassemble_label(const Label& l)
 {
-	Line label{ rom_, l.start_adrs() };
+	adrs_t start_adrs = l.start_adrs();
+	adrs_t end_adrs = l.end_adrs();
+
+	//	Before the rom, we skip
+	if (end_adrs<rom_.load_adrs())
+		return;
+
+	//	After the rom, we skip
+	if (start_adrs>rom_.last_adrs())
+		return;
+
+	//	We make sure we don't go out of the rom
+	if (start_adrs<rom_.load_adrs())
+		start_adrs=rom_.load_adrs();
+
+	if (end_adrs>rom_.last_adrs())
+		end_adrs = rom_.last_adrs();
+
+	Line label{ rom_, start_adrs };
 	std::vector<Span> label_spans = { Span::label(l.name().c_str()) };
 	label.set_spans(label_spans);
 	lines_.push_back(label);
-	current_ = l.start_adrs();
+	current_ = start_adrs;
 
-	disassemble_type(l.type(), l.end_adrs());
+	disassemble_type(l.type(), end_adrs);
 }
 
 Disassembly Disassembler::disassemble()

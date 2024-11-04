@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <cassert>
+
 class Label;
 class Comment;
 #include "comment.h"
@@ -26,6 +28,14 @@ public:
 		kDATAW,
 		kCOUNT
 	} RegionType;
+
+	static const std::string& region_type_name( RegionType type )
+	{
+		assert( type >= 0 );
+		assert( type < kCOUNT );
+		static const std::string names[] = { "????", "CODE", "STRZ", "STR8S", "STRF2", "DATA", "DATAW" };
+		return names[type];
+	}
 
 	Annotations(Rom& rom, const std::string& filename);
 

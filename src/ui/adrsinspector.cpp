@@ -17,6 +17,8 @@ void AdrsInspectorPanel::data_changed()
 
 void AdrsInspectorPanel::do_draw_data()
 {
+	ImGui::SameLine();
+
 	Label *label = ui_.explorer().annotations().label_from_adrs(data());
 
 	ImGui::PushFont(ui_.large_font());
@@ -45,15 +47,15 @@ void AdrsInspectorPanel::do_draw_data()
 		switch (ref.type_)
 		{
 			case XRef::kJUMP:
-				ui_.DrawAddress(adrs, UI::kDisplayDisplacement, UI::kInteractNone, color);
+				ui_.DrawAddress(adrs, kDisplayDisplacement, UI::kInteractNone, color);
 				// ImGui::TextColored(ImVec4(244/255.0, 71/255.0, 71/255.0, 1.0f), "%04X:", adrs);
 				break;
 			case XRef::kREF:
-				ui_.DrawAddress(adrs, UI::kDisplayDisplacement, UI::kInteractNone, color);
+				ui_.DrawAddress(adrs, kDisplayDisplacement, UI::kInteractNone, color);
 				// ImGui::TextColored(ImVec4(71/255.0, 71/255.0, 244/255.0, 1.0f), "%04X:", adrs);
 				break;
 			case XRef::kDATA:
-				ui_.DrawAddress(adrs, UI::kDisplayDisplacement, UI::kInteractNone, data_ref_color);
+				ui_.DrawAddress(adrs, kDisplayDisplacement, UI::kInteractNone, data_ref_color);
 				// ImGui::TextColored(ImVec4(128/255.0, 128/255.0, 128/255.0, 1.0f), "%04X:", adrs);
 				break;
 		}
