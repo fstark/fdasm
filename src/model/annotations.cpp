@@ -1,5 +1,7 @@
 #include "annotations.h"
 #include "label.h"
+#include "utils.h"
+
 #include <algorithm>
 #include <cassert>
 #include <map>
@@ -37,10 +39,11 @@ int Annotations::read_annotations(const std::string& filename)
 		unsigned int adrs;
 		char type[16];
 		char label[16];
+		char lbl_comment[16384];
 		*label = 0;
 		// fprintf( stderr, "> %s\n", line );
 		int n;
-		if ((n = sscanf(line, "%X %s %s", &adrs, type, label)))
+		if ((n = sscanf(line, "%X %s %s \"%[^\"]\"", &adrs, type, label, lbl_comment)))
 		{
 			if (n>=2 && !strcmp(type, "COMMENT"))
 			{
@@ -57,7 +60,13 @@ int Annotations::read_annotations(const std::string& filename)
 				continue;
 			}
 
-			if (n!=3)
+			if (n==3)
+			{
+				lbl_comment[0] = 0;
+				n = 4;
+			}
+
+			if (n!=4)
 			{
 				fprintf( stderr, "Error reading region line: [%s]\n", line );
 				continue;
@@ -77,7 +86,7 @@ int Annotations::read_annotations(const std::string& filename)
 			else if (strcmp(type, "STRF2") == 0)
 				RegionType = Annotations::kSTRF2;
 
-			all_labels_.push_back({ static_cast<adrs_t>(adrs), label, RegionType });
+			all_labels_.push_back({ static_cast<adrs_t>(adrs), label, RegionType, unescape(lbl_comment) });
 		}
 	}
 
@@ -112,7 +121,10 @@ int Annotations::write_annotations(const std::string& filename) const
 			case kUNKNOWN: type = "UNKNOWN"; break;
 			case kCOUNT: type = "ERROR"; break;
 		}
-		fprintf(file, "%04X %s %s\n", label.start_adrs(), type.c_str(), label.name().c_str());
+		if (label.comment().empty())
+			fprintf(file, "%04X %s %s\n", label.start_adrs(), type.c_str(), label.name().c_str());
+		else
+			fprintf(file, "%04X %s %s \"%s\"\n", label.start_adrs(), type.c_str(), label.name().c_str(), escape(label.comment()).c_str());
 	}
 
 	//	Write the comments
@@ -188,9 +200,9 @@ void Annotations::comments_changed()
 
 size_t Annotations::label_count() const { return all_labels_.size(); }
 
-void Annotations::add_label(const std::string& name, adrs_t adrs, RegionType type)
+void Annotations::add_label(const std::string& name, adrs_t adrs, RegionType type, const std::string& comment)
 {
-	Label label(adrs, name, type);
+	Label label(adrs, name, type, comment);
 	all_labels_.push_back(label);
 	labels_changed();
 }

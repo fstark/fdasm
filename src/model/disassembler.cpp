@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "label.h"
+#include "utils.h"
 
 #define MAX_CODE_LEN 256000
 
@@ -294,7 +295,7 @@ std::vector<Span> DataEmitter::emit(size_t max_len)
 		max_len = 8;
 
 	// p += snprintf( p, MAX_CODE_LEN, "DB ");
-	res.push_back(Span::pseudo("DB"));
+	res.push_back(Span::pseudo("DB "));
 
 	while (max_len--)
 	{
@@ -312,7 +313,7 @@ std::vector<Span> DataWEmitter::emit(size_t)
 	// char *p = buffer;
 
 	// p += snprintf( p, MAX_CODE_LEN, "DW ");
-	res.push_back(Span::pseudo("DW"));
+	res.push_back(Span::pseudo("DW "));
 	// p += snprintf( p, MAX_CODE_LEN, "%04XH", disassembler_.read_word());
 	res.push_back(Span::adrs(disassembler_.read_word()));
 	// p += snprintf( p, MAX_CODE_LEN,"" );
@@ -320,51 +321,11 @@ std::vector<Span> DataWEmitter::emit(size_t)
 	return res;
 }
 
-static void escape_char( char *&p, int c )
-{
-	if (c == 0x0a)
-	{
-		*p++ = '\\';
-		*p++ = 'n';
-	}
-	else if (c == 0x0d)
-	{
-		*p++ = '\\';
-		*p++ = 'r';
-	}
-	else if (c == 0x09)
-	{
-		*p++ = '\\';
-		*p++ = 't';
-	}
-	else if (c == 0x22)
-	{
-		*p++ = '\\';
-		*p++ = '"';
-	}
-	else if (c == 0x5c)
-	{
-		*p++ = '\\';
-		*p++ = '\\';
-	}
-	else if (c < 0x20 || c > 0x7f)
-	{
-		*p++ = '\\';
-		*p++ = 'x';
-		*p++ = "0123456789ABCDEF"[c >> 4];
-		*p++ = "0123456789ABCDEF"[c & 0x0f];
-	}
-	else
-	{
-		*p++ = c;
-	}
-}
-
 std::vector<Span> StrzEmitter::emit(size_t)
 {
 	std::vector<Span> res;
 
-	res.push_back(Span::pseudo("DB"));
+	res.push_back(Span::pseudo("DB "));
 	char buffer[32789];
 	char* p = buffer;
 	while (!disassembler_.finished())
@@ -392,7 +353,7 @@ std::vector<Span> StrF2Emitter::emit(size_t)
 	// char *p = buffer;
 
 	// p += snprintf( p, MAX_CODE_LEN, "DB \"%c%c\"",disassembler_.read_byte(),disassembler_.read_byte());
-	res.push_back(Span::pseudo("DB"));
+	res.push_back(Span::pseudo("DB "));
 	uint8_t c0 = disassembler_.read_byte();
 	uint8_t c1 = disassembler_.read_byte();
 	snprintf(buffer, 16, "%c%c", c0, c1);
@@ -406,7 +367,7 @@ std::vector<Span> Str8sEmitter::emit(size_t)
 	std::vector<Span> res;
 	char buffer[16];
 
-	res.push_back(Span::pseudo("DB"));
+	res.push_back(Span::pseudo("DB "));
 	snprintf(buffer, 16, "80H or '%c'", disassembler_.read_byte() & 0x7f);
 	res.push_back(Span::expression(buffer));
 	res.push_back(Span::text(","));
@@ -523,6 +484,32 @@ void Disassembler::disassemble_label(const Label& l)
 
 	if (end_adrs>rom_.last_adrs())
 		end_adrs = rom_.last_adrs();
+
+	if (l.comment()!="")
+	{
+		// split the comment into lines
+		std::vector<std::string> comment_lines;
+		std::string comment = l.comment();
+		size_t pos = 0;
+		while ((pos = comment.find("\n")) != std::string::npos)
+		{
+			comment_lines.push_back(comment.substr(0, pos));
+			comment.erase(0, pos + 1);
+		}
+		if (comment.size() > 0)
+			comment_lines.push_back(comment);
+
+		std::clog << "[" << l.comment() << "]" << std::endl;
+		std::clog << "Comment lines: " << comment_lines.size() << std::endl;
+
+		for (const auto &line : comment_lines)
+		{
+			Line comment{ rom_, start_adrs };
+			std::vector<Span> comment_spans = { Span::text(line.c_str()) };
+			comment.set_spans(comment_spans);
+			lines_.push_back(comment);
+		}
+	}
 
 	Line label{ rom_, start_adrs };
 	std::vector<Span> label_spans = { Span::label(l.name().c_str()) };

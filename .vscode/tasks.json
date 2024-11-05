@@ -19,7 +19,13 @@
                     "fileLocation": ["relative", "${workspaceFolder}/src"]
                 }
             ],
-            "detail": "Generated task to run make."
+            "detail": "Generated task to run make.",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true,
+                "reveal": "always"
+            }
         },
         {
             "label": "run",
@@ -32,7 +38,13 @@
                 "kind": "test",
                 "isDefault": true
             },
-            "problemMatcher": []
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true,
+                "reveal": "always"
+            }
         },
         {
             "label": "build and run",
@@ -42,6 +54,12 @@
             "command": "./fdasm",
             "options": {
                 "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true,
+                "reveal": "always"
             }
         }
     ]

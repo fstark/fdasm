@@ -162,7 +162,7 @@ void UI::init_imgui()
 	// icon_font_ = io.Fonts->AddFontFromFileTTF( "src/fontawesome-free-solid-900.otf", 13.0f );
 }
 
-void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type)
+void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type, const std::string &comment)
 {
 	//  We remove existing lavel at this address
 	Label* lbl = explorer_.annotations().label_from_adrs(adrs);
@@ -174,7 +174,7 @@ void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::Regio
 	if (!label.empty())
 	{
 		explorer_.annotations().remove_label_if_exists(label);
-		explorer_.annotations().add_label(label, adrs, type);
+		explorer_.annotations().add_label(label, adrs, type, comment);
 	}
 	//  We rebuild the disassembly
 	disassembly_ = explorer_.disassembler()->disassemble();
@@ -218,7 +218,7 @@ void UI::DrawSelectRect(const char* buffer)
 
 //  Draws an address with specific style
 //  and handle interactions
-void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */, const ImVec4& color)
+void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */, const ImVec4& /* color */)
 {
 	char buffer[256];
 
@@ -264,7 +264,7 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 		DrawSelectRect(buffer);
 	}
 
-	ImGui::TextColored(color, "%s", buffer); // Display address
+	ImGui::TextColored(address_color(adrs), "%s", buffer); // Display address
 }
 
 void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */ )
@@ -343,6 +343,10 @@ void UI::run()
 		// Show demo ImgUI window
 		ImGui::ShowDemoWindow();
 
+        ImGui::Begin("Colors");
+		DrawColorPickers();
+        ImGui::End();
+
 		//  Byte info if needed
 		if (byte_inspector_)
 			byte_inspector_->draw();
@@ -400,4 +404,125 @@ void UI::shutdown_imgui()
 	SDL_GL_DeleteContext(gl_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+}
+
+ImVec4 adrs_color_values[12] = {
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
+	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f }
+};
+const char *adrs_color_names[12] = {
+	"Code out of ROM, in hex",
+	"Data out of ROM, in hex",
+	"Code in ROM, in hex",
+	"Data in ROM, in hex",
+	"Code out of ROM, as a global label",
+	"Data out of ROM, as a global label",
+	"Code in ROM, as a global label",
+	"Data in ROM, as a global label",
+	"Code out of ROM, as a local label",	//	unlikely
+	"Data out of ROM, as a local label",	//	unlikely
+	"Code in ROM, as a local label",
+	"Data in ROM, as a local label",
+};
+
+ImVec4 UI::address_color(adrs_t adrs) const
+{
+	static bool first = true;
+	if (first)
+	{
+		first = false;
+		load_preferences();
+	}
+
+	typedef enum eAddrsType
+	{
+		kAdrsHex,
+		kAdrsGlobal,
+		kAdrsLocal
+	} eAdrsType;
+
+	eAdrsType adrs_type = kAdrsHex;
+
+	if (explorer_.annotations().label_from_adrs(adrs))
+		adrs_type = kAdrsGlobal;
+
+	bool is_rom = explorer_.rom().contains(adrs);
+
+	bool is_data = true;
+	if (explorer_.annotations().get_region_type(adrs)==Annotations::kCODE)
+		is_data = false;
+
+	//  We set the color according to the address type
+	return adrs_color_values[adrs_type*4+is_rom*2+is_data];
+}
+
+void UI::save_preferences() const
+{
+	//  Save the preferences to file fdasm.pref
+	FILE* file = fopen("fdasm.pref", "w");
+	if (file == NULL)
+	{
+		fprintf(stderr, "Failed to open file: %s\n", "fdasm.pref");
+		return;
+	}
+	for (int i=0;i!=12;i++)
+	{
+		fprintf(file, "%f %f %f %f\n", adrs_color_values[i].x, adrs_color_values[i].y, adrs_color_values[i].z, adrs_color_values[i].w);
+	}
+	fclose(file);
+}
+
+void UI::load_preferences() const
+{
+	//  Load the preferences from file fdasm.pref
+	FILE* file = fopen("fdasm.pref", "r");
+	if (file == NULL)
+	{
+		fprintf(stderr, "Failed to open file: %s\n", "fdasm.pref");
+		return;
+	}
+	for (int i=0;i!=12;i++)
+	{
+		fscanf(file, "%f %f %f %f\n", &adrs_color_values[i].x, &adrs_color_values[i].y, &adrs_color_values[i].z, &adrs_color_values[i].w);
+	}
+	fclose(file);
+}
+
+void UI::DrawColorPickers()
+{
+	static bool first = true;
+	if (first)
+	{
+		first = false;
+		load_preferences();
+	}
+
+	if (ImGui::CollapsingHeader("Address colors"))
+		for (int i=0; i!=12; i++)
+		{
+			if (ImGui::ColorEdit4(adrs_color_names[i], (float*)&adrs_color_values[i],ImGuiColorEditFlags_NoInputs))
+				save_preferences();
+		}
+
+	if (ImGui::CollapsingHeader("Other colors"))
+	{
+		if (ImGui::ColorEdit4("Bytes", (float*)&byte_color,ImGuiColorEditFlags_NoInputs))
+			;
+		if (ImGui::ColorEdit4("Bytes Selected", (float*)&byte_select_color,ImGuiColorEditFlags_NoInputs))
+			;
+		if (ImGui::ColorEdit4("Opcodes", (float*)&mnemonic_color,ImGuiColorEditFlags_NoInputs))
+			;
+		if (ImGui::ColorEdit4("Operands", (float*)&operand_color,ImGuiColorEditFlags_NoInputs))
+			;
+	}
 }

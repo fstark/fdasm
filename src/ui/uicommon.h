@@ -27,6 +27,8 @@ extern ImVec4 data_color;
 extern ImVec4 std_color;
 extern ImVec4 std_select_color;
 extern ImVec4 mnemonic_color;
+extern ImVec4 operand_color;
+
 extern ImVec4 string_color;
 
 extern ImVec4 select_color;
@@ -58,3 +60,6 @@ void format_byte( char *buffer, uint8_t byte, eDisplayStyle display_style );
 
 //  A small button with a singlt icon
 bool small_icon_button(const char* label);
+
+//  True if we are hovering on the current line
+bool is_hover_line();

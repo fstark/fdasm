@@ -15,8 +15,8 @@ int main(int argc, char* argv[])
 	// const char *rom_file = "M100rom.bin";
 	// const char *fda_file = "M100rom.fda";
 
-	const char *rom_file = "vdb-80.rom";
-	const char *fda_file = "vdb-80.fda";
+	const char *rom_file = "vdp-80.rom";
+	const char *fda_file = "vdp-80.fda";
 
 	if (argc == 3)
 	{

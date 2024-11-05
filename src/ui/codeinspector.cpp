@@ -74,6 +74,7 @@ void CodeInspectorPanel::do_draw_data()
 	// 4 bytes + ':' + 8*2 bytes + 7 sep = 28 + 2 margins
 	float adrs_width  = 30 * char_width;
 	float label_width = 16 * char_width;
+	float close_button_x = 13 * char_width;
 
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;
@@ -99,7 +100,11 @@ void CodeInspectorPanel::do_draw_data()
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
+			bool is_hovering_line = is_hover_line();	//	True if mouse over current line
+
 			const auto& line = ui_.lines()[i];
+
+			bool skip_adrs_comment = false;
 
 			// Set background color for even lines
 			if (i % 2 == 0)
@@ -189,16 +194,17 @@ void CodeInspectorPanel::do_draw_data()
 			}
 			else
 			{
+				skip_adrs_comment = true;
 				//  Label
 				ImGui::Text("");
-				ImGui::SameLine(label_width);
+				ImGui::SameLine(close_button_x);
 
 				std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs_);
-				if (small_icon_button(button_id.c_str()))
+				if (is_hovering_line && small_icon_button(button_id.c_str()))
 				{
 					ui_.remove_label_if_exists(line.spans()[0].content());
 				}
-				ImGui::SameLine(0,0);
+				ImGui::SameLine(label_width);
 
 				if (ui_.is_hoover(line.start_adrs_))
 				{
@@ -209,26 +215,17 @@ void CodeInspectorPanel::do_draw_data()
 					ImGui::TextColored(std_color, "%s:", line.spans()[0].content().c_str());
 				ui_.hoover(line.start_adrs_, tag + 3, ImGui::IsItemHovered());
 
-				//  Where the label was drawn
-				// ImVec2 line_start = ImGui::GetItemRectMin();
-				// ImVec2 line_end   = ImGui::GetItemRectMax();
-
-// #define SIZE 120
-// 				//  Go to right end
-// 				ImGui::SameLine(ImGui::GetWindowWidth() - SIZE); // Where we will draw
-// 				auto pos = ImGui::GetCursorScreenPos();
-
-// 				line_start.x = 0;
-// 				line_end.x   = pos.x + SIZE;
-
-
-				// ImGui::SameLine();
+				if (ImGui::IsItemClicked())
+				{
+					ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, "",false));
+				}
 			}
 
 			ImGui::SameLine(adrs_width);
 
 			// Instruction (Column 3)
 			if (!line.is_empty())
+			{
 				for (const auto& span : line.spans())
 				{
 					auto color   = std_color;
@@ -248,7 +245,7 @@ void CodeInspectorPanel::do_draw_data()
 							color = string_color;
 							break;
 						default:
-							color = std_color;
+							color = operand_color;
 							break;
 					}
 
@@ -273,6 +270,11 @@ void CodeInspectorPanel::do_draw_data()
 							ByteInspectorPanel::DisplayInstruction(ui_, ui_.explorer().cpu_info().instruction(v));
 							ImGui::EndTooltip();
 						}
+						if (is_mnem)
+						{
+							ImGui::SameLine(0, 0);
+							ImGui::Text(" ");
+						}
 						// if (is_adrs)
 						// {
 						//     ui_.hoover( span.adrs(), tag+1, ImGui::IsItemHovered() );
@@ -282,34 +284,34 @@ void CodeInspectorPanel::do_draw_data()
 						//     ui_.inspect_adrs( span.adrs(), false );
 						// }
 					}
-					ImGui::SameLine();
+					ImGui::SameLine(0,0);
 				}
-			
-			//	Comments (Column 4)
-			const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs_);
-			if (comment)
+			}
+
+			if (!skip_adrs_comment)
 			{
-				ImGui::SameLine(350);
-				ImGui::TextColored(comment_color, "; %s", comment->text().c_str());
+				//	Comments (Column 4)
+				const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs_);
+				if (comment)
+				{
+					ImGui::SameLine(350);
+					ImGui::TextColored(comment_color, "; %s", comment->text().c_str());
+				}
+				else
+				{
+					//  Haaack
+					ImGui::SameLine(350);
+					ImGui::Text("                 ");
+				}
+				if (ImGui::IsItemClicked())
+				{
+					ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs_));
+				}
 			}
 			else
 			{
-				//  Haaack
-				ImGui::SameLine(350);
-				ImGui::Text("                 ");
+				ImGui::Text("");
 			}
-			if (ImGui::IsItemClicked())
-			{
-				ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs_));
-			}
-
-			// ImGui::Text("");
-
-			// Pop the style color for even lines
-			// if (i % 2 == 0)
-			// {
-			//     ImGui::PopStyleColor(3);
-			// }
 		}
 	}
 	clipper.End();

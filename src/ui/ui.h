@@ -25,7 +25,7 @@ public:
 
 	~UI();
 
-	void replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type);
+	void replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type, const std::string &comment);
 
 	void remove_label_if_exists(const std::string& label)
 	{
@@ -125,6 +125,16 @@ public:
 	const Explorer& explorer() const { return explorer_; }
 	Explorer& explorer() { return explorer_; }
 	void close_panels();
+
+	//	Returns the appropriate color for the given address
+	//	Color is choosen according to label presence, rom or data
+	ImVec4 address_color(adrs_t adrs) const;
+
+	//	Draw the color pickers
+	void DrawColorPickers();
+
+	void save_preferences() const;
+	void load_preferences() const;
 
 private:
 	Explorer& explorer_;

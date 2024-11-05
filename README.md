@@ -1,6 +1,93 @@
 # fdasm
 Fred's disassembler
 
+# BUGS
+
+- [Data] Sync of the "Data Window" with the disassembly view is not working properly
+- [Code] Disassembly should not attempt to scroll to address out of ROM (may display it differently to start with)
+- [Adrs] CMD_F (for instance) does not appear in the window (but should as it is referenced from df54)
+- [Code] Jumping to an address from a duplicated window moves the main window
+- [Code] Scroll at the end is weird sometimes (flashes back and forth)
+
+# TODO
+
+- decide on a f'cking color scheme
+    - Addresses
+        - Labels (none vs global vs local)
+        - Code vs data
+        - in ROM vs out of ROM
+            color_for_address( address )
+            => returns color
+    - Bytes
+    - Mnemonics
+        - Operands
+    - Comments
+        - Adrs comments
+        - System comments
+        - Label comments
+    - Information (like region type)
+- Preferences Panel [IN PROGRESS]
+- Labels window
+    - Create new label [DONE]
+    - Delete label
+    - Edit comments from labels window
+- Bookmarks
+- Data display modes
+- Data filter (search for bytes/words)
+- Autoscroll to address when duplicating a panel [DONE]
+- Make silent labels
+- Make code a data panel at an address [DONE]
+- History in data panels [DONE]
+- Scroll to line should have a 5 lines gap [DONE]
+- Xrefs from code located in data sections should be less trusted than xrefs from code sections [DONE]
+- Cleanup
+    - Style
+        - public before private [DONE]
+        - no direct access to members from outside the implementation
+        - remove most header inline code [IN PROGRESS]
+        - snake_case methods [DONE]
+    - Changes
+        - Regions/Labels/Annotations. Make a decision on names
+        - Annotation's all_labels_ and labels_map_: wtf? [DONE]
+        - Label * should be removed and use only names? [DONE] (mostly?)
+
+
+- Section inspector
+    - Change section name
+    - Change section type (instr, data bytes, words, strings, etc)
+        => regenerate disassembly
+- Design the user interaction model
+    - Tooltips ?
+    - Inspectors (update on click, cannot close, open at startup) [DONE]
+    - Separated windows (on double-click or via dup in inspectors) [DONE]
+- Create some sort of Document object that gather everything together [DONE]
+    - ROM
+    - Labels
+    - Disassembler
+- Split the UI code in bits [IN PROGRESS]
+- Make the windows specific classes and wrap the ImGUI init elsewhere [IN PROGRESS]
+- Implement info panels for [DONE]
+    - Bytes
+    - Addresses
+- Add comment
+    - User comments [DONE]
+    - Way to display "system" comments (user comments from target address)
+- Labels
+    - Think about local labels (have name but are only valid between 2 global labels)
+- View modifiers
+    - Display bytes in hex/ASCII (press 'A' to temp display?) [DONE]
+    - Show/hide bytes column
+    - Show/hide system comments
+    - Show/hide addresses/labels
+- Collapse/expand sections
+    Sections are defined by global labels
+- Think about an auto-labelling feature
+    - Label all addresses that are referenced by a jump/call [DONE]
+- Think about a section status
+    (to track progress on the reverse engineering)
+    (stuff could be collapsed by default depending no the status)
+    (or maybe just make the collapse state persistent)
+
 # UI Concepts
 
 Some elements are displayed/interacted with in a consistent way across the UI:
@@ -46,67 +133,3 @@ Data view:
     A toolbar with all the modes
     A direct entry of an address (or label)
 
-# BUGS
-
-- [Data] Sync of the "Data Window" with the disassembly view is not working properly
-- [Code] Disassembly should not attempt to scroll to address out of ROM (may display the differently)
-- [Adrs] OP46 (for instance) does not appear in the window (but should as it is referenced from df54)
-- [Code] Jumping to an address from a duplicated window moves the main window
-
-# TODO
-
-- Data display modes
-- Data filter (search for bytes/words)
-- Autoscroll to address when duplicating a panel
-- Make silent labels
-- Make code a data panel at an address [DONE]
-- History in data panels [DONE]
-- Scroll to line should have a 5 lines gap [DONE]
-- Xrefs from code located in data sections should be less trusted than xrefs from code sections [DONE]
-- Cleanup
-    - Style
-        - public before private [DONE]
-        - no direct access to members from outside the implementation
-        - remove most header inline code
-        - snake_case methods [DONE]
-    - Changes
-        - Regions/Labels/Annotations. Make a decision on names
-        - Annotation's all_labels_ and labels_map_: wtf? [DONE]
-        - Label * should be removed and use only names? [DONE] (mostly?)
-
-
-- Section inspector
-    - Change section name
-    - Change section type (instr, data bytes, words, strings, etc)
-        => regenerate disassembly
-- Design the user interaction model
-    - Tooltips ?
-    - Inspectors (update on click, cannot close, open at startup)
-    - Separated windows (on double-click or via dup in inspectors)
-- Create some sort of Document object that gather everything together [DONE]
-    - ROM
-    - Labels
-    - Disassembler
-- Split the UI code in bits [IN PROGRESS]
-- Make the windows specific classes and wrap the ImGUI init elsewhere [IN PROGRESS]
-- Implement info panels for [DONE]
-    - Bytes
-    - Addresses
-- Add comment
-    - User comments [DONE]
-    - Way to display "system" comments (user comments from target address)
-- Labels
-    - Think about local labels (have name but are only valid between 2 global labels)
-- View modifiers
-    - Display bytes in hex/ASCII (press 'A' to temp display?) [DONE]
-    - Show/hide bytes column
-    - Show/hide system comments
-    - Show/hide addresses/labels
-- Collapse/expand sections
-    Sections are defined by global labels
-- Think about an auto-labelling feature
-    - Label all addresses that are referenced by a jump/call [DONE]
-- Think about a section status
-    (to track progress on the reverse engineering)
-    (stuff could be collapsed by default depending no the status)
-    (or maybe just make the collapse state persistent)

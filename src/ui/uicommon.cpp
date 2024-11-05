@@ -10,6 +10,8 @@ auto data_color        = ImVec4(0.8f, 0.8f, 0.1f, 1.0f);
 auto std_color        = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
 auto std_select_color = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
 auto mnemonic_color   = ImVec4(84 / 255.0, 147 / 255.0, 201 / 255.0, 1.0f);
+auto operand_color   = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+
 auto string_color     = ImVec4(198 / 255.0, 140 / 255.0, 116 / 255.0, 1.0f);
 
 auto select_color = ImVec4(255 / 255.0, 255 / 255.0, 255 / 255.0, 1.0f);
@@ -94,7 +96,8 @@ bool small_icon_button(const char* label)
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0)); // Transparent background
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.160f, 0.290f, 0.480f, 0.540f));
+//    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.160f, 0.290f, 0.480f, 0.540f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.160f, 0.290f, 0.480f, 0.9f));
 
         //  Changes to get the icon correctly placed
     float backup_padding_y = g.Style.FramePadding.y;
@@ -123,4 +126,13 @@ bool small_icon_button(const char* label)
 g.Style.ItemSpacing.y = 4 ;
 
     return pressed;
+}
+
+bool is_hover_line()
+{
+		ImVec2 rect_min = ImGui::GetCursorScreenPos();
+		ImVec2 rect_max = ImVec2(rect_min.x + ImGui::GetContentRegionAvail().x, rect_min.y + ImGui::GetTextLineHeightWithSpacing());
+		ImVec2 mouse_pos = ImGui::GetMousePos();
+		return (mouse_pos.x >= rect_min.x && mouse_pos.x <= rect_max.x &&
+										mouse_pos.y >= rect_min.y && mouse_pos.y <= rect_max.y);
 }

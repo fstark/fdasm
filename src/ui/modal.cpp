@@ -17,7 +17,7 @@ void Modal::do_draw()
 		first_open_ = false;
 	}
 
-	if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_KeypadEnter)))
+	if (ImGui::Button("OK", ImVec2(120, 0)) || (!disable_enter_ && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter))) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_KeypadEnter)))
 	{
 		ImGui::CloseCurrentPopup();
 		if (apply())
@@ -35,26 +35,33 @@ void Modal::do_draw()
 #include "ui.h"
 
 
-LabelEditModal::LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */, bool edit_adrs)
+LabelEditModal::LabelEditModal(UI& ui, adrs_t adrs, const std::string& label, bool edit_adrs )
 	: Modal(ui)
 	, adrs_{ adrs }
 	, edit_adrs_{ edit_adrs }
 {
+	disable_enter_ = true;
 	title_          = "Edit Label";
-	name_buffer_[0] = 0;
-	Label* lbl      = ui_.explorer().annotations().label_from_adrs(adrs);
+	strncpy( name_buffer_, label.c_str(), 128 );
+
+	Label* lbl      = ui_.explorer().annotations().label_from_adrs(adrs_);
 	label_type_     = Annotations::kCODE;
+	snprintf( adrs_buffer_, 16, "%04X", adrs );
+
+		//	Existing name
 	if (lbl)
 	{
 		snprintf(name_buffer_, 128, "%s", lbl->name().c_str());
 		label_type_ = lbl->type();
+		strncpy( comment_buffer_, lbl->comment().c_str(), 16384 );
 	}
+
 	if (name_buffer_[0]==0)
 	{	//	No name, we invent ours
 		snprintf( name_buffer_, 128, "D%04X", adrs );
+		comment_buffer_[0] = 0;
 	}
 }
-
 
 void LabelEditModal::do_draw_content()
 {
@@ -72,7 +79,7 @@ void LabelEditModal::do_draw_content()
 		ImGui::SetKeyboardFocusHere();
 	ImGui::InputText("##name", name_buffer_, IM_ARRAYSIZE(name_buffer_));
 
-	//  Drwopdown for label type
+	//  Dropdown for label type
 	ImGui::Text("Type:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(60);
@@ -99,10 +106,20 @@ void LabelEditModal::do_draw_content()
 		label_type_ = (Annotations::RegionType)map[item_current];
 	}
 	ImGui::PopItemWidth();
+
+	ImGui::Text("Comment:");
+	ImGui::SameLine();
+	ImGui::InputTextMultiline("##comment", comment_buffer_, IM_ARRAYSIZE(comment_buffer_), ImVec2(400, 100));
 }
 
 bool LabelEditModal::apply()
 {
+	//	We update the address if field was editable
+	if (edit_adrs_)
+	{
+		adrs_ = strtol(adrs_buffer_, nullptr, 16);
+	}
+
 	//	We look if the label already exists at a different address
 	Label* lbl = ui_.explorer().annotations().label_from_name(name_buffer_);
 	if (lbl && lbl->adrs() != adrs_)
@@ -117,7 +134,7 @@ bool LabelEditModal::apply()
 			return false;
 	}
 
-	ui_.replace_label(name_buffer_, adrs_, label_type_);
+	ui_.replace_label(name_buffer_, adrs_, label_type_, comment_buffer_);
 
 	return true;
 }

@@ -68,7 +68,7 @@ public:
 			//	If we don't have a label for LOAD, we add one
 			if (!annotations_.label_from_adrs(rom_contents_.load_adrs()))
 			{
-				annotations_.add_label("LOAD", rom_contents_.load_adrs(), Annotations::kCODE);
+				annotations_.add_label("LOAD", rom_contents_.load_adrs(), Annotations::kCODE, "Load address");
 			}
 		}
 	}

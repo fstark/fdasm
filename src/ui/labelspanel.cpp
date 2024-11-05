@@ -73,6 +73,38 @@ void LabelsPanel::draw_filter()
     }
 }
 
+void LabelsPanel::go_to_adrs( adrs_t adrs ) const
+{
+    if (ui_.explorer().rom().contains(adrs))
+    {
+        ui_.update_adrs_panel(adrs);
+        ui_.update_byte_panel(ui_.explorer().rom().get(adrs));
+        ui_.update_code_panel(adrs);
+    }
+}
+
+void LabelsPanel::edit_label(const Label& label)
+{
+    ui_.add_panel(std::make_unique<LabelEditModal>(ui_, label.adrs(), label.name(), true));
+}
+
+void LabelsPanel::edit_comment( adrs_t adrs )
+{
+    ui_.add_panel(std::make_unique<CommentEditModal>(ui_, adrs));
+}
+
+void LabelsPanel::handle_adrs( adrs_t adrs )
+{
+    if (ImGui::IsItemClicked())
+    {
+        go_to_adrs( adrs );
+        if (ImGui::GetMouseClickedCount(0) == 2)
+        {
+            ui_.add_panel(std::make_unique<LabelEditModal>(ui_, adrs, "", true));
+        }   
+    }
+}
+
 void LabelsPanel::do_draw()
 {
 	ImGuiListClipper clipper;
@@ -89,28 +121,43 @@ void LabelsPanel::do_draw()
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
+			bool is_hovering_line = is_hover_line();	//	True if mouse over current line
+
             auto& label = *labels_[i];
             adrs_t adrs = label.adrs();
             std::string name = label.name();
             const Comment *comment = ui_.explorer().annotations().comment_from_adrs(adrs);
 
 		    std::string button_id = ICON_FA_CIRCLE_XMARK"##" + name;
-			if (small_icon_button(button_id.c_str()))
-                ;
-            ImGui::SameLine();
+			if (is_hovering_line)
+            {
+                if (small_icon_button(button_id.c_str()))
+					ui_.remove_label_if_exists(label.name());
+            }
+            else
+                ImGui::Text("");
+
+            ImGui::SameLine(20);
 
                 //  Label name
-            ImGui::Text("%s", name.c_str());
-            if (ImGui::IsItemClicked() && ui_.explorer().rom().contains(adrs))
+            if (ui_.is_hoover(adrs))
             {
-                ui_.update_adrs_panel(adrs);
-                ui_.update_byte_panel(ui_.explorer().rom().get(adrs));
-                ui_.update_code_panel(adrs);
+                UI::DrawSelectRect(name.c_str());
+                ImGui::TextColored(std_select_color, "%s", name.c_str());
             }
+            else
+                ImGui::Text("%s", name.c_str());
+			ui_.hoover( adrs, tag, ImGui::IsItemHovered());
+
+            handle_adrs( adrs );
+
             ImGui::SameLine(100, 0);
 
                 //  Label address
             ui_.DrawAddress(adrs, kDisplayHex, UI::kInteractNone);
+			ui_.hoover( adrs, tag+1, ImGui::IsItemHovered());
+
+            handle_adrs( adrs );
 
                 //  Type
             ImGui::SameLine();
@@ -127,6 +174,10 @@ void LabelsPanel::do_draw()
                 ImGui::SameLine();
                 ImGui::Text("                 ");
             }
+
+            if (ImGui::IsItemClicked())
+                edit_comment(adrs);
+
         }
 	}
 

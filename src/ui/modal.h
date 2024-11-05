@@ -17,12 +17,13 @@ public:
 
 protected:
 	bool first_open_ = true;
+	bool disable_enter_ = false;
 };
 
 class LabelEditModal : public Modal
 {
 public:
-	LabelEditModal(UI& ui, adrs_t adrs, const std::string& /* label */, bool edit_adrs);
+	LabelEditModal(UI& ui, adrs_t adrs, const std::string& label, bool edit_adrs );
 	void do_draw_content() override;
 	bool apply() override;
 
@@ -32,6 +33,7 @@ private:
 	char adrs_buffer_[16];
 	Annotations::RegionType label_type_;
 	char name_buffer_[128];
+	char comment_buffer_[16384];
 };
 
 class CommentEditModal : public Modal

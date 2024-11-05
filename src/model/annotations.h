@@ -51,7 +51,7 @@ public:
 	Label* label_from_name(const std::string& name); // unsure if good idea. maybe never let Labels leak and treat only names
 
 	//  Adds a label
-	void add_label(const std::string& name, adrs_t adrs, RegionType type);
+	void add_label(const std::string& name, adrs_t adrs, RegionType type, const std::string &comment );
 
 	//  Adds several labels
 	void add_labels(const std::vector<Label>& labels);
