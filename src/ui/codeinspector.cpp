@@ -5,6 +5,15 @@
 #include "ui.h"
 #include "uicommon.h"
 
+const int LABEL_COMMENT_START_COLUMN = 2;
+
+const int ADRS_START_COLUMN = 0;
+const int BYTES_START_COLUMN = 6;
+const int DELETE_LABEL_START_COLUMN = 20;
+const int LABEL_START_COLUMN = 23;
+const int INSTRUCTION_START_COLUMN = 32;
+const int COMMENT_START_COLUMN = 55;
+
 CodeInspectorPanel::CodeInspectorPanel(UI& ui, adrs_t data)
     : InspectorPanel(ui, data)
 {
@@ -20,6 +29,320 @@ void CodeInspectorPanel::data_changed()
 void CodeInspectorPanel::scroll_to_line(int line) { target_line_ = line; }
 
 void CodeInspectorPanel::scroll_to_adrs(int adrs) { scroll_to_line(ui_.disassembly().adrs_to_line(adrs)); }
+
+void CodeInspectorPanel::paint_selection_if_needed( const Line &line )
+{
+	if (line.is_empty())
+		return ; 		//	I don't understand why this is needed
+	//	If the line is selected, paint it
+	if (line.start_adrs()<=data() && data()<=line.end_adrs())
+	{
+		paint_line( ImGui::GetColorU32(bg_select_color) );
+	}
+}
+
+void CodeInspectorPanel::draw_line_adrs( const Line &line )
+{
+		//	We move to the instruction column
+	ImGui::Text("");
+	ImGui::SameLine(ADRS_START_COLUMN * char_width_,0);
+
+	if (line.is_empty())
+	{
+		return ; 		//	I don't understand why this is needed
+	}
+
+	//  Address of the current instruction (column 1)
+	auto display = address_display_style_;
+	if (ui_.force_labels_)
+		display = kDisplayDisplacement;
+
+	ui_.DrawAddress(line.start_adrs(), display, UI::kInteractNone);
+	ui_.hoover(line.start_adrs(), tag + 0, ImGui::IsItemHovered());
+
+	if (ImGui::IsItemClicked())
+	{
+		if (ImGui::GetMouseClickedCount(0) == 1)
+		{
+			ui_.update_adrs_panel(line.start_adrs());
+			ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs()));
+			ui_.update_data_panel(line.start_adrs());
+		}
+
+		if (ImGui::GetMouseClickedCount(0) == 2)
+		{
+			ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
+		}
+	}
+}
+
+void CodeInspectorPanel::draw_line_bytes( const Line &line )
+{
+	ImGui::Text("");
+	ImGui::SameLine(BYTES_START_COLUMN * char_width_,0);
+
+		//  Bytes of the current instruction (column 2)
+	auto display = bytes_display_style_;
+	if (ui_.force_ascii_)
+		display = kDisplayAscii;
+
+	for (int i = 0; i != line.byte_count(); i++)
+	{
+		ui_.DrawByte(line.get_byte(i), display, UI::kInteractNone, line.start_adrs() + i);
+		if (ImGui::IsItemClicked())
+		{
+				//	Update panels to go at this address
+			if (ImGui::GetMouseClickedCount(0) == 1)
+			{
+				ui_.update_adrs_panel(line.start_adrs() + i);
+				ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs() + i));
+				ui_.update_data_panel(line.start_adrs() + i);
+			}
+				//	Edition of label inside the list of bytes
+			if (ImGui::GetMouseClickedCount(0) == 2)
+			{
+				ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs()+i, "",false));
+			}
+		}
+			//	Hoover to set the hoover address
+		ui_.hoover(line.start_adrs() + i, tag + 1, ImGui::IsItemHovered());
+
+			//  The BYTE tooltip on bytes of the instruction/DB
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			auto v = ui_.explorer().rom().get(line.start_adrs()+i);
+			ByteInspectorPanel::DisplayInstruction(ui_, ui_.explorer().cpu_info().instruction(v));
+			ImGui::EndTooltip();
+		}
+
+		// if (i==6)
+		// {
+		// 	ImGui::SameLine();
+		// 	ImGui::Text("...");
+		// 	ImGui::SameLine(0,0);
+		// 	break;
+		// }
+	}
+}
+
+
+void CodeInspectorPanel::will_visit(const Line& line)
+{
+		//	We select the line
+	paint_selection_if_needed( line );
+
+		//	We print the address if needed
+	draw_line_adrs( line );
+	ImGui::SameLine(0,0);
+
+		//	We print the bytes
+	draw_line_bytes( line );
+
+		//	We move to the instruction column
+	ImGui::Text("");
+	ImGui::SameLine(INSTRUCTION_START_COLUMN * char_width_,0);
+}
+
+void CodeInspectorPanel::did_visit(const Line& line)
+{
+	if (line.is_empty())
+	{
+		return ; 		//	I don't understand why this is needed
+	}
+
+	ImGui::SameLine(0,0);
+	ImGui::Text("");
+	ImGui::SameLine(COMMENT_START_COLUMN * char_width_,0);
+
+	const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs());
+	if (comment)
+	{
+		ImGui::TextColored(comment_color, "; %s", comment->text().c_str());
+	}
+	else
+	{
+		//  #### Haaack just for the click. This is bad.
+		ImGui::Text("                 ");
+	}
+	if (ImGui::IsItemClicked())
+	{
+		ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
+	}
+
+}
+
+void CodeInspectorPanel::visit(const OrgDirectiveLine& line)
+{
+	ImGui::Text("ORG %04XH", line.adrs());
+}
+
+void CodeInspectorPanel::visit(const DBDirectiveLine& line)
+{
+	auto display = bytes_display_style_;
+	if (ui_.force_ascii_)
+		display = kDisplayAscii;
+
+	ImGui::Text("DB ");
+	ImGui::SameLine(0,0);
+	auto data = line.data();
+	auto adrs = line.start_adrs();
+	const char *sep = "";
+	for (auto byte : data)
+	{
+		ImGui::Text("%s", sep);
+		ImGui::SameLine(0,0);
+		sep = ",";
+		ui_.DrawByte(byte, static_cast<eDisplayStyle>(display | kDisplayStyleASM), UI::kInteractNone, adrs);
+		ui_.hoover(adrs, tag + 65, ImGui::IsItemHovered());
+		if (ImGui::IsItemClicked())
+		{
+			ui_.update_byte_panel(byte);
+		}
+		ImGui::SameLine(0,0);
+		adrs++;
+	}
+	ImGui::Text("");
+}
+
+void CodeInspectorPanel::visit(const DWDirectiveLine& line)
+{
+	auto display = kDisplayDisplacement;
+	if (ui_.force_labels_)
+		display = kDisplayHex;
+
+	ImGui::Text("DW ");
+	ImGui::SameLine(0,0);
+	auto data = line.data();
+	const char *sep = "";
+	for (auto word : data)
+	{
+		ImGui::Text("%s", sep);
+		ImGui::SameLine(0,0);
+		sep = ",";
+		ui_.DrawAddress(word, static_cast<eDisplayStyle>(display | kDisplayStyleASM), UI::kInteractNone);
+		ui_.hoover(word, tag + 73, ImGui::IsItemHovered());
+		if (ImGui::IsItemClicked())
+		{
+			ui_.inspect_adrs(word, false);
+			ui_.update_data_panel(word);
+			ui_.update_code_panel(word);	//	We move within the code
+		}
+		ImGui::SameLine(0,0);
+	}
+	ImGui::Text("");
+}
+
+void CodeInspectorPanel::visit(const DSDirectiveLine& line)
+{
+	ImGui::Text("DB ");
+	ImGui::SameLine(0,0);
+	ImGui::Text("\"");
+	ImGui::SameLine(0,0);
+	ImGui::TextColored(string_color,"%s", line.data().c_str());
+	ImGui::SameLine(0,0);
+	ImGui::Text("\"");
+}
+
+void CodeInspectorPanel::visit(const InstructionLine& line)
+{
+		//	#### This should also be in the instruction itself, via "hints"
+	auto display = address_display_style_;
+	if (ui_.force_ascii_)
+		display = kDisplayAscii;
+
+	auto display_adrs = kDisplayDisplacement;
+	if (ui_.force_labels_)
+		display_adrs = kDisplayHex;
+
+	auto inst = line.instruction();
+	ImGui::TextColored( mnemonic_color, "%s", inst.short_mnemonic().c_str() );
+	if (inst.has_d8())
+	{
+		ImGui::SameLine(0,0);
+		ui_.DrawByte(line.byte(), static_cast<eDisplayStyle>(display | kDisplayStyleASM), UI::kInteractNone, line.start_adrs() + 1);
+		ui_.hoover(line.start_adrs() + 1, tag + 64, ImGui::IsItemHovered());
+		if (ImGui::IsItemClicked())
+		{
+			ui_.update_byte_panel(line.byte());
+		}
+		ImGui::Text("");
+	}
+	if (inst.has_d16())
+	{
+		auto adrs = line.word();
+		ImGui::SameLine(0,0);
+
+		ui_.DrawAddress(adrs, static_cast<eDisplayStyle>(display_adrs|kDisplayStyleASM), UI::kInteractNone);
+		ui_.hoover(adrs, tag + 2, ImGui::IsItemHovered());
+		if (ImGui::IsItemClicked())
+		{
+			ui_.inspect_adrs(adrs, false);
+			ui_.update_data_panel(adrs);
+			ui_.update_code_panel(adrs);	//	We move within the code
+		}
+	}
+	if (inst.has_adrs())
+	{
+		auto adrs = line.word();
+		ImGui::SameLine(0,0);
+
+		ui_.DrawAddress(adrs, static_cast<eDisplayStyle>(display_adrs|kDisplayStyleASM), UI::kInteractNone);
+		ui_.hoover(adrs, tag + 3, ImGui::IsItemHovered());
+		if (ImGui::IsItemClicked())
+		{
+			ui_.inspect_adrs(adrs, false);
+			ui_.update_data_panel(adrs);
+			ui_.update_code_panel(adrs);	//	We move within the code
+		}
+	}
+}
+
+void CodeInspectorPanel::visit(const CommentLine& line)
+{
+	ImGui::SameLine(LABEL_COMMENT_START_COLUMN * char_width_,0);
+
+	ImGui::TextColored(comment_color, ";");
+	ImGui::SameLine();
+	ImGui::TextColored(comment_color, "%s", line.comment().c_str());
+	if (ImGui::IsItemClicked())
+	{
+		ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
+	}
+}
+
+void CodeInspectorPanel::visit(const LabelLine& line)
+{
+	//  Label
+	ImGui::Text("");
+	ImGui::SameLine(DELETE_LABEL_START_COLUMN * char_width_,0);
+
+	std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs());
+	if (is_hovering_line_ && small_icon_button(button_id.c_str()))
+	{
+		ui_.remove_label_if_exists(line.label().name());
+	}
+	ImGui::SameLine(LABEL_START_COLUMN * char_width_,0);
+
+	if (ui_.is_hoover(line.start_adrs()))
+	{
+		UI::DrawSelectRect(line.label().name().c_str());
+		ImGui::TextColored(label_select_color, "%s:", line.label().name().c_str());
+	}
+	else
+		ImGui::TextColored(label_color, "%s:", line.label().name().c_str());
+	ui_.hoover(line.start_adrs(), tag + 3, ImGui::IsItemHovered());
+
+	if (ImGui::IsItemClicked())
+	{
+		ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
+	}
+}
+
+void CodeInspectorPanel::visit(const BlankLine& )
+{
+	ImGui::Text("");
+}
 
 void CodeInspectorPanel::do_draw_data()
 {
@@ -70,11 +393,7 @@ void CodeInspectorPanel::do_draw_data()
 	ImGui::PopItemWidth();
 
 	// Get imgui character width
-	float char_width = ImGui::CalcTextSize("A").x;
-	// 4 bytes + ':' + 8*2 bytes + 7 sep = 28 + 2 margins
-	float adrs_width  = 30 * char_width;
-	float label_width = 16 * char_width;
-	float close_button_x = 13 * char_width;
+	char_width_ = ImGui::CalcTextSize("A").x;
 
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;
@@ -100,25 +419,28 @@ void CodeInspectorPanel::do_draw_data()
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			bool is_hovering_line = is_hover_line();	//	True if mouse over current line
+			is_hovering_line_ = is_hover_line();	//	True if mouse over current line
 
-			const auto& line = ui_.lines()[i];
-
-			bool skip_adrs_comment = false;
+			const auto& line = *ui_.lines()[i];
 
 			// Set background color for even lines
 			if (i % 2 == 0)
 			{
-				paint_line( ImGui::GetColorU32(line_color) );
+				if (dynamic_cast<const BlankLine*>(&line) == nullptr
+				&& dynamic_cast<const CommentLine*>(&line) == nullptr)
+					paint_line( ImGui::GetColorU32(line_color) );
 			}
 
+			line.visit(*this);
+
+#if 0
 			// Draw the address of the current line
 			// 4 digits hexadecimal
 			if (!line.is_empty())
 			{
 
 				//	If the line is selected, paint it
-				if (line.start_adrs_<=data() && data()<=line.end_adrs_)
+				if (line.start_adrs()<=data() && data()<=line.end_adrs())
 				{
 					paint_line( ImGui::GetColorU32(bg_select_color) );
 				}
@@ -128,23 +450,24 @@ void CodeInspectorPanel::do_draw_data()
 				if (ui_.force_labels_)
 					display = kDisplayDisplacement;
 
-				ui_.DrawAddress(line.start_adrs_, display, UI::kInteractNone);
-				ui_.hoover(line.start_adrs_, tag + 0, ImGui::IsItemHovered());
+				ui_.DrawAddress(line.start_adrs(), display, UI::kInteractNone);
+				ui_.hoover(line.start_adrs(), tag + 0, ImGui::IsItemHovered());
 
 				if (ImGui::IsItemClicked())
 				{
 					if (ImGui::GetMouseClickedCount(0) == 1)
 					{
-						ui_.update_adrs_panel(line.start_adrs_);
-						ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs_));
-						ui_.update_data_panel(line.start_adrs_);
+						ui_.update_adrs_panel(line.start_adrs());
+						ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs()));
+						ui_.update_data_panel(line.start_adrs());
 					}
 
 					if (ImGui::GetMouseClickedCount(0) == 2)
 					{
-						ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, "",false));
+						ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
 					}
 				}
+DONE TO HERE
 
 				ImGui::SameLine();
 
@@ -155,30 +478,30 @@ void CodeInspectorPanel::do_draw_data()
 
 				for (int i = 0; i != line.byte_count(); i++)
 				{
-					ui_.DrawByte(line.get_byte(i), display, UI::kInteractNone, line.start_adrs_ + i);
+					ui_.DrawByte(line.get_byte(i), display, UI::kInteractNone, line.start_adrs() + i);
 					if (ImGui::IsItemClicked())
 					{
 							//	Update panels to go at this address
 						if (ImGui::GetMouseClickedCount(0) == 1)
 						{
-							ui_.update_adrs_panel(line.start_adrs_ + i);
-							ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs_ + i));
-							ui_.update_data_panel(line.start_adrs_ + i);
+							ui_.update_adrs_panel(line.start_adrs() + i);
+							ui_.update_byte_panel(ui_.explorer().rom().get(line.start_adrs() + i));
+							ui_.update_data_panel(line.start_adrs() + i);
 						}
 							//	Edition of label inside the list of bytes
 						if (ImGui::GetMouseClickedCount(0) == 2)
 						{
-							ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_+i, "",false));
+							ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs()+i, "",false));
 						}
 					}
 						//	Hoover to set the hoover address
-					ui_.hoover(line.start_adrs_ + i, tag + 1, ImGui::IsItemHovered());
+					ui_.hoover(line.start_adrs() + i, tag + 1, ImGui::IsItemHovered());
 
 						//  The BYTE tooltip on bytes of the instruction/DB
 					if (ImGui::IsItemHovered())
 					{
 						ImGui::BeginTooltip();
-						auto v = ui_.explorer().rom().get(line.start_adrs_+i);
+						auto v = ui_.explorer().rom().get(line.start_adrs()+i);
 						ByteInspectorPanel::DisplayInstruction(ui_, ui_.explorer().cpu_info().instruction(v));
 						ImGui::EndTooltip();
 					}
@@ -194,30 +517,31 @@ void CodeInspectorPanel::do_draw_data()
 			}
 			else
 			{
+DONE
 				skip_adrs_comment = true;
 				//  Label
 				ImGui::Text("");
 				ImGui::SameLine(close_button_x);
 
-				std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs_);
+				std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs());
 				if (is_hovering_line && small_icon_button(button_id.c_str()))
 				{
 					ui_.remove_label_if_exists(line.spans()[0].content());
 				}
 				ImGui::SameLine(label_width);
 
-				if (ui_.is_hoover(line.start_adrs_))
+				if (ui_.is_hoover(line.start_adrs()))
 				{
 					UI::DrawSelectRect(line.spans()[0].content().c_str());
 					ImGui::TextColored(std_select_color, "%s:", line.spans()[0].content().c_str());
 				}
 				else
 					ImGui::TextColored(std_color, "%s:", line.spans()[0].content().c_str());
-				ui_.hoover(line.start_adrs_, tag + 3, ImGui::IsItemHovered());
+				ui_.hoover(line.start_adrs(), tag + 3, ImGui::IsItemHovered());
 
 				if (ImGui::IsItemClicked())
 				{
-					ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs_, "",false));
+					ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
 				}
 			}
 
@@ -266,7 +590,7 @@ void CodeInspectorPanel::do_draw_data()
 						if (is_mnem && ImGui::IsItemHovered())
 						{
 							ImGui::BeginTooltip();
-							auto v = ui_.explorer().rom().get(line.start_adrs_);
+							auto v = ui_.explorer().rom().get(line.start_adrs());
 							ByteInspectorPanel::DisplayInstruction(ui_, ui_.explorer().cpu_info().instruction(v));
 							ImGui::EndTooltip();
 						}
@@ -291,7 +615,7 @@ void CodeInspectorPanel::do_draw_data()
 			if (!skip_adrs_comment)
 			{
 				//	Comments (Column 4)
-				const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs_);
+				const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs());
 				if (comment)
 				{
 					ImGui::SameLine(350);
@@ -305,13 +629,14 @@ void CodeInspectorPanel::do_draw_data()
 				}
 				if (ImGui::IsItemClicked())
 				{
-					ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs_));
+					ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
 				}
 			}
 			else
 			{
 				ImGui::Text("");
 			}
+#endif
 		}
 	}
 	clipper.End();

@@ -7,20 +7,12 @@
 
 #define MAX_CODE_LEN 256000
 
-std::vector<Span> CodeEmitter::emit(size_t)
+void CodeEmitter::emit(size_t)
 {
-	// char buffer[MAX_CODE_LEN+1];
-	// char *p = buffer;
-
-	static const char* register_names = "BCDEHLMA";
-	static const char* arith_names[]  = { "ADD", "ADC", "SUB", "SBB", "ANA", "XRA", "ORA", "CMP" };
-	// static const char *jump_names[] = { "JNZ", "JP", "JM", "JPE", "JC", "JPO", "JNC", "JPE" };
-	static const char* flag_names[]      = { "NZ", "Z", "NC", "C", "PO", "PE", "P", "M" };
-	static const char* register_names3[] = { "B", "D", "H", "PSW" };
-
-	// p += snprintf( p, MAX_CODE_LEN, "%04XH ", disassembler_.adrs() );
+	adrs_t start_adrs = disassembler_.adrs();
 
 	uint8_t opcode = disassembler_.read_byte();
+	const Instruction &instr = disassembler_.cpu_info().instruction(opcode);
 
 	// p += snprintf( p, MAX_CODE_LEN,"%02XH ", opcode );
 
@@ -30,347 +22,284 @@ std::vector<Span> CodeEmitter::emit(size_t)
 
 	if (quadrant == 0)
 	{
-		static const char* register_names2[] = { "B", "D", "H", "SP" };
-
 		if (x == 0)
 		{
-			static const char* instr_00[] = { "NOP", "[DSUB]", "[ARHL]", "[RDEL]", "RIM", "[LDHI r8]", "SIM", "[LDSI r8]" };
-			return { Span::mnemonic(instr_00[y]) };
+			// static const char* instr_00[] = { "NOP", "[DSUB]", "[ARHL]", "[RDEL]", "RIM", "[LDHI r8]", "SIM", "[LDSI r8]" };
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 		if (x == 1)
 		{
 			if (y % 2 == 0)
 			{
-				return {
-					Span::mnemonic("LXI"),
-					Span::reg(register_names2[y / 2]),
-					Span::text(","),
-					Span::adrs(disassembler_.read_word())
-				};
+				// return {
+				// 	Span::mnemonic("LXI"),
+				// 	Span::reg(register_names2[y / 2]),
+				// 	Span::text(","),
+				// 	Span::adrs(disassembler_.read_word())
+				// };
+				disassembler_.add_instruction( instr, start_adrs, start_adrs+2, disassembler_.read_word() );
+				return ;
 			}
 			else
 			{
-				return {
-					Span::mnemonic("DAD"),
-					Span::reg(register_names2[y / 2])
-				};
+				// return {
+				// 	Span::mnemonic("DAD"),
+				// 	Span::reg(register_names2[y / 2])
+				// };
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
 			}
 		}
 		if (x == 2)
 		{
 			if (y < 4)
 			{
-				static const char* instr_2a[] = { "STAX B", "LDAX B", "STAX D", "LDAX D" };
-				return { Span::mnemonic(instr_2a[y]) }; // #### wrong, separate regs?
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
 			}
 			else
 			{
-				static const char* instr_2b[] = { "SHLD", "LHLD", "STA", "LDA" };
-				return {
-					Span::mnemonic(instr_2b[y - 4]),
-					Span::adrs(disassembler_.read_word())
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs+2, disassembler_.read_word() );
+				return ;
 			}
 		}
 		if (x == 3)
 		{
-			return {
-				Span::mnemonic(y % 1 ? "DCX" : "INX"),
-				Span::reg(register_names2[y / 2])
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 		if (x == 4)
 		{
-			// INR
-			return {
-				Span::mnemonic("INR"),
-				Span::reg(register_names[y])
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 		if (x == 5)
 		{
-			// DCR
-			return {
-				Span::mnemonic("DCR"),
-				Span::reg(register_names[y])
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 		if (x == 6)
 		{
-			// MVI
-			return {
-				Span::mnemonic("MVI"),
-				Span::reg(register_names[y]),
-				Span::text(","),
-				Span::byte(disassembler_.read_byte())
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs+1, disassembler_.read_byte() );
+			return ;
 		}
 		if (x == 7)
 		{
-			static const char* instr_07[] = { "RLC", "RRC", "RAL", "RAR", "DAA", "CMA", "STC", "CMC" };
-			return {
-				Span::mnemonic(instr_07[y])
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 	}
 
 	if (quadrant == 1)
 	{ //	MOV
-		int src = (opcode & 0x38) >> 3;
-		int dst = (opcode & 0x07);
-		// p += snprintf( p, MAX_CODE_LEN, "MOV %c,%c",register_names[src],register_names[dst]);
-		return {
-			Span::mnemonic("MOV"),
-			Span::reg(register_names[src]),
-			Span::text(","),
-			Span::reg(register_names[dst])
-		};
+		disassembler_.add_instruction( instr, start_adrs, start_adrs );
+		return ;
 	}
 	if (quadrant == 2)
 	{ // arith
-		// p += snprintf( p, MAX_CODE_LEN, "%s %c",arith_names[y],register_names[x]);
-		return {
-			Span::mnemonic(arith_names[y]),
-			Span::reg(register_names[x])
-		};
+		disassembler_.add_instruction( instr, start_adrs, start_adrs );
+		return ;
 	}
 
 	if (quadrant == 3)
 	{
 		if (x == 0)
 		{
-			// Rxx
-			char mnem[16];
-			snprintf(mnem, 16, "R%s", flag_names[y]);
-			return {
-				Span::mnemonic(mnem)
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 		if (x == 1)
 		{
-			static const char* instr_31[] = { "POP B", "RET", "POP D", "[SHLX]", "POP H", "PCHL", "POP PSW", "SPHL" };
-			// p += snprintf( p, MAX_CODE_LEN,"%s", instr_31[y] );
-			return {
-				Span::mnemonic(instr_31[y])
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 		if (x == 2)
 		{ // control flow
-			char mnem[16];
-			snprintf(mnem, 16, "J%s", flag_names[y]);
-			// p += snprintf( p, MAX_CODE_LEN, "J%s $%04X",flag_names[y],disassembler_.read_word());
-			return {
-				Span::mnemonic(mnem),
-				Span::adrs(disassembler_.read_word())
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs+2, disassembler_.read_word() );
+			return ;
 		}
 		if (x == 3)
 		{
 			if (y == 0)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "JMP $%04X",disassembler_.read_word());
-				return {
-					Span::mnemonic("JMP"),
-					Span::adrs(disassembler_.read_word())
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs+2, disassembler_.read_word() );
+				return ;
 			}
 			else if (y == 1)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "[RSTV]");
-				return {
-					Span::mnemonic("[RSTV]")
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
 			}
 			else if (y == 2)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "OUT %02XH",disassembler_.read_byte());
-				return {
-					Span::mnemonic("OUT"),
-					Span::byte(disassembler_.read_byte())
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs+1, disassembler_.read_byte() );
+				return ;
 			}
 			else if (y == 3)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "IN %02XH",disassembler_.read_byte());
-				return {
-					Span::mnemonic("IN"),
-					Span::byte(disassembler_.read_byte())
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs+1, disassembler_.read_byte() );
+				return ;
 			}
 			else if (y == 4)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "XTHL");
-				return {
-					Span::mnemonic("XTHL")
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
 			}
 			else if (y == 5)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "SPHL");
-				return {
-					Span::mnemonic("XCHG")
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
 			}
 			else if (y == 6)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "DI");
-				return {
-					Span::mnemonic("DI")
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
 			}
 			else if (y == 7)
 			{
-				// p += snprintf( p, MAX_CODE_LEN, "EI");
-				return {
-					Span::mnemonic("EI")
-				};
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
 			}
-			return {
-				Span::mnemonic("??? ")
-			};
+			assert( false );
 		}
 		if (x == 4)
 		{
-			// p += snprintf( p, MAX_CODE_LEN, "C%s $%04X",flag_names[y],disassembler_.read_word());
-			char mnem[16];
-			snprintf(mnem, 16, "C%s", flag_names[y]);
-			return {
-				Span::mnemonic(mnem),
-				Span::adrs(disassembler_.read_word())
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs+2, disassembler_.read_word() );
+			return ;
 		}
 		if (x == 5)
 		{
 			// PUSH
-
-			static const char* instr_35b[] = { "CALL", "[JHLX]", "[LHLX]", "[JK]" };
-
 			if (y % 2 == 0)
-				// p += snprintf( p, MAX_CODE_LEN, "PUSH %s",register_names3[y/2]);
-				return {
-					Span::mnemonic("PUSH"),
-					Span::reg(register_names3[y / 2])
-				};
+			{
+				disassembler_.add_instruction( instr, start_adrs, start_adrs );
+				return ;
+			}
 			else
-				// p += snprintf( p, MAX_CODE_LEN, "%s $%04X", instr_35b[y/2], disassembler_.read_word());
-				return {
-					Span::mnemonic(instr_35b[y / 2]),
-					Span::adrs(disassembler_.read_word())
-				};
+			{
+				disassembler_.add_instruction( instr, start_adrs, start_adrs+2, disassembler_.read_word() );
+				return ;
+			}
 		}
 		if (x == 6)
 		{
-			static const char* instr_36[8] = { "ADI", "ACI", "SUI", "SBI", "ANI", "XRI", "ORI", "CPI" };
-			// p += snprintf( p, MAX_CODE_LEN,"%s %02XH", instr_36[y], disassembler_.read_byte() );
-			return {
-				Span::mnemonic(instr_36[y]),
-				Span::byte(disassembler_.read_byte())
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs+1, disassembler_.read_byte() );
+			return ;
 		}
 		if (x == 7)
 		{
 			//	RST
-			// p += snprintf( p, MAX_CODE_LEN, "RST %02XH",y);
-			return {
-				Span::mnemonic("RST"),
-				Span::byte(y) //	Should be addressable to y*8
-			};
+			disassembler_.add_instruction( instr, start_adrs, start_adrs );
+			return ;
 		}
 	}
 
-	// p += snprintf( p, MAX_CODE_LEN, " ??? %02X %d %d %d", opcode, quadrant, x, y);
-
-	return {
-		Span::mnemonic("???")
-	};
+	assert( false );
 }
 
-std::vector<Span> DataEmitter::emit(size_t max_len)
+void DataEmitter::emit(size_t max_len)
 {
-	std::vector<Span> res;
-	// char buffer[MAX_CODE_LEN+1];
-	// char *p = buffer;
+	auto start_adrs = disassembler_.adrs();
 
 	if (max_len > 8)
 		max_len = 8;
 
-	// p += snprintf( p, MAX_CODE_LEN, "DB ");
-	res.push_back(Span::pseudo("DB "));
+	std::vector<uint8_t> data;
 
-	while (max_len--)
+	for (size_t i = 0; i < max_len; i++)
 	{
-		// p += snprintf( p, MAX_CODE_LEN, "%s%02XH", sep, disassembler_.read_byte());
-		res.push_back(Span::byte(disassembler_.read_byte()));
+		data.push_back(disassembler_.read_byte());
 	}
 
-	return res;
+	disassembler_.add_db( start_adrs, data );
 }
 
-std::vector<Span> DataWEmitter::emit(size_t)
+void DataWEmitter::emit(size_t max_len)
 {
-	std::vector<Span> res;
-	// char buffer[MAX_CODE_LEN+1];
-	// char *p = buffer;
+	auto start_adrs = disassembler_.adrs();
 
-	// p += snprintf( p, MAX_CODE_LEN, "DW ");
-	res.push_back(Span::pseudo("DW "));
-	// p += snprintf( p, MAX_CODE_LEN, "%04XH", disassembler_.read_word());
-	res.push_back(Span::adrs(disassembler_.read_word()));
-	// p += snprintf( p, MAX_CODE_LEN,"" );
+	if (max_len > 4)
+		max_len = 4;
 
-	return res;
+	std::vector<adrs_t> data;
+
+	// copies max_len words from the disassembler to data
+	for (size_t i = 0; i < max_len-1; i+=2)
+	{
+		data.push_back(disassembler_.read_word());
+	}
+
+		//	If we could not generate data, we skip the directive
+	if (data.size()>0)
+		disassembler_.add_dw( start_adrs, data );
 }
 
-std::vector<Span> StrzEmitter::emit(size_t)
+void StrzEmitter::emit(size_t max_len)
 {
-	std::vector<Span> res;
-
-	res.push_back(Span::pseudo("DB "));
+	auto start_adrs = disassembler_.adrs();
+	auto count = max_len;
 	char buffer[32789];
 	char* p = buffer;
 	while (!disassembler_.finished())
 	{
 		uint8_t c = disassembler_.read_byte();
+		*p++ = c;
 		if (c == 0)
 			break;
-
-		escape_char( p, c );
+		count--;
+		if (count==0)
+			break;
 	}
 
-	*p++ = 0;
+	if (count==0)
+	{	//	EOS not found, we generate a DB
+		std::vector<uint8_t> data;
+		// copies max_len from buffer
+		for (size_t i = 0; i < max_len; i++)
+		{
+			data.push_back(buffer[i]);
+		}
+		//	DB
+		disassembler_.add_db( start_adrs, data );
+		return ;
+	}
 
-	//	Incorrect, some characters may not be printable
-	res.push_back(Span::string(buffer));
-	res.push_back(Span::byte(0)); // #### Should be formated in decimal 0
-
-	return res;
+	disassembler_.add_ds( start_adrs, buffer );
 }
 
-std::vector<Span> StrF2Emitter::emit(size_t)
+void StrF2Emitter::emit(size_t)
 {
-	std::vector<Span> res;
+	adrs_t start_adrs = disassembler_.adrs();
+
+	// std::vector<Span> res;
 	char buffer[16];
 	// char *p = buffer;
 
 	// p += snprintf( p, MAX_CODE_LEN, "DB \"%c%c\"",disassembler_.read_byte(),disassembler_.read_byte());
-	res.push_back(Span::pseudo("DB "));
 	uint8_t c0 = disassembler_.read_byte();
 	uint8_t c1 = disassembler_.read_byte();
 	snprintf(buffer, 16, "%c%c", c0, c1);
-	res.push_back(Span::string(buffer));
 
-	return res;
+	disassembler_.add_ds( start_adrs, buffer );
 }
 
-std::vector<Span> Str8sEmitter::emit(size_t)
+void Str8sEmitter::emit(size_t)
 {
-	std::vector<Span> res;
-	char buffer[16];
+	auto start_adrs = disassembler_.adrs();
+	std::vector<uint8_t> data;
+	data.push_back(disassembler_.read_byte());
+	disassembler_.add_db( start_adrs, data );
 
-	res.push_back(Span::pseudo("DB "));
-	snprintf(buffer, 16, "80H or '%c'", disassembler_.read_byte() & 0x7f);
-	res.push_back(Span::expression(buffer));
-	res.push_back(Span::text(","));
+	start_adrs++;
+
+	// // std::vector<Span> res;
+	// char buffer[16];
+
+	// res.push_back(Span::pseudo("DB "));
+	// snprintf(buffer, 16, "80H or '%c'", disassembler_.read_byte() & 0x7f);
+	// res.push_back(Span::expression(buffer));
+	// res.push_back(Span::text(","));
 
 	uint8_t c;
 
@@ -385,14 +314,14 @@ std::vector<Span> Str8sEmitter::emit(size_t)
 	// p += snprintf( p, MAX_CODE_LEN, "\"");
 	disassembler_.unread();
 
-	res.push_back(Span::string(buf2));
-
-	return res;
+	// res.push_back(Span::string(buf2));
+	disassembler_.add_ds( start_adrs, buf2 );
 }
 
-Disassembler::Disassembler(const Rom &rom, const Annotations &annotations)
+Disassembler::Disassembler(const Rom &rom, const Annotations &annotations, const CPUInfo& cpuinfo)
     : rom_(rom)
     , annotations_(annotations)
+	, cpu_info_(cpuinfo)
     , _emitters{
 	    std::make_unique<CodeEmitter>(*this),
 	    std::make_unique<CodeEmitter>(*this),
@@ -417,51 +346,37 @@ uint16_t Disassembler::read_word()
 	return word;
 }
 
-// std::string Disassembler::disassemble_strz()
-// {
-// 	char buffer[MAX_CODE_LEN+1];
-// 	char *p = buffer;
-
-//     p += snprintf( p, MAX_CODE_LEN, "DB \"");
-// 	uint8_t c;
-//     while ((c=read_byte()) != 0)
-//         p += snprintf( p, MAX_CODE_LEN, "%c", c);
-//     p += snprintf( p, MAX_CODE_LEN, "\",00H");
-
-// 	return buffer;
-// }
-
-Line Disassembler::disassemble_one_instruction(Annotations::RegionType type, adrs_t end_adrs)
+void Disassembler::disassemble_one_instruction(Annotations::RegionType type, adrs_t end_adrs)
 {
 	auto adrs = current_;
-	//	Lets look at the size (limited to 8 bytes)
 	int size = end_adrs - adrs + 1;
-	if (size > 8)
-		size = 8;
 
-	auto spans = _emitters[type]->emit(size);
+	_emitters[type]->emit(size);
 	adrs_t end = current_ - 1;
 
 	if (end > end_adrs)
 	{
+		//	#### BUG: it is too late, we already added the falty instruction
+
 		//	The instruction did not fit in the region
 		//	We finish the disassembly with a DB
 		current_ = adrs;
-		return disassemble_one_instruction(Annotations::kDATA, end_adrs);
+		disassemble_one_instruction(Annotations::kDATA, end_adrs);
+		return;
 	}
-
-	Line l{ rom_, adrs, end };
-	l.set_spans(spans);
-
-	return l;
 }
 
 void Disassembler::disassemble_type(Annotations::RegionType type, adrs_t end_adrs)
 {
 	while (current_ <= end_adrs)
 	{
-		auto l = disassemble_one_instruction(type, end_adrs);
-		lines_.push_back(l);
+		adrs_t start_adrs = current_;
+		disassemble_one_instruction(type, end_adrs);
+		if (start_adrs==current_)
+		{
+			//	We made no progress, we generate a DB
+			disassemble_one_instruction(Annotations::kDATA, end_adrs);
+		}
 	}
 }
 
@@ -485,8 +400,13 @@ void Disassembler::disassemble_label(const Label& l)
 	if (end_adrs>rom_.last_adrs())
 		end_adrs = rom_.last_adrs();
 
+	current_ = start_adrs;
+
 	if (l.comment()!="")
 	{
+		//	We add a blank line
+		add_blank(current_);
+
 		// split the comment into lines
 		std::vector<std::string> comment_lines;
 		std::string comment = l.comment();
@@ -499,30 +419,25 @@ void Disassembler::disassemble_label(const Label& l)
 		if (comment.size() > 0)
 			comment_lines.push_back(comment);
 
-		std::clog << "[" << l.comment() << "]" << std::endl;
-		std::clog << "Comment lines: " << comment_lines.size() << std::endl;
-
 		for (const auto &line : comment_lines)
 		{
-			Line comment{ rom_, start_adrs };
-			std::vector<Span> comment_spans = { Span::text(line.c_str()) };
-			comment.set_spans(comment_spans);
-			lines_.push_back(comment);
+			add_comment(line);
 		}
+
+		add_blank(current_);
 	}
 
-	Line label{ rom_, start_adrs };
-	std::vector<Span> label_spans = { Span::label(l.name().c_str()) };
-	label.set_spans(label_spans);
-	lines_.push_back(label);
-	current_ = start_adrs;
-
+	add_label(l);
 	disassemble_type(l.type(), end_adrs);
 }
 
 Disassembly Disassembler::disassemble()
 {
 	lines_.clear();
+
+	auto line = new OrgDirectiveLine(rom_, 0, rom_.load_adrs());
+
+	lines_.push_back(line);
 
 	for (const auto& l : annotations_.get_labels())
 	{

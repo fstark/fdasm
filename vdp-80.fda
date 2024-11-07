@@ -5,14 +5,14 @@ D0F7 UNKNOWN OUTPUT_DEVICE
 D800 CODE LOAD "Entry point of ROM of the IMSAI VDP-80\nThis code is mapped at 0000H and executed\nIt changes the mapping and boots the monitor"
 D810 CODE BOOT "Boot procedure"
 D83C CODE SKIP
-D853 CODE MONRESET
-D856 CODE MONENTRY
+D853 CODE MONRESET "Reset stack and enter monitor"
+D856 CODE MONENTRY "Standard monitor entry point"
 D868 CODE LOOKUPJMP
-D875 CODE CMD_COLON
+D875 CODE CMD_COLON "':' command.\nUse a different jump table for :D, :I and :O"
 D87B CODE LD87B
 D891 CODE LD891
 D896 CODE LD896
-D8A7 CODE REBOOT
+D8A7 CODE REBOOT "Reset memory mapping and jumps to 0x0000"
 D8AE CODE LD8AE
 D8B0 CODE LD8B0
 D8CC CODE LD8CC
@@ -22,7 +22,7 @@ D8F7 CODE LD8F7
 D917 CODE LD917
 D920 CODE LD920
 D931 CODE LD931
-D948 CODE LD948
+D948 CODE USE_DEVICE "Adds a device for input and output"
 D953 CODE LD953
 D96B CODE LD96B
 D977 CODE LD977
@@ -76,7 +76,7 @@ DB6A CODE CMD_L
 DB85 CODE LDB85
 DB88 CODE LDB88
 DB8B CODE LDB8B
-DB8D CODE PRT_THEN_MON
+DB8D CODE PRT_THEN_MON "Prints a char and jump to monitor"
 DB93 CODE LDB93
 DBA2 CODE LDBA2
 DBB1 CODE LDBB1
@@ -116,7 +116,7 @@ DD5D CODE LDD5D
 DD6B CODE LDD6B
 DD73 CODE LDD73
 DD84 CODE LDD84
-DD8F CODE LDD8F
+DD8F CODE PRINVALID "Prints \"INVALID\""
 DD95 STRZ STRINVALID
 DD9D CODE CMD_XD
 DDA3 CODE CMD_XI
@@ -136,15 +136,15 @@ DE05 CODE READ_FROM_B
 DE0D CODE WRITE_TO_A
 DE1A CODE WRITE_TO_C
 DE27 CODE WRITE_TO_B
-DE34 CODE WAIT_CHAR
-DE3B CODE READ_CHAR "Reads on character from the current input device\nDoes not wait, retruns 0 if no chars\n"
+DE34 CODE WAIT_CHAR "Reads a character until one is available"
+DE3B CODE READ_CHAR "Reads one character from the current input device\nDoes not wait, returns 0 if no chars\n"
 DE59 CODE PRINTSTR "Prints zero-terminated string\npointed to by HL\n"
-DE66 CODE PRTCHAR
-DE8A CODE READCHR_CTRC
-DEAC CODE TOUPPER
-DEB5 CODE PRTCRLF
-DEBF CODE PRTHEX2
-DEC8 CODE PRTHEX1
+DE66 CODE PRTCHAR "Print one character on the current output device"
+DE8A CODE READCHR_CTRC "Reads one character (uppercase)\nReset monitor if ^C (or ^U)\n(ESC management unclear)"
+DEAC CODE TOUPPER "Makes lowercase characters uppercase\nOthers unchanged\n"
+DEB5 CODE PRTCRLF "Prints a carriage return and a line feed\n"
+DEBF CODE PRTHEX2 "Prints 2 digits hex number"
+DEC8 CODE PRTHEX1 "Prints single digit hex number"
 DED3 CODE PRTHEX4SPC "Prints HL as 4 hex digits\nfollowed by a space\n"
 DED8 CODE PRTHEX2SPC "Prints 2 digits hexadecimal\nfollowed by a space\n"
 DEDB CODE PRTSPACE "Prints a space\n"
@@ -255,7 +255,6 @@ D85D COMMENT "'?'"
 D85F COMMENT "Prints '?'"
 D868 COMMENT "Look up for A and jump to address in the table"
 D86E COMMENT "Not found"
-D874 COMMENT "Exec jump tale"
 D884 COMMENT "'D'"
 D88C COMMENT "'I'"
 D8A9 COMMENT "Restore mapping"
@@ -264,7 +263,6 @@ D9A6 COMMENT "Store prev HL in d100"
 D9D3 COMMENT "LF"
 D9D6 COMMENT "'-'"
 D9EF COMMENT "24 (lines?)"
-DA93 COMMENT "Prints 'C'"
 DAF1 COMMENT "%1101 1011"
 DAFA COMMENT "Will call there"
 DAFE COMMENT "C9 = RET"
@@ -347,3 +345,6 @@ DF95 COMMENT "'D'"
 DF98 COMMENT "'I'"
 DF9B COMMENT "'O'"
 DF9E COMMENT "End of list"
+D874 COMMENT "Exec jump table"
+DA91 COMMENT "'C'"
+DC1B COMMENT "Prints 'I', the input char and goes to monitor "

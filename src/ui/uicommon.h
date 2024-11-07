@@ -42,18 +42,23 @@ extern ImVec4 comment_color;
 extern ImVec4 comment_light_color;
 extern ImVec4 info_color;           //  Color for an non-vital information
 
+extern ImVec4 label_color;
+extern ImVec4 label_select_color;
+
 void paint_line(ImU32 color);
 void paint_element( const char *str, ImU32 color);
 
 typedef enum
 {
-    kDisplayHex,         //  As hex
-    kDisplayAscii,       //  As ASCII
-    kDisplayBinary,      //  As binary
-    kDisplayOctal,       //  As octal
-    kDisplayDecimal,     //  As decimal
-    kDisplayLabel,       //  As a label
-    kDisplayDisplacement //  As a label with displacement
+    kDisplayHex,            //  As hex
+    kDisplayAscii,          //  As ASCII
+    kDisplayBinary,         //  As binary
+    kDisplayOctal,          //  As octal
+    kDisplayDecimal,        //  As decimal
+    kDisplayLabel,          //  As a label
+    kDisplayDisplacement,   //  As a label with displacement
+
+    kDisplayStyleASM = 0x10 //  In a way suitable for assembly inclusion
 } eDisplayStyle;
 
 void format_byte( char *buffer, uint8_t byte, eDisplayStyle display_style );

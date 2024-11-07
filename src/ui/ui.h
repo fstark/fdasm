@@ -29,15 +29,14 @@ public:
 
 	void remove_label_if_exists(const std::string& label)
 	{
-		remove_label_ = label;
-		(void)explorer_.annotations().write_annotations();
+		remove_label_ = label;		//	Will remove later at the end of the main loop
 	}
 
 	void set_label_type(const std::string& label, Annotations::RegionType new_type)
 	{
 		auto lbl = explorer().annotations().label_from_name(label);
 		lbl->set_type(new_type);
-		disassembly_ = explorer().disassembler()->disassemble();
+		changed();
 		(void)explorer_.annotations().write_annotations();
 	}
 
@@ -110,7 +109,7 @@ public:
 	void new_disassembly_panel( adrs_t adrs );
 	void inspect_adrs(adrs_t adrs, bool /* hoover */);
 
-	const std::vector<Line>& lines() const { return disassembly_.lines(); }
+	const std::vector<Line *>& lines() const { return disassembly_.lines(); }
 	// Incorrect, should be stored elsewhere
 	//  Probably the explorer
 
@@ -136,8 +135,10 @@ public:
 	void save_preferences() const;
 	void load_preferences() const;
 
-private:
+protected:
 	Explorer& explorer_;
+
+	void changed();	//	Rebuild the disassembly, save fda file, save asm file
 
 	void init_imgui();
 	void shutdown_imgui();
@@ -165,5 +166,4 @@ private:
 
 	//  If not empty, we remove this label after the next draw
 	std::string remove_label_;
-
 };

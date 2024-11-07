@@ -17,14 +17,16 @@ int main(int argc, char* argv[])
 
 	const char *rom_file = "vdp-80.rom";
 	const char *fda_file = "vdp-80.fda";
+	const char *asm_file = "vdp-80.asm";
 
 	if (argc == 3)
 	{
 		rom_file = argv[1];
 		fda_file = argv[2];
+		asm_file = argv[3];
 	}
 
-	Explorer explorer("8085.txt", rom_file, 0xd800, fda_file);
+	Explorer explorer("8085.txt", rom_file, 0xd800, fda_file, asm_file);
 
 	// Annotations rom_contents( fda_file );
 	// Disassembler *disassembler = load_rom( rom_file, rom_contents );

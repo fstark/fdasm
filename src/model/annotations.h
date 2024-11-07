@@ -89,7 +89,6 @@ private:
 
 	void set_region(adrs_t start, adrs_t end, Annotations::RegionType type)
 	{
-		std::clog << "Setting region " << start << " to " << end << " to " << type << std::endl;
 		for (adrs_t adrs = start; adrs <= end; adrs++)
 			regions_[adrs - rom_.load_adrs()] = type;
 	}

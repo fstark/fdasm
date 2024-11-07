@@ -7,6 +7,7 @@
 #include "label.h"
 #include "rom.h"
 #include "xrefs.h"
+#include "asmgenerator.h"
 
 class Explorer
 {
@@ -15,12 +16,14 @@ public:
 	    const std::string& cpuinfo,
 	    const std::string& Rom,
 		adrs_t load_adrs,
-	    const std::string& fdafile)
+	    const std::string& fdafile,
+		const std::string& asmfile)
 	    : cpu_info_{ cpuinfo }
 	    , rom_contents_{ Rom, load_adrs }
 	    , annotations_{ rom_contents_, fdafile }
-	    , disassembler_{ rom_contents_, annotations_ }
+	    , disassembler_{ rom_contents_, annotations_, cpu_info_ }
 	    , xrefs_{ rom_contents_, cpu_info_, annotations_ }
+		, generator_{ asmfile }
 	{
 		if (annotations_.label_count() == 0)
 		{
@@ -73,8 +76,9 @@ public:
 		}
 	}
 
-	// #### Nope
 	Disassembler* disassembler() { return &disassembler_; }
+
+	AsmGenerator &asmgenerator() { return generator_; }
 
 	const Rom& rom() const { return rom_contents_; }
 	const CPUInfo& cpu_info() const { return cpu_info_; }
@@ -87,6 +91,5 @@ private:
 	Annotations annotations_;
 	Disassembler disassembler_;
 	XRefs xrefs_;
-
-
+	AsmGenerator generator_;
 };

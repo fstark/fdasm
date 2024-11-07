@@ -2,7 +2,7 @@
     No operations
     Flags affected: None
 
-01: LXI B, D16
+01: LXI B,D16
     Load register pair B with 16-bit data
     Flags affected: None
     BC <- byte 3, byte 2
@@ -27,7 +27,7 @@
     Flags affected: Z, S, P, AC
     B <- B - 1
 
-06: MVI B, D8
+06: MVI B,D8
     Move immediate 8-bit data to register B
     Flags affected: None
     B <- byte 2
@@ -66,7 +66,7 @@
     Flags affected: Z, S, P, AC
     C <- C - 1
 
-0E: MVI C, D8
+0E: MVI C,D8
     Move immediate 8-bit data to register C
     Flags affected: None
     C <- byte 2
@@ -80,7 +80,7 @@
     No operations
     Flags affected: None
 
-11: LXI D, D16
+11: LXI D,D16
     Load register pair immediate
     Flags affected: None
     DE <- byte 3, byte 2
@@ -105,7 +105,7 @@
     Flags affected: Z, S, P, AC
     D <- D - 1
 
-16: MVI D, D8
+16: MVI D,D8
     Move immediate 8-bit data to register D
     Flags affected: None
     D <- byte 2
@@ -144,7 +144,7 @@
     Flags affected: Z, S, P, AC
     E <- E - 1
 
-1E: MVI E, D8
+1E: MVI E,D8
     Move immediate 8-bit data to register E
     Flags affected: None
     E <- byte 2
@@ -159,7 +159,7 @@
     Flags affected: None
     A <- interrupt mask
 
-21: LXI H, D16
+21: LXI H,D16
     Load register pair immediate
     Flags affected: None
     HL <- byte 3, byte 2
@@ -184,7 +184,7 @@
     Flags affected: Z, S, P, AC
     H <- H - 1
 
-26: MVI H, D8
+26: MVI H,D8
     Move immediate 8-bit data to register H
     Flags affected: None
     H <- byte 2
@@ -223,7 +223,7 @@
     Flags affected: Z, S, P, AC
     L <- L - 1
 
-2E: MVI L, D8
+2E: MVI L,D8
     Move immediate 8-bit data to register L
     Flags affected: None
     L <- byte 2
@@ -238,7 +238,7 @@
     Flags affected: None
     Set mask in A
 
-31: LXI SP, D16
+31: LXI SP,D16
     Load register pair immediate
     Flags affected: None
     SP <- byte 3, byte 2
@@ -263,7 +263,7 @@
     Flags affected: Z, S, P, AC
     (HL) <- (HL) - 1
 
-36: MVI M, D8
+36: MVI M,D8
     Move immediate 8-bit data to memory
     Flags affected: None
     (HL) <- byte 2
@@ -302,7 +302,7 @@
     Flags affected: Z, S, P, AC
     A <- A - 1
 
-3E: MVI A, D8
+3E: MVI A,D8
     Move immediate 8-bit data to accumulator
     Flags affected: None
     A <- byte 2
@@ -312,272 +312,272 @@
     Flags affected: CY
     CY <- ~CY
 
-40: MOV B, B
+40: MOV B,B
     Move B to B
     Flags affected: None
     B <- B
 
-41: MOV B, C
+41: MOV B,C
     Move C to B
     Flags affected: None
     B <- C
 
-42: MOV B, D
+42: MOV B,D
     Move D to B
     Flags affected: None
     B <- D
 
-43: MOV B, E
+43: MOV B,E
     Move E to B
     Flags affected: None
     B <- E
 
-44: MOV B, H
+44: MOV B,H
     Move H to B
     Flags affected: None
     B <- H
 
-45: MOV B, L
+45: MOV B,L
     Move L to B
     Flags affected: None
     B <- L
 
-46: MOV B, M
+46: MOV B,M
     Move memory to B
     Flags affected: None
     B <- (HL)
 
-47: MOV B, A
+47: MOV B,A
     Move A to B
     Flags affected: None
     B <- A
 
-48: MOV C, B
+48: MOV C,B
     Move B to C
     Flags affected: None
     C <- B
 
-49: MOV C, C
+49: MOV C,C
     Move C to C
     Flags affected: None
     C <- C
 
-4A: MOV C, D
+4A: MOV C,D
     Move D to C
     Flags affected: None
     C <- D
 
-4B: MOV C, E
+4B: MOV C,E
     Move E to C
     Flags affected: None
     C <- E
 
-4C: MOV C, H
+4C: MOV C,H
     Move H to C
     Flags affected: None
     C <- H
 
-4D: MOV C, L
+4D: MOV C,L
     Move L to C
     Flags affected: None
     C <- L
 
-4E: MOV C, M
+4E: MOV C,M
     Move memory to C
     Flags affected: None
     C <- (HL)
 
-4F: MOV C, A
+4F: MOV C,A
     Move A to C
     Flags affected: None
     C <- A
 
-50: MOV D, B
+50: MOV D,B
     Move B to D
     Flags affected: None
     D <- B
 
-51: MOV D, C
+51: MOV D,C
     Move C to D
     Flags affected: None
     D <- C
 
-52: MOV D, D
+52: MOV D,D
     Move D to D
     Flags affected: None
     D <- D
 
-53: MOV D, E
+53: MOV D,E
     Move E to D
     Flags affected: None
     D <- E
 
-54: MOV D, H
+54: MOV D,H
     Move H to D
     Flags affected: None
     D <- H
 
-55: MOV D, L
+55: MOV D,L
     Move L to D
     Flags affected: None
     D <- L
 
-56: MOV D, M
+56: MOV D,M
     Move memory to D
     Flags affected: None
     D <- (HL)
 
-57: MOV D, A
+57: MOV D,A
     Move A to D
     Flags affected: None
     D <- A
 
-58: MOV E, B
+58: MOV E,B
     Move B to E
     Flags affected: None
     E <- B
 
-59: MOV E, C
+59: MOV E,C
     Move C to E
     Flags affected: None
     E <- C
 
-5A: MOV E, D
+5A: MOV E,D
     Move D to E
     Flags affected: None
     E <- D
 
-5B: MOV E, E
+5B: MOV E,E
     Move E to E
     Flags affected: None
     E <- E
 
-5C: MOV E, H
+5C: MOV E,H
     Move H to E
     Flags affected: None
     E <- H
 
-5D: MOV E, L
+5D: MOV E,L
     Move L to E
     Flags affected: None
     E <- L
 
-5E: MOV E, M
+5E: MOV E,M
     Move memory to E
     Flags affected: None
     E <- (HL)
 
-5F: MOV E, A
+5F: MOV E,A
     Move A to E
     Flags affected: None
     E <- A
 
-60: MOV H, B
+60: MOV H,B
     Move B to H
     Flags affected: None
     H <- B
 
-61: MOV H, C
+61: MOV H,C
     Move C to H
     Flags affected: None
     H <- C
 
-62: MOV H, D
+62: MOV H,D
     Move D to H
     Flags affected: None
     H <- D
 
-63: MOV H, E
+63: MOV H,E
     Move E to H
     Flags affected: None
     H <- E
 
-64: MOV H, H
+64: MOV H,H
     Move H to H
     Flags affected: None
     H <- H
 
-65: MOV H, L
+65: MOV H,L
     Move L to H
     Flags affected: None
     H <- L
 
-66: MOV H, M
+66: MOV H,M
     Move memory to H
     Flags affected: None
     H <- (HL)
 
-67: MOV H, A
+67: MOV H,A
     Move A to H
     Flags affected: None
     H <- A
 
-68: MOV L, B
+68: MOV L,B
     Move B to L
     Flags affected: None
     L <- B
 
-69: MOV L, C
+69: MOV L,C
     Move C to L
     Flags affected: None
     L <- C
 
-6A: MOV L, D
+6A: MOV L,D
     Move D to L
     Flags affected: None
     L <- D
 
-6B: MOV L, E
+6B: MOV L,E
     Move E to L
     Flags affected: None
     L <- E
 
-6C: MOV L, H
+6C: MOV L,H
     Move H to L
     Flags affected: None
     L <- H
 
-6D: MOV L, L
+6D: MOV L,L
     Move L to L
     Flags affected: None
     L <- L
 
-6E: MOV L, M
+6E: MOV L,M
     Move memory to L
     Flags affected: None
     L <- (HL)
 
-6F: MOV L, A
+6F: MOV L,A
     Move A to L
     Flags affected: None
     L <- A
 
-70: MOV M, B
+70: MOV M,B
     Move B to memory
     Flags affected: None
     (HL) <- B
 
-71: MOV M, C
+71: MOV M,C
     Move C to memory
     Flags affected: None
     (HL) <- C
 
-72: MOV M, D
+72: MOV M,D
     Move D to memory
     Flags affected: None
     (HL) <- D
 
-73: MOV M, E
+73: MOV M,E
     Move E to memory
     Flags affected: None
     (HL) <- E
 
-74: MOV M, H
+74: MOV M,H
     Move H to memory
     Flags affected: None
     (HL) <- H
 
-75: MOV M, L
+75: MOV M,L
     Move L to memory
     Flags affected: None
     (HL) <- L
@@ -587,47 +587,47 @@
     Flags affected: None
     Halt the processor
 
-77: MOV M, A
+77: MOV M,A
     Move A to memory
     Flags affected: None
     (HL) <- A
 
-78: MOV A, B
+78: MOV A,B
     Move B to A
     Flags affected: None
     A <- B
 
-79: MOV A, C
+79: MOV A,C
     Move C to A
     Flags affected: None
     A <- C
 
-7A: MOV A, D
+7A: MOV A,D
     Move D to A
     Flags affected: None
     A <- D
 
-7B: MOV A, E
+7B: MOV A,E
     Move E to A
     Flags affected: None
     A <- E
 
-7C: MOV A, H
+7C: MOV A,H
     Move H to A
     Flags affected: None
     A <- H
 
-7D: MOV A, L
+7D: MOV A,L
     Move L to A
     Flags affected: None
     A <- L
 
-7E: MOV A, M
+7E: MOV A,M
     Move memory to A
     Flags affected: None
     A <- (HL)
 
-7F: MOV A, A
+7F: MOV A,A
     Move A to A
     Flags affected: None
     A <- A

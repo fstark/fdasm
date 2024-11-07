@@ -4,108 +4,11 @@
 #include <memory>
 #include <vector>
 #include "rom.h"
+#include "annotations.h"
+#include <iostream>
 
-using namespace std::literals::string_literals;
-
-class Span
-{
-public:
-	typedef enum
-	{
-		kMnemonic,
-		kRegister,
-		kAddress,
-		kByte,
-		kPseudo,
-		kString,
-		kText,
-		kExpression,
-		kLabel
-	} SpanType;
-
-private:
-	SpanType type_;
-	std::string content_;
-	adrs_t adrs_ = 0; // Just for hack
-
-public:
-	Span(SpanType type, const std::string& text)
-	    : type_{ type }
-	    , content_{ text }
-	{
-	}
-
-	Span(SpanType type, const std::string& text, adrs_t adrs)
-	    : type_{ type }
-	    , content_{ text }
-	    , adrs_{ adrs }
-	{
-	}
-
-	SpanType get_type() const { return type_; } // unused
-
-	const std::string& content() const
-	{
-		return content_;
-	}
-
-	adrs_t adrs() const { return adrs_; }
-
-	static Span mnemonic(const char* text)
-	{
-		return { kMnemonic, text };
-	}
-
-	static Span reg(const char* text)
-	{
-		return { kRegister, text };
-	}
-
-	static Span reg(char reg)
-	{
-		char buffer[2] = { reg, 0 };
-		return { kRegister, buffer };
-	}
-
-	static Span text(const char* text)
-	{
-		return { kText, text };
-	}
-
-	static Span adrs(adrs_t adrs)
-	{
-		char buffer[6];
-		snprintf(buffer, 6, "%04XH", adrs);
-		return { kAddress, buffer, adrs };
-	}
-
-	static Span byte(adrs_t data)
-	{
-		char buffer[4];
-		snprintf(buffer, 4, "%02XH", data);
-		return { kByte, buffer };
-	}
-
-	static Span pseudo(const char* text)
-	{
-		return { kPseudo, text };
-	}
-
-	static Span string(const char* str)
-	{
-		return { kString, "\""s + str + "\""s };
-	}
-
-	static Span expression(const char* str)
-	{
-		return { kExpression, str };
-	}
-
-	static Span label(const char* str)
-	{
-		return { kLabel, str };
-	}
-};
+#include "line.h"
+#include "utils.h"
 
 class Disassembler;
 
@@ -121,7 +24,7 @@ public:
 
 	virtual ~Emitter() = default;
 
-	virtual std::vector<Span> emit(size_t max_len) = 0;
+	virtual void emit(size_t max_len) = 0;
 };
 
 class CodeEmitter : public Emitter
@@ -132,7 +35,7 @@ public:
 	{
 	}
 
-	std::vector<Span> emit(size_t max_len) override;
+	void emit(size_t max_len) override;
 };
 
 class DataEmitter : public Emitter
@@ -143,7 +46,7 @@ public:
 	{
 	}
 
-	std::vector<Span> emit(size_t max_len) override;
+	void emit(size_t max_len) override;
 };
 
 class DataWEmitter : public Emitter
@@ -154,7 +57,7 @@ public:
 	{
 	}
 
-	std::vector<Span> emit(size_t max_len) override;
+	void emit(size_t max_len) override;
 };
 
 class StrzEmitter : public Emitter
@@ -165,7 +68,7 @@ public:
 	{
 	}
 
-	std::vector<Span> emit(size_t max_len) override;
+	void emit(size_t max_len) override;
 };
 
 class StrF2Emitter : public Emitter
@@ -176,7 +79,7 @@ public:
 	{
 	}
 
-	std::vector<Span> emit(size_t max_len) override;
+	void emit(size_t max_len) override;
 };
 
 class Str8sEmitter : public Emitter
@@ -187,87 +90,41 @@ public:
 	{
 	}
 
-	std::vector<Span> emit(size_t max_len) override;
+	void emit(size_t max_len) override;
 };
 
-#include "annotations.h"
-#include <iostream>
-
-class Line
-{
-	bool empty_ = true;
-
-	// const std::vector<uint8_t>& bytes_; // I don't think we want this (only the offsets)
-
-	const Rom& rom_;	// #### This is temporary. Lines should probably copy the bytes they need
-							// (and only the ones they need)
-
-public:
-	adrs_t start_adrs_;
-	adrs_t end_adrs_;
-
-	std::vector<Span> content_;
-
-	uint8_t get_byte(int offset) const { return rom_.get(start_adrs_ + offset); }
-	int byte_count() const { return end_adrs_ - start_adrs_ + 1; }
-
-	Line(const Rom &rom, adrs_t start_adrs, adrs_t end_adrs)
-	    : empty_{ false }
-	    , rom_{ rom }
-	    , start_adrs_{ start_adrs }
-	    , end_adrs_{ end_adrs }
-	{
-	}
-
-	Line(const Rom& rom, adrs_t start_adrs)
-	    : empty_{ true }
-	    , rom_{ rom }
-	    , start_adrs_{ start_adrs }
-	    , end_adrs_{ start_adrs } // #### Or -1
-	{
-	}
-
-	bool is_empty() const { return empty_; }
-
-	const std::vector<Span> spans() const { return content_; }
-
-	// void add( const char *text, Span::SpanType type=Span::SpanType::kText )
-	// {
-	// 	content_.push_back( Span{ type, text } );
-	// }
-
-	void set_spans(std::vector<Span>& vec)
-	{
-		content_.insert(content_.end(), vec.begin(), vec.end());
-	}
-};
+#include "cpuinfo.h"
 
 class Disassembly
 {
-	std::vector<Line> lines_;
+	std::vector<Line*> lines_;	//	#### Should be unique_ptr
 
 public:
 	Disassembly() = default;
 
-	Disassembly(std::vector<Line>& lines)
+	Disassembly(std::vector<Line*>& lines)
 	    : lines_{ lines }
 	{
 	}
 
-	Disassembly(std::vector<Line>&& lines)
+	Disassembly(std::vector<Line*>&& lines)
 	    : lines_{ std::move(lines) }
 	{
 	}
 
-	const std::vector<Line>& lines() const { return lines_; }
+	const std::vector<Line*>& lines() const { return lines_; }
 
 	size_t adrs_to_line(adrs_t adrs) const
 	{
+
 		for (size_t i = 0; i < lines_.size(); i++)
 		{
-			if (lines_[i].start_adrs_ <= adrs && lines_[i].end_adrs_ >= adrs)
+			if (lines_[i]->start_adrs() <= adrs && lines_[i]->end_adrs() >= adrs)
+			{
 				return i;
+			}
 		}
+
 		return 0;
 	}
 };
@@ -278,11 +135,13 @@ public:
 class Disassembler
 {
 public:
-	Disassembler(const Rom &rom, const Annotations &rom_content);
+	Disassembler(const Rom &rom, const Annotations &rom_content, const CPUInfo& cpuinfo);
 
 	~Disassembler() {}
 
 	Disassembly disassemble();
+
+	CPUInfo &cpu_info() { return cpu_info_; }
 
 	uint8_t read_byte();
 
@@ -296,19 +155,104 @@ public:
 
 	void dump();
 
+	void add_instruction( const Instruction &instruction, adrs_t start_adrs, adrs_t end_adrs )
+	{
+		InstructionLine *line = new InstructionLine( rom_, start_adrs, instruction, 0, 0 );
+		auto bytes = rom_.get_bytes( start_adrs, end_adrs - start_adrs + 1 );
+		line->set_bytes( bytes );
+		lines_.emplace_back(line);
+	}
+
+	void add_instruction( const Instruction &instruction, adrs_t start_adrs, adrs_t end_adrs, uint8_t byte )
+	{
+		InstructionLine *line = new InstructionLine( rom_, start_adrs, instruction, byte, 0 );
+		auto bytes = rom_.get_bytes( start_adrs, end_adrs - start_adrs + 1 );
+		line->set_bytes( bytes );
+		lines_.emplace_back(line);
+	}
+
+	void add_instruction( const Instruction &instruction, adrs_t start_adrs, adrs_t end_adrs, adrs_t adrs )
+	{
+		InstructionLine *line = new InstructionLine( rom_, start_adrs, instruction, 0, adrs );
+		auto bytes = rom_.get_bytes( start_adrs, end_adrs - start_adrs + 1 );
+		line->set_bytes( bytes );
+		lines_.emplace_back(line);
+	}
+
+	void add_comment(const std::string& comment)
+	{
+		CommentLine *line = new CommentLine(rom_, current_, comment);
+		lines_.emplace_back(line);
+	}
+
+	void add_label(const Label& label)
+	{
+		LabelLine *line = new LabelLine(rom_, label);
+		lines_.emplace_back(line);
+	}
+
+	void add_db( adrs_t start_adrs, const std::vector<uint8_t> &data )
+	{
+		DBDirectiveLine *line = new DBDirectiveLine(rom_, start_adrs, data);
+		auto bytes = rom_.get_bytes( start_adrs, data.size() );
+		line->set_bytes( bytes );
+		lines_.emplace_back(line);
+	}
+
+	void add_dw( adrs_t start_adrs, const std::vector<adrs_t> &data )
+	{
+		DWDirectiveLine *line = new DWDirectiveLine(rom_, start_adrs, data);
+		auto bytes = rom_.get_bytes( start_adrs, data.size()*2 );
+		line->set_bytes( bytes );
+		lines_.emplace_back(line);
+	}
+
+	//	Adds a string definition
+	//	If the string is larger than 8 characters
+	// 	we will add additional blank lines to hold the bytes
+	void add_ds( adrs_t start_adrs, const std::string &str )
+	{
+		DSDirectiveLine *line = new DSDirectiveLine(rom_, start_adrs, str);
+		Line * l = line;
+
+		auto adrs = start_adrs;
+		int len = str.size()+1;
+
+		while (len>0)
+		{
+			int count = std::min(8, len);
+			auto bytes = rom_.get_bytes( adrs, count );
+			l->set_bytes( bytes );
+			lines_.emplace_back(l);
+			adrs += count;
+			len -= count;
+			l = new BlankLine(rom_, adrs);
+		}
+
+		if (l!=line)
+			delete l;	//	We never added this one
+	}
+
+	void add_blank( adrs_t start_adrs )
+	{
+		BlankLine *line = new BlankLine(rom_, start_adrs);
+		lines_.emplace_back(line);
+	}
+
 private:
 	const Rom &rom_;
 	adrs_t current_ = 0;
-
 	const Annotations &annotations_;
+	CPUInfo cpu_info_;
 
+
+public:
 	std::unique_ptr<Emitter> _emitters[Annotations::kCOUNT];
 
-	std::vector<Line> lines_;
+protected:
+	std::vector<Line *> lines_;
 
-	Line disassemble_one_instruction(Annotations::RegionType type, adrs_t end_adrs);
+	void disassemble_one_instruction(Annotations::RegionType type, adrs_t end_adrs);
 	void disassemble_type(Annotations::RegionType type, adrs_t end_adrs);
 	void disassemble_label(const Label& l);
-
-
 };

@@ -9,6 +9,7 @@ class Rom
 public:
 	Rom(const std::string& rom_file, adrs_t load_adrs);
 	const std::vector<uint8_t>& bytes() const { return bytes_; }
+	std::vector<uint8_t> get_bytes(adrs_t start_adrs, size_t len) const { return std::vector<uint8_t>(bytes_.begin() + start_adrs - load_adrs_, bytes_.begin() + start_adrs - load_adrs_ + len); };
 	adrs_t load_adrs() const { return load_adrs_; }
 	adrs_t last_adrs() const { return load_adrs_ + bytes_.size() - 1; }
 

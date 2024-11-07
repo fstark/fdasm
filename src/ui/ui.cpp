@@ -20,7 +20,7 @@ UI::UI(Explorer& explorer)
 	: explorer_{ explorer }
 {
 	//  We disassemble the code
-	disassembly_ = explorer_.disassembler()->disassemble();
+	changed();
 
 	init_imgui();
 
@@ -177,7 +177,7 @@ void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::Regio
 		explorer_.annotations().add_label(label, adrs, type, comment);
 	}
 	//  We rebuild the disassembly
-	disassembly_ = explorer_.disassembler()->disassemble();
+	changed();
 	(void)explorer_.annotations().write_annotations();
 }
 
@@ -222,36 +222,39 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 {
 	char buffer[256];
 
+	//  Default is hexadecimal
+	if (display_style&kDisplayStyleASM)
+		snprintf(buffer, 256, "%04XH", adrs);
+	else
+		snprintf(buffer, 256, "%04x", adrs);
+
 	switch (display_style)
 	{
 		case kDisplayHex:
-			snprintf(buffer, 256, "%04x", adrs);
+		case kDisplayHex|kDisplayStyleASM:
 			break;
 		case kDisplayDecimal:
+		case kDisplayDecimal|kDisplayStyleASM:
 			snprintf(buffer, 256, "%5d", adrs);
 			break;
 		case kDisplayLabel:
+		case kDisplayLabel|kDisplayStyleASM:
 		{
 			auto lbl = explorer().annotations().label_from_adrs(adrs);
 			if (lbl)
 				snprintf(buffer, 256, "%s", lbl->name().c_str());
-			else
-				snprintf(buffer, 256, "%04x", adrs);
 		}
 		break;
 		case kDisplayDisplacement:
+		case kDisplayDisplacement|kDisplayStyleASM:
 		{
 			auto lbl = explorer().annotations().label_before_adrs(adrs, 99);
 			if (!lbl)
-				snprintf(buffer, 256, "%04x       ", adrs);
+				break;
 			else if (lbl->start_adrs() == adrs)
-				snprintf(buffer, 256, "%s   ", lbl->name().c_str());
-			else if (adrs - lbl->start_adrs() < 10)
-				snprintf(buffer, 256, "%s+%d ", lbl->name().c_str(), adrs - lbl->start_adrs());
+				snprintf(buffer, 256, "%s", lbl->name().c_str());
 			else
 				snprintf(buffer, 256, "%s+%d", lbl->name().c_str(), adrs - lbl->start_adrs());
-			while (strlen(buffer) < 8 + 1 + 2)
-                strlcat(buffer, " ", sizeof(buffer));
 		}
 		break;
 		default:
@@ -387,7 +390,7 @@ void UI::run()
 		{
 			explorer_.annotations().remove_label_if_exists(remove_label_);
 			remove_label_ = "";
-			disassembly_  = explorer_.disassembler()->disassemble();
+			changed();
 			(void)explorer_.annotations().write_annotations();
 		}
 	}
@@ -524,5 +527,27 @@ void UI::DrawColorPickers()
 			;
 		if (ImGui::ColorEdit4("Operands", (float*)&operand_color,ImGuiColorEditFlags_NoInputs))
 			;
+		if (ImGui::ColorEdit4("Comments", (float*)&comment_color,ImGuiColorEditFlags_NoInputs))
+			;
+
+			// no, should be save as addresses in rom
+		if (ImGui::ColorEdit4("Labels", (float*)&label_color,ImGuiColorEditFlags_NoInputs))
+			;
+		if (ImGui::ColorEdit4("Selected Labels", (float*)&label_select_color,ImGuiColorEditFlags_NoInputs))
+			;
+
+		if (ImGui::ColorEdit4("Strings", (float*)&string_color,ImGuiColorEditFlags_NoInputs))
+			;
+		if (ImGui::ColorEdit4("Line selection", (float*)&bg_select_color,ImGuiColorEditFlags_NoInputs))
+			;
+
 	}
 }
+
+void UI::changed()
+{
+
+	disassembly_ = explorer_.disassembler()->disassemble();
+	explorer_.asmgenerator().generate( lines(), explorer_.annotations() );
+}
+

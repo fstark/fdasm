@@ -4,7 +4,9 @@
 
 class Comment;
 
-class CodeInspectorPanel : public InspectorPanel<adrs_t>
+#include "line.h"
+
+class CodeInspectorPanel : public InspectorPanel<adrs_t>, DefaultLineVisitor
 {
 public:
 	CodeInspectorPanel(UI& ui, adrs_t data);
@@ -23,6 +25,27 @@ protected:
 		*res = *this;
 		return res;
 	}
+
+	void paint_selection_if_needed( const Line &line );
+	void draw_line_adrs( const Line &line );
+	void draw_line_bytes( const Line &line );
+
+	//	Line visitor
+	void will_visit(const Line& line) override;
+	void did_visit(const Line& line) override;
+
+	void visit(const OrgDirectiveLine& line) override;
+	void visit(const DBDirectiveLine& line) override;
+	void visit(const DWDirectiveLine& line) override;
+	void visit(const DSDirectiveLine& line) override;
+	void visit(const InstructionLine& line) override;
+	void visit(const CommentLine& line) override;
+	void visit(const LabelLine& line) override;
+	void visit(const BlankLine& line) override;
+
+	float char_width_;
+
+	bool is_hovering_line_;
 
 private:
 	int target_line_ = -1; 				//  The line to scroll to (if !=-1)

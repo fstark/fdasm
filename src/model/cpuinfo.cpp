@@ -3,6 +3,43 @@
 #include <iostream>
 #include <stdio.h>
 
+Instruction::Instruction(uint8_t opcode, const std::string& mnemonic, const std::string& description, const std::string& flags, const std::string& effect)
+	: opcode_{ opcode }
+	, mnemonic_{ mnemonic }
+	, description_{ description }
+	, flags_{ flags }
+	, effect_{ effect }
+	, is_jump_{ false }
+	, is_ref_{ false }
+{
+	std::string short_mnemonic = mnemonic;
+
+	//	Remove "D8" from the mnemonic
+	size_t pos = short_mnemonic.find("D8");
+	if (pos != std::string::npos)
+	{
+		short_mnemonic.erase(pos, 2);
+		has_d8_ = true;
+	}
+
+	//	Remove "D16" from the mnemonic
+	pos = short_mnemonic.find("D16");
+	if (pos != std::string::npos)
+	{	
+		short_mnemonic.erase(pos, 3);
+		has_d16_ = true;
+	}
+	//	Remove "adr" from the mnemonic
+	pos = short_mnemonic.find("adr");
+	if (pos != std::string::npos)
+	{
+		short_mnemonic.erase(pos, 3);
+		has_adrs_ = true;
+	}
+
+	short_mnemonic_ = short_mnemonic;
+}
+
 CPUInfo::CPUInfo(const std::string filename)
 {
 	instructions_.resize(256);

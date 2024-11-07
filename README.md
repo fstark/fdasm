@@ -8,6 +8,7 @@ Fred's disassembler
 - [Adrs] CMD_F (for instance) does not appear in the window (but should as it is referenced from df54)
 - [Code] Jumping to an address from a duplicated window moves the main window
 - [Code] Scroll at the end is weird sometimes (flashes back and forth)
+- [Code] When forcing ASCII display, the non-ascii characters are not displayed
 
 # TODO
 
@@ -32,6 +33,7 @@ Fred's disassembler
     - Delete label
     - Edit comments from labels window
 - Bookmarks
+- Notes
 - Data display modes
 - Data filter (search for bytes/words)
 - Autoscroll to address when duplicating a panel [DONE]
