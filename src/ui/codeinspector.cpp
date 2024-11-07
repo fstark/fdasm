@@ -107,7 +107,7 @@ void CodeInspectorPanel::draw_line_bytes( const Line &line )
 			//	Hoover to set the hoover address
 		ui_.hoover(line.start_adrs() + i, tag + 1, ImGui::IsItemHovered());
 
-			//  The BYTE tooltip on bytes of the instruction/DB
+			//  The BYTE tooltip on bytes of the instruction
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
@@ -129,19 +129,27 @@ void CodeInspectorPanel::draw_line_bytes( const Line &line )
 
 void CodeInspectorPanel::will_visit(const Line& line)
 {
-		//	We select the line
-	paint_selection_if_needed( line );
+	if (nested_==0)
+	{
+			//	We select the line
+		paint_selection_if_needed( line );
 
-		//	We print the address if needed
-	draw_line_adrs( line );
-	ImGui::SameLine(0,0);
+			//	We print the address if needed
+		draw_line_adrs( line );
+		ImGui::SameLine(0,0);
 
-		//	We print the bytes
-	draw_line_bytes( line );
+			//	We print the bytes
+		draw_line_bytes( line );
 
-		//	We move to the instruction column
-	ImGui::Text("");
-	ImGui::SameLine(INSTRUCTION_START_COLUMN * char_width_,0);
+			//	We move to the instruction column
+		ImGui::Text("");
+		ImGui::SameLine(INSTRUCTION_START_COLUMN * char_width_,0);
+	}
+	else
+	{
+		ImGui::Text("");
+		ImGui::SameLine(4 * char_width_,0);
+	}
 }
 
 void CodeInspectorPanel::did_visit(const Line& line)
@@ -153,7 +161,10 @@ void CodeInspectorPanel::did_visit(const Line& line)
 
 	ImGui::SameLine(0,0);
 	ImGui::Text("");
-	ImGui::SameLine(COMMENT_START_COLUMN * char_width_,0);
+	if (nested_==0)
+		ImGui::SameLine(COMMENT_START_COLUMN * char_width_,0);
+	else
+		ImGui::SameLine((COMMENT_START_COLUMN-INSTRUCTION_START_COLUMN+4) * char_width_,0);
 
 	const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs());
 	if (comment)
@@ -257,6 +268,16 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 
 	auto inst = line.instruction();
 	ImGui::TextColored( mnemonic_color, "%s", inst.short_mnemonic().c_str() );
+
+	//	Instruction tooltip
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		auto v = ui_.explorer().rom().get(line.start_adrs());
+		ByteInspectorPanel::DisplayInstruction(ui_, ui_.explorer().cpu_info().instruction(v));
+		ImGui::EndTooltip();
+	}
+
 	if (inst.has_d8())
 	{
 		ImGui::SameLine(0,0);
@@ -289,6 +310,15 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 
 		ui_.DrawAddress(adrs, static_cast<eDisplayStyle>(display_adrs|kDisplayStyleASM), UI::kInteractNone);
 		ui_.hoover(adrs, tag + 3, ImGui::IsItemHovered());
+
+		//	Special case for JUMP instructions
+		if (inst.is_jump() && ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			code_preview( adrs );
+			ImGui::EndTooltip();
+		}
+
 		if (ImGui::IsItemClicked())
 		{
 			ui_.inspect_adrs(adrs, false);
@@ -296,6 +326,59 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 			ui_.update_code_panel(adrs);	//	We move within the code
 		}
 	}
+}
+
+void CodeInspectorPanel::code_preview( adrs_t adrs )
+{
+	std::clog << "Code preview " << adrs << std::endl;
+
+	nested_++;
+
+	//	Find line for adrs
+	//	And we skip back all the labels, comment and blank lines
+	auto line = ui_.disassembly().adrs_to_line(adrs);
+	if (line>0)
+	{
+		line--;
+		Line *l = ui_.lines()[line];
+		while (dynamic_cast<const LabelLine*>(l) != nullptr || dynamic_cast<const CommentLine*>(l) != nullptr || dynamic_cast<const BlankLine*>(l) != nullptr)
+		{
+			if (line==0)
+			{
+				line--;
+				break;
+			}
+			line--;
+			l = ui_.lines()[line];
+		}
+		line++;
+	}
+
+	//	We draw all lines until we have 8 instructions
+	int drawn = 0;
+	while (1)
+	{
+		if (line>=ui_.lines().size())
+			break;
+		Line *l = ui_.lines()[line];
+		if (l)
+		{
+				//	We skip blank lines
+			if (dynamic_cast<const BlankLine*>(l) == nullptr)
+				l->visit(*this);
+
+				//	We count the number of instruction lines
+			if (dynamic_cast<const InstructionLine*>(l) != nullptr)
+			{
+				drawn++;
+				if (drawn>=8)
+					break;
+			}
+		}
+		line++;
+	}
+
+	nested_--;
 }
 
 void CodeInspectorPanel::visit(const CommentLine& line)
@@ -315,14 +398,20 @@ void CodeInspectorPanel::visit(const LabelLine& line)
 {
 	//  Label
 	ImGui::Text("");
-	ImGui::SameLine(DELETE_LABEL_START_COLUMN * char_width_,0);
+	if (nested_==0)
+		ImGui::SameLine(DELETE_LABEL_START_COLUMN * char_width_,0);
+	else
+		ImGui::SameLine(0.01 * char_width_,0);
 
-	std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs());
-	if (is_hovering_line_ && small_icon_button(button_id.c_str()))
+	if (nested_==0)
 	{
-		ui_.remove_label_if_exists(line.label().name());
+		std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs());
+		if (is_hovering_line_ && small_icon_button(button_id.c_str()))
+		{
+			ui_.remove_label_if_exists(line.label().name());
+		}
+		ImGui::SameLine(LABEL_START_COLUMN * char_width_,0);
 	}
-	ImGui::SameLine(LABEL_START_COLUMN * char_width_,0);
 
 	if (ui_.is_hoover(line.start_adrs()))
 	{

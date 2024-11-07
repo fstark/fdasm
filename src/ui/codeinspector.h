@@ -43,6 +43,9 @@ protected:
 	void visit(const LabelLine& line) override;
 	void visit(const BlankLine& line) override;
 
+	//	Preview 8 lines of code from adrs
+	void code_preview( adrs_t adrs );
+
 	float char_width_;
 
 	bool is_hovering_line_;
@@ -52,4 +55,6 @@ private:
 
 	eDisplayStyle address_display_style_ = kDisplayHex;
 	eDisplayStyle bytes_display_style_   = kDisplayHex;
+
+	int nested_ = 0;
 };
