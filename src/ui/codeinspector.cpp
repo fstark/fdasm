@@ -28,7 +28,11 @@ void CodeInspectorPanel::data_changed()
 
 void CodeInspectorPanel::scroll_to_line(int line) { target_line_ = line; }
 
-void CodeInspectorPanel::scroll_to_adrs(int adrs) { scroll_to_line(ui_.disassembly().adrs_to_line(adrs)); }
+void CodeInspectorPanel::scroll_to_adrs(int adrs)
+{
+	if (ui_.explorer().rom().contains(adrs))
+		scroll_to_line(ui_.disassembly().adrs_to_line(adrs));
+}
 
 void CodeInspectorPanel::paint_selection_if_needed( const Line &line )
 {
@@ -37,7 +41,7 @@ void CodeInspectorPanel::paint_selection_if_needed( const Line &line )
 	//	If the line is selected, paint it
 	if (line.start_adrs()<=data() && data()<=line.end_adrs())
 	{
-		paint_line( ImGui::GetColorU32(bg_select_color) );
+		paint_line( ImGui::GetColorU32(ui_.preferences().get_color(Preferences::kLineSelectionColor)) );
 	}
 }
 
@@ -169,7 +173,7 @@ void CodeInspectorPanel::did_visit(const Line& line)
 	const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs());
 	if (comment)
 	{
-		ImGui::TextColored(comment_color, "; %s", comment->text().c_str());
+		ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "; %s", comment->text().c_str());
 	}
 	else
 	{
@@ -250,7 +254,7 @@ void CodeInspectorPanel::visit(const DSDirectiveLine& line)
 	ImGui::SameLine(0,0);
 	ImGui::Text("\"");
 	ImGui::SameLine(0,0);
-	ImGui::TextColored(string_color,"%s", line.data().c_str());
+	ImGui::TextColored(ui_.preferences().get_color(Preferences::kStringColor),"%s", line.data().c_str());
 	ImGui::SameLine(0,0);
 	ImGui::Text("\"");
 }
@@ -267,7 +271,7 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 		display_adrs = kDisplayHex;
 
 	auto inst = line.instruction();
-	ImGui::TextColored( mnemonic_color, "%s", inst.short_mnemonic().c_str() );
+	ImGui::TextColored( ui_.preferences().get_color(Preferences::kOpCodeColor), "%s", inst.short_mnemonic().c_str() );
 
 	//	Instruction tooltip
 	if (ImGui::IsItemHovered())
@@ -330,7 +334,8 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 
 void CodeInspectorPanel::code_preview( adrs_t adrs )
 {
-	std::clog << "Code preview " << adrs << std::endl;
+	//	### Bad: this has to be calculated for the tool-tip use case
+	char_width_ = ImGui::CalcTextSize("A").x;
 
 	nested_++;
 
@@ -365,7 +370,10 @@ void CodeInspectorPanel::code_preview( adrs_t adrs )
 		{
 				//	We skip blank lines
 			if (dynamic_cast<const BlankLine*>(l) == nullptr)
+			{
+				paint_selection_if_needed( *l );
 				l->visit(*this);
+			}
 
 				//	We count the number of instruction lines
 			if (dynamic_cast<const InstructionLine*>(l) != nullptr)
@@ -385,9 +393,9 @@ void CodeInspectorPanel::visit(const CommentLine& line)
 {
 	ImGui::SameLine(LABEL_COMMENT_START_COLUMN * char_width_,0);
 
-	ImGui::TextColored(comment_color, ";");
+	ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), ";");
 	ImGui::SameLine();
-	ImGui::TextColored(comment_color, "%s", line.comment().c_str());
+	ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "%s", line.comment().c_str());
 	if (ImGui::IsItemClicked())
 	{
 		ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
@@ -416,10 +424,10 @@ void CodeInspectorPanel::visit(const LabelLine& line)
 	if (ui_.is_hoover(line.start_adrs()))
 	{
 		UI::DrawSelectRect(line.label().name().c_str());
-		ImGui::TextColored(label_select_color, "%s:", line.label().name().c_str());
+		ImGui::TextColored(ui_.preferences().get_color(Preferences::kSelectedLabelColor), "%s:", line.label().name().c_str());
 	}
 	else
-		ImGui::TextColored(label_color, "%s:", line.label().name().c_str());
+		ImGui::TextColored(ui_.preferences().get_color(Preferences::kLabelColor), "%s:", line.label().name().c_str());
 	ui_.hoover(line.start_adrs(), tag + 3, ImGui::IsItemHovered());
 
 	if (ImGui::IsItemClicked())
@@ -480,9 +488,6 @@ void CodeInspectorPanel::do_draw_data()
 		bytes_display_style_ = (eDisplayStyle)map[item_current];
 	}
 	ImGui::PopItemWidth();
-
-	// Get imgui character width
-	char_width_ = ImGui::CalcTextSize("A").x;
 
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;

@@ -14,7 +14,20 @@ public:
 protected:
 	void data_changed() override;
 
-	std::unique_ptr<InspectorPanel<adrs_t>> duplicate() const override { return std::make_unique<AdrsInspectorPanel>(ui_,data()); }
+	std::unique_ptr<InspectorPanel<adrs_t>> duplicate() const override
+	{
+		auto res = std::make_unique<AdrsInspectorPanel>(ui_,data());
+		*res = *this;
+		return res;
+	}
+
+	//	User interaction
+	void select(adrs_t adrs);
+	void select();
+
+	//	Show the code at the given address
+	//	#### Should probably be a static in code inspector
+	void show_code(adrs_t adrs);
 
 private:
 	std::vector<XRef> xrefs_to_;

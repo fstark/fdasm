@@ -51,7 +51,7 @@ void InspectorPanel<T>::set_data( T d )
 {
 	if (d==data())
 	{
-	    data_changed();	//	For inspectors that want to reset to this exact data
+	    data_changed();	//	For inspectors that wants to reset to this exact data
 		return;
 	}
 

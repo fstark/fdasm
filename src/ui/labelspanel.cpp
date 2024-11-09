@@ -128,6 +128,9 @@ void LabelsPanel::do_draw()
             std::string name = label.name();
             const Comment *comment = ui_.explorer().annotations().comment_from_adrs(adrs);
 
+            ImGui::Text("");
+            same_line_at_column( 0 );
+
 		    std::string button_id = ICON_FA_CIRCLE_XMARK"##" + name;
 			if (is_hovering_line)
             {
@@ -137,7 +140,7 @@ void LabelsPanel::do_draw()
             else
                 ImGui::Text("");
 
-            ImGui::SameLine(20);
+            same_line_at_column( 3 );
 
                 //  Label name
             if (ui_.is_hoover(adrs))
@@ -151,7 +154,7 @@ void LabelsPanel::do_draw()
 
             handle_adrs( adrs );
 
-            ImGui::SameLine(100, 0);
+            same_line_at_column( 17 );
 
                 //  Label address
             ui_.DrawAddress(adrs, kDisplayHex, UI::kInteractNone);
@@ -166,12 +169,12 @@ void LabelsPanel::do_draw()
                 //  Label comment
             if (comment)
             {
-                ImGui::SameLine(180);
-                ImGui::TextColored(comment_color, "; %s", comment->text().c_str());
+                same_line_at_column( 28 );
+                ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "; %s", comment->text().c_str());
             }
             else
             {
-                ImGui::SameLine();
+                same_line_at_column( 28 );
                 ImGui::Text("                 ");
             }
 

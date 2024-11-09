@@ -11,7 +11,8 @@ public:
 		title_ = "";
 	}
 
-	void do_draw() override;
+	void draw() override;
+	void do_draw() override {} // not used. prob wrong hierarchy.
 	virtual void do_draw_content() = 0;
 	virtual bool apply()         = 0;
 

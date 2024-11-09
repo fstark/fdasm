@@ -38,6 +38,20 @@ Instruction::Instruction(uint8_t opcode, const std::string& mnemonic, const std:
 	}
 
 	short_mnemonic_ = short_mnemonic;
+
+	shorter_mnemonic_ = short_mnemonic;
+
+	//	Remove "," from the shorter_mnemonic
+	pos = shorter_mnemonic_.find(",");
+	if (pos != std::string::npos)
+	{
+		shorter_mnemonic_.erase(pos, 1);
+	}
+	//	Remove " " at the end of the shorter_mnemonic if any
+	if (shorter_mnemonic_.back() == ' ')
+	{
+		shorter_mnemonic_.pop_back();
+	}
 }
 
 CPUInfo::CPUInfo(const std::string filename)

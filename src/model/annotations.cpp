@@ -72,7 +72,7 @@ int Annotations::read_annotations(const std::string& filename)
 				continue;
 			}
 			// fprintf( stderr, "     %x %x %s\n", start, end, type );
-			Annotations::RegionType RegionType = Annotations::kUNKNOWN;
+			Annotations::RegionType RegionType = Annotations::kCODE;
 			if (strcmp(type, "CODE") == 0)
 				RegionType = Annotations::kCODE;
 			else if (strcmp(type, "STRZ") == 0)
@@ -118,7 +118,6 @@ int Annotations::write_annotations(const std::string& filename) const
 			case kSTR8S: type = "STR8S"; break;
 			case kDATA: type = "DATA"; break;
 			case kSTRF2: type = "STRF2"; break;
-			case kUNKNOWN: type = "UNKNOWN"; break;
 			case kCOUNT: type = "ERROR"; break;
 		}
 		if (label.comment().empty())

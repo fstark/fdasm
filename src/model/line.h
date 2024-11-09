@@ -79,8 +79,8 @@ class Line
 
     adrs_t start_adrs() const { return start_adrs_; }
     adrs_t end_adrs() const {
-        if (start_adrs_+bytes_.size()-1 > start_adrs_)
-            return start_adrs_; // #### This is wrong, but 0,0 => end of 0xffff because there are 65537 possibilities for empty
+        if (start_adrs_==0 && bytes_.empty())
+            return 0; // #### This is wrong, but 0,0 => end of 0xffff because there are 65537 possibilities for empty
         return start_adrs_+bytes_.size()-1;
         }
 

@@ -33,7 +33,7 @@ public:
 		return *this;
 	}
 
-	void draw();
+	virtual void draw();
 
 	const std::string name() const { return title_ + "##" + id_; }
 
@@ -58,5 +58,8 @@ protected:
 
 	//  Override to perform the drawing
 	virtual void do_draw() = 0;
-};
 
+	float char_width_;
+
+	void same_line_at_column(int column) const;
+};

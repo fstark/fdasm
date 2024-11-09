@@ -293,14 +293,6 @@ void Str8sEmitter::emit(size_t)
 
 	start_adrs++;
 
-	// // std::vector<Span> res;
-	// char buffer[16];
-
-	// res.push_back(Span::pseudo("DB "));
-	// snprintf(buffer, 16, "80H or '%c'", disassembler_.read_byte() & 0x7f);
-	// res.push_back(Span::expression(buffer));
-	// res.push_back(Span::text(","));
-
 	uint8_t c;
 
 	char buf2[32768];
@@ -323,7 +315,6 @@ Disassembler::Disassembler(const Rom &rom, const Annotations &annotations, const
     , annotations_(annotations)
 	, cpu_info_(cpuinfo)
     , _emitters{
-	    std::make_unique<CodeEmitter>(*this),
 	    std::make_unique<CodeEmitter>(*this),
 	    std::make_unique<StrzEmitter>(*this),
 	    std::make_unique<Str8sEmitter>(*this),

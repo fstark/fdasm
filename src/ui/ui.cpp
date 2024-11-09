@@ -15,10 +15,13 @@
 #include "adrsinspector.h"
 
 #include "labelspanel.h"
+#include "preferences.h"
 
 UI::UI(Explorer& explorer)
 	: explorer_{ explorer }
 {
+	preferences_ = std::make_unique<Preferences>( *this );
+
 	//  We disassemble the code
 	changed();
 
@@ -285,10 +288,10 @@ void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* in
 	if (is_hoover(adrs))
 	{
 		UI::DrawSelectRect(buffer);
-		ImGui::TextColored(byte_select_color, "%s", buffer);
+		ImGui::TextColored(preferences().get_color(Preferences::kByteSelectColor), "%s", buffer);
 	}
 	else
-		ImGui::TextColored(byte_color, "%s", buffer);
+		ImGui::TextColored(preferences().get_color(Preferences::kByteColor), "%s", buffer);
 
 	ImGui::SameLine();
 }
@@ -346,9 +349,8 @@ void UI::run()
 		// Show demo ImgUI window
 		ImGui::ShowDemoWindow();
 
-        ImGui::Begin("Colors");
-		DrawColorPickers();
-        ImGui::End();
+		//  Preferences
+		preferences_->draw();
 
 		//  Byte info if needed
 		if (byte_inspector_)
@@ -409,44 +411,8 @@ void UI::shutdown_imgui()
 	SDL_Quit();
 }
 
-ImVec4 adrs_color_values[12] = {
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f },
-	{ 244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f }
-};
-const char *adrs_color_names[12] = {
-	"Code out of ROM, in hex",
-	"Data out of ROM, in hex",
-	"Code in ROM, in hex",
-	"Data in ROM, in hex",
-	"Code out of ROM, as a global label",
-	"Data out of ROM, as a global label",
-	"Code in ROM, as a global label",
-	"Data in ROM, as a global label",
-	"Code out of ROM, as a local label",	//	unlikely
-	"Data out of ROM, as a local label",	//	unlikely
-	"Code in ROM, as a local label",
-	"Data in ROM, as a local label",
-};
-
 ImVec4 UI::address_color(adrs_t adrs) const
 {
-	static bool first = true;
-	if (first)
-	{
-		first = false;
-		load_preferences();
-	}
-
 	typedef enum eAddrsType
 	{
 		kAdrsHex,
@@ -466,82 +432,7 @@ ImVec4 UI::address_color(adrs_t adrs) const
 		is_data = false;
 
 	//  We set the color according to the address type
-	return adrs_color_values[adrs_type*4+is_rom*2+is_data];
-}
-
-void UI::save_preferences() const
-{
-	//  Save the preferences to file fdasm.pref
-	FILE* file = fopen("fdasm.pref", "w");
-	if (file == NULL)
-	{
-		fprintf(stderr, "Failed to open file: %s\n", "fdasm.pref");
-		return;
-	}
-	for (int i=0;i!=12;i++)
-	{
-		fprintf(file, "%f %f %f %f\n", adrs_color_values[i].x, adrs_color_values[i].y, adrs_color_values[i].z, adrs_color_values[i].w);
-	}
-	fclose(file);
-}
-
-void UI::load_preferences() const
-{
-	//  Load the preferences from file fdasm.pref
-	FILE* file = fopen("fdasm.pref", "r");
-	if (file == NULL)
-	{
-		fprintf(stderr, "Failed to open file: %s\n", "fdasm.pref");
-		return;
-	}
-	for (int i=0;i!=12;i++)
-	{
-		fscanf(file, "%f %f %f %f\n", &adrs_color_values[i].x, &adrs_color_values[i].y, &adrs_color_values[i].z, &adrs_color_values[i].w);
-	}
-	fclose(file);
-}
-
-void UI::DrawColorPickers()
-{
-	static bool first = true;
-	if (first)
-	{
-		first = false;
-		load_preferences();
-	}
-
-	if (ImGui::CollapsingHeader("Address colors"))
-		for (int i=0; i!=12; i++)
-		{
-			if (ImGui::ColorEdit4(adrs_color_names[i], (float*)&adrs_color_values[i],ImGuiColorEditFlags_NoInputs))
-				save_preferences();
-		}
-
-	if (ImGui::CollapsingHeader("Other colors"))
-	{
-		if (ImGui::ColorEdit4("Bytes", (float*)&byte_color,ImGuiColorEditFlags_NoInputs))
-			;
-		if (ImGui::ColorEdit4("Bytes Selected", (float*)&byte_select_color,ImGuiColorEditFlags_NoInputs))
-			;
-		if (ImGui::ColorEdit4("Opcodes", (float*)&mnemonic_color,ImGuiColorEditFlags_NoInputs))
-			;
-		if (ImGui::ColorEdit4("Operands", (float*)&operand_color,ImGuiColorEditFlags_NoInputs))
-			;
-		if (ImGui::ColorEdit4("Comments", (float*)&comment_color,ImGuiColorEditFlags_NoInputs))
-			;
-
-			// no, should be save as addresses in rom
-		if (ImGui::ColorEdit4("Labels", (float*)&label_color,ImGuiColorEditFlags_NoInputs))
-			;
-		if (ImGui::ColorEdit4("Selected Labels", (float*)&label_select_color,ImGuiColorEditFlags_NoInputs))
-			;
-
-		if (ImGui::ColorEdit4("Strings", (float*)&string_color,ImGuiColorEditFlags_NoInputs))
-			;
-		if (ImGui::ColorEdit4("Line selection", (float*)&bg_select_color,ImGuiColorEditFlags_NoInputs))
-			;
-
-	}
+	return preferences_->get_color( adrs_type*4+is_rom*2+is_data );
 }
 
 void UI::changed()

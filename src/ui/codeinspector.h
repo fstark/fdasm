@@ -14,6 +14,9 @@ public:
 	void scroll_to_line(int line);
 	void scroll_to_adrs(int adrs);
 
+	//	Preview 8 lines of code from adrs
+	void code_preview( adrs_t adrs );
+
 protected:
 	void data_changed() override;
 
@@ -42,11 +45,6 @@ protected:
 	void visit(const CommentLine& line) override;
 	void visit(const LabelLine& line) override;
 	void visit(const BlankLine& line) override;
-
-	//	Preview 8 lines of code from adrs
-	void code_preview( adrs_t adrs );
-
-	float char_width_;
 
 	bool is_hovering_line_;
 

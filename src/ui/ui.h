@@ -7,7 +7,7 @@ typedef void* SDL_GLContext;
 struct ImFont;
 
 class Panel;
-
+class Preferences;
 class AdrsInspectorPanel;
 class CodeInspectorPanel;
 class DataInspectorPanel;
@@ -16,6 +16,7 @@ class ByteInspectorPanel;
 class LabelsPanel;
 
 #include "uicommon.h"
+#include "preferences.h"
 
 //	This class represents the UI, aka the whole application
 class UI
@@ -115,6 +116,8 @@ public:
 
 	const Disassembly& disassembly() const { return disassembly_; }
 
+	const Preferences& preferences() const { return *preferences_; }
+
 	void run();
 
 	//  Theme support
@@ -128,12 +131,6 @@ public:
 	//	Returns the appropriate color for the given address
 	//	Color is choosen according to label presence, rom or data
 	ImVec4 address_color(adrs_t adrs) const;
-
-	//	Draw the color pickers
-	void DrawColorPickers();
-
-	void save_preferences() const;
-	void load_preferences() const;
 
 protected:
 	Explorer& explorer_;
@@ -152,6 +149,9 @@ protected:
 
 	//  If true, click follows links
 	bool link_ = false;
+
+	//	Preferences
+	std::unique_ptr<Preferences> preferences_;
 
 	//  Inspectors
 	std::unique_ptr<CodeInspectorPanel> code_inspector_;

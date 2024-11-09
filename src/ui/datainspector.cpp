@@ -15,24 +15,47 @@ void DataInspectorPanel::data_changed()
 	scroll_to_adrs( data() );
 }
 
+void DataInspectorPanel::paint_selection_if_needed( int line )
+{
+	//	If the line is selected, paint it
+	if (line==targetted_line_)
+	{
+		paint_line( ImGui::GetColorU32(ui_.preferences().get_color(Preferences::kLineSelectionColor)) );
+	}
+}
+
 void DataInspectorPanel::do_draw_data()
 {
-	int bytes_per_line = 16;
+	bytes_per_line_ = 1;
+	
+	switch (type_)
+	{
+		case 0:
+			bytes_per_line_ = 16;
+			break;
+		case 1:
+			bytes_per_line_ = 8;
+			break;
+		case 2:
+			bytes_per_line_ = 1;
+			break;
+		default:
+			break;
+	}
 
-	if (as_words_)
-		bytes_per_line = 8;
-
-	//	Add a checkbox "Words"
 	ImGui::SameLine();
-	if (ImGui::Checkbox("Words", &as_words_))
-		;
+	ImGui::RadioButton("Bytes", &type_, 0); ImGui::SameLine();
+	ImGui::RadioButton("Words", &type_, 1); ImGui::SameLine();
+	ImGui::RadioButton("Graphics", &type_, 2);
+
 
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGuiListClipper clipper;
-	clipper.Begin(ui_.explorer().rom().size()/ bytes_per_line, ImGui::GetTextLineHeightWithSpacing());
+	clipper.Begin(ui_.explorer().rom().size()/ bytes_per_line_, ImGui::GetTextLineHeightWithSpacing());
 
 	if (target_line_ != -1)
 	{
+		targetted_line_ = target_line_;
 		float line_height_with_spacing = ImGui::GetTextLineHeightWithSpacing();
 		target_line_ -= 5;
 		if (target_line_ < 0)
@@ -46,7 +69,9 @@ void DataInspectorPanel::do_draw_data()
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			adrs_t adrs = i * bytes_per_line + ui_.explorer().rom().load_adrs();
+			paint_selection_if_needed(i);
+
+			adrs_t adrs = i * bytes_per_line_ + ui_.explorer().rom().load_adrs();
 
 			auto display = kDisplayHex;
 			if (ui_.force_labels_)
@@ -66,12 +91,20 @@ void DataInspectorPanel::do_draw_data()
 			ImGui::Text(":");
 			ImGui::SameLine();
 
-			for (int i = 0; i != bytes_per_line; i++)
+			for (int i = 0; i != bytes_per_line_; i++)
 			{
-				if (as_words_)
-					draw_word( adrs+i );
-				else
-					draw_byte( adrs+i );
+				switch (type_)
+				{
+					case 0:
+						draw_byte(adrs + i);
+						break;
+					case 1:
+						draw_word(adrs + i);
+						break;
+					case 2:
+						draw_graphics(adrs + i);
+						break;
+				}
 			}
 			ImGui::Text("");
 		}
@@ -86,7 +119,7 @@ void DataInspectorPanel::draw_byte( adrs_t adrs )
 	//	If the byte is selected, paint it
 	if (adrs==data())
 	{
-		paint_element( "00", ImGui::GetColorU32(bg_select_color) );
+		paint_element( "00", ImGui::GetColorU32(ui_.preferences().get_color(Preferences::kLineSelectionColor)) );
 	}
 
 	auto display = kDisplayHex;
@@ -121,6 +154,17 @@ void DataInspectorPanel::draw_word( adrs_t adrs )
 
 		format_byte( buffer, byte, kDisplayHex );
 		ImGui::TextColored( info_color, "%s", buffer );
+
+		//	#### This code is duplicated
+		//	also we probably would want to do some hover on the word value too
+		if (ImGui::IsItemClicked())
+		{	//	We go to the displayed *content*
+			ui_.update_adrs_panel(val);
+			if (ui_.explorer().rom().contains(val))
+				ui_.update_byte_panel(ui_.explorer().rom().get(val));
+			ui_.update_code_panel(val);
+		}
+
 		ImGui::SameLine(0,0);
 	}
 	else
@@ -137,7 +181,34 @@ void DataInspectorPanel::draw_word( adrs_t adrs )
 
 	byte = ui_.explorer().rom().get(adrs);
 	format_byte( buffer, byte, kDisplayHex );
-	ImGui::TextColored( byte_color, "%s", buffer );
+	ImGui::TextColored( ui_.preferences().get_color(Preferences::kByteColor), "%s", buffer );
+
+	if (ui_.explorer().rom().contains(adrs+1))	// Special case for end of window
+	{
+		uint16_t val = ui_.explorer().rom().get_word(adrs);
+		if (ImGui::IsItemClicked())
+		{	//	We go to the displayed *content*
+			ui_.update_adrs_panel(val);
+			if (ui_.explorer().rom().contains(val))
+				ui_.update_byte_panel(ui_.explorer().rom().get(val));
+			ui_.update_code_panel(val);
+		}
+	}
 
 	ImGui::SameLine();
+}
+
+void DataInspectorPanel::draw_graphics( adrs_t adrs )
+{
+	uint8_t byte = ui_.explorer().rom().get(adrs);
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+	ImVec2 p = ImGui::GetCursorScreenPos();
+	float size = 16.0f;
+	for (int j = 0; j < 8; ++j)
+	{
+		bool bit = byte & 0x80;
+		byte <<= 1;
+		if (bit)
+			draw_list->AddRectFilled(ImVec2(p.x + j * size, p.y), ImVec2(p.x + (j+1)*size - 1, p.y + size), IM_COL32(230, 230, 230, 255));
+	}
 }

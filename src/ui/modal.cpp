@@ -2,34 +2,33 @@
 
 #include "uicommon.h"
 
-void Modal::do_draw()
+void Modal::draw()
 {
-
-	ImGui::OpenPopup(title_.c_str());
 
 	// Always center this window when appearing
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
+	ImGui::OpenPopup(title_.c_str());
 	if (ImGui::BeginPopupModal(title_.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		do_draw_content();
 		first_open_ = false;
-	}
 
-	if (ImGui::Button("OK", ImVec2(120, 0)) || (!disable_enter_ && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter))) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_KeypadEnter)))
-	{
-		ImGui::CloseCurrentPopup();
-		if (apply())
+		if (ImGui::Button("OK", ImVec2(120, 0)) || (!disable_enter_ && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter))) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_KeypadEnter)))
+		{
+			ImGui::CloseCurrentPopup();
+			if (apply())
+				close();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+		{
+			ImGui::CloseCurrentPopup();
 			close();
+		}
+		ImGui::EndPopup();
 	}
-	ImGui::SameLine();
-	if (ImGui::Button("Cancel", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
-	{
-		ImGui::CloseCurrentPopup();
-		close();
-	}
-	ImGui::EndPopup();
 }
 
 #include "ui.h"
@@ -84,8 +83,8 @@ void LabelEditModal::do_draw_content()
 	ImGui::SameLine();
 	ImGui::PushItemWidth(60);
 	{
-		const char* items[]     = { "Unknowns", "Code", "Strz", "80+Str", "2-chars Str", "Bytes", "Words" };
-		static int map[]        = { Annotations::kUNKNOWN, Annotations::kCODE, Annotations::kSTRZ, Annotations::kSTR8S, Annotations::kSTRF2, Annotations::kDATA, Annotations::kDATAW };
+		const char* items[]     = { "Code", "Strz", "80+Str", "2-chars Str", "Bytes", "Words" };
+		static int map[]        = { Annotations::kCODE, Annotations::kSTRZ, Annotations::kSTR8S, Annotations::kSTRF2, Annotations::kDATA, Annotations::kDATAW };
 		static int item_current = 0;
 
 		// Get current label type

@@ -119,7 +119,7 @@ public:
 
 		for (size_t i = 0; i < lines_.size(); i++)
 		{
-			if (lines_[i]->start_adrs() <= adrs && lines_[i]->end_adrs() >= adrs)
+			if (lines_[i]->start_adrs() <= adrs && adrs <= lines_[i]->end_adrs())
 			{
 				return i;
 			}

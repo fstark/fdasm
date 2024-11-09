@@ -19,7 +19,6 @@ class Annotations
 public:
 	typedef enum
 	{
-		kUNKNOWN,
 		kCODE,
 		kSTRZ,
 		kSTR8S,
@@ -33,7 +32,7 @@ public:
 	{
 		assert( type >= 0 );
 		assert( type < kCOUNT );
-		static const std::string names[] = { "????", "CODE", "STRZ", "STR8S", "STRF2", "DATA", "DATAW" };
+		static const std::string names[] = { "CODE", "STRZ", "STR8S", "STRF2", "DATA", "DATAW" };
 		return names[type];
 	}
 

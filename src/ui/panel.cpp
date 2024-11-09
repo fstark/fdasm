@@ -4,6 +4,9 @@
 
 void Panel::draw()
 {
+	// Get imgui character width
+	char_width_ = ImGui::CalcTextSize("A").x;
+
     ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.2f, 0.3f, 0.4f, 1.0f)); // Example color
     ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.3f, 0.4f, 0.5f, 1.0f)); // Example color
     ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, ImVec4(0.1f, 0.2f, 0.3f, 1.0f)); // Example color
@@ -29,3 +32,9 @@ void Panel::draw()
 
     ImGui::PopStyleColor(3);
 }
+
+void Panel::same_line_at_column(int column) const
+{
+	ImGui::SameLine(column * char_width_, 0);
+}
+

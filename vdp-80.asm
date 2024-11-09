@@ -7,9 +7,9 @@
 LOAD:
 	MVI A,40H
 	OUT 0F3H	; Mem mapping?
-	JMP 0D810H
-	JMP 0DE3BH
-	JMP 0DE66H
+	JMP 0D810H	; Initial boot
+	JMP 0DE3BH	; Vector ReadChar
+	JMP 0DE66H	; Vector PrintChar
 	JMP 0D9EFH
 ;
 ; Boot procedure
@@ -43,7 +43,7 @@ SKIP:
 	OUT 3
 	CALL 0D8AEH
 	LXI H,0DFA7H
-	CALL 0DE59H	; Print monitor welcome string
+	CALL 0DE59H	; Print 
 ;
 ; Reset stack and enter monitor
 ;
@@ -105,7 +105,7 @@ LD8AE:
 	IN 14H
 LD8B0:
 	LXI H,0DFC7H
-	CALL 0DE59H
+	CALL 0DE59H	; Print 
 	LXI H,0D0F7H
 	MVI A,10H
 	ANA M
@@ -152,7 +152,7 @@ LD8F7:
 	PUSH PSW
 	CALL 0D98CH
 	MVI B,1
-	CALL 0D948H
+	CALL 0D948H	; Use device 1
 	POP PSW
 	MOV H,A
 	MVI L,0
@@ -162,10 +162,10 @@ LD8F7:
 LD917:
 	CALL 0DED3H
 	LXI H,0DFE4H
-	JMP 0DE59H
+	JMP 0DE59H	; Print 
 LD920:
 	MVI B,2
-	CALL 0D948H
+	CALL 0D948H	; Use device 2
 	RAR
 	RAR
 	RAR
@@ -173,7 +173,7 @@ LD920:
 	XRA M
 	MOV M,A
 	LXI H,0DFF2H
-	JMP 0DE59H
+	JMP 0DE59H	; Print 
 LD931:
 	MOV C,A
 	IN 12H
@@ -212,6 +212,9 @@ LD953:
 	MVI A,0B7H
 	OUT 13H
 	RET
+;
+; Write 0x00, 0x00, 0x00, 0x40, 0xae and 0x37 in 13H
+;
 LD96B:
 	CALL 0D977H
 	MVI A,0AEH
@@ -219,6 +222,9 @@ LD96B:
 	MVI A,37H
 	OUT 13H
 	RET
+;
+; Write 0x00, 0x00, 0x00 and 0x40 in 13H
+;
 LD977:
 	XRA A
 	OUT 13H
@@ -241,7 +247,7 @@ LD98C:
 	CNZ 0D9A0H
 	JNZ 0D96BH
 	LXI H,0DFD7H
-	JMP 0DE59H
+	JMP 0DE59H	; Print 
 LD9A0:
 	LXI D,0D103H
 	XCHG
@@ -321,12 +327,15 @@ LDA0B:
 	INX H
 	XTHL
 	MOV M,A
-	CPI 20H
+	CPI 20H	; ' '
 	JC 0DA23H
-	CPI 7FH
+	CPI 7FH	; DEL
 	JC 0DA25H
-LDA23:
-	MVI M,2EH
+;
+; Uses '.' for unprintable ASCII characters
+;
+UNPRINTABLE:
+	MVI M,2EH	; '.'
 LDA25:
 	INX H
 	DCX B
@@ -341,7 +350,7 @@ LDA25:
 LDA34:
 	CALL 0DEDBH
 	LXI H,0D0E4H
-	CALL 0DE59H
+	CALL 0DE59H	; TODO: check
 	MOV A,B
 	ORA C
 	JZ 0DA4FH
@@ -396,7 +405,7 @@ LDA82:
 LDA96:
 	CALL 0DE8AH
 	CALL 0DEF9H
-	JC 0DB8BH
+	JC 0DB8BH	; Invalid hex
 	ADD A
 	ADD A
 	ADD A
@@ -404,7 +413,7 @@ LDA96:
 	MOV E,A
 	CALL 0DE8AH
 	CALL 0DEF9H
-	JC 0DB8BH
+	JC 0DB8BH	; Invalid hex
 	ADD E
 	MOV E,A
 	ADD D
@@ -416,7 +425,7 @@ CMD_T:
 LDAB6:
 	XRA A
 	MOV D,M
-LDAB8:
+LOOP_16:
 	MOV M,A
 	CMP M
 	JNZ 0DACEH
@@ -567,7 +576,11 @@ LDB85:
 	CALL 0DBE7H
 LDB88:
 	JZ 0DB93H
-LDB8B:
+;
+; Called when character is invalid Hex
+; Prints 'T' and goes to monitor
+;
+INVALIDHEX:
 	MVI A,54H	; Prints 'T'
 ;
 ; Prints a char and jump to monitor
@@ -741,9 +754,9 @@ LDC9D:
 	ANI 0F0H
 	LXI H,0DCB5H
 	CPI 0A0H
-	JZ 0DE59H
+	JZ 0DE59H	; Print 
 	LXI H,0DCBFH
-	CALL 0DE59H
+	CALL 0DE59H	; Print 
 	LHLD 0D0FEH
 	INX H
 	MOV A,M
@@ -869,7 +882,7 @@ LDD84:
 ;
 PRINVALID:
 	LXI H,0DD95H
-	JMP 0DE59H
+	JMP 0DE59H	; Print 
 STRINVALID:
 	DB "INVALID",0
 CMD_XD:
@@ -881,7 +894,11 @@ CMD_XI:
 CMD_XO:
 	LXI H,0D0F7H
 	JMP 0D9E0H
-LDDAF:
+;
+; Reads address in HL and DE
+; BC = DE-HL+1
+;
+READ_START_END_LEN:
 	CALL 0DDBCH
 	PUSH PSW	; Save result of read HEX (Z if ok?)
 	MOV A,E
@@ -890,7 +907,7 @@ LDDAF:
 	MOV A,D
 	SBB H
 	MOV B,A
-	INX B
+	INX B	; BC = DE-HL+1
 	POP PSW	; Restore result of read HEX
 	RET
 READ_HEX_HL_DE:
@@ -956,21 +973,21 @@ READ_FROM_B:
 WRITE_TO_A:
 	IN 13H
 	ANI 1
-	JZ 0DE0DH
+	JZ 0DE0DH	; Again
 	LDA 0D0FDH
 	OUT 12H
 	RET
 WRITE_TO_C:
 	IN 3
 	ANI 1
-	JZ 0DE1AH
+	JZ 0DE1AH	; Again
 	LDA 0D0FDH
 	OUT 2
 	RET
 WRITE_TO_B:
 	IN 15H
 	ANI 1
-	JZ 0DE27H
+	JZ 0DE27H	; Again
 	LDA 0D0FDH
 	OUT 2
 	RET
@@ -986,7 +1003,7 @@ WAIT_CHAR:
 ; Does not wait, returns 0 if no chars
 ;
 READ_CHAR:
-	LDA 0D0F6H	; READ_CHAR
+	LDA 0D0F6H
 	ANI 2
 	CNZ 0DE05H
 	RNZ
@@ -1012,7 +1029,7 @@ PRINTSTR:
 	CALL 0DE66H
 	POP B
 	INX H
-	JMP 0DE59H
+	JMP 0DE59H	; Loop to next char
 ;
 ; Print one character on the current output device
 ;
@@ -1049,7 +1066,7 @@ READCHR_CTRC:
 	JZ 0D853H
 	CPI 15H	; ^U?
 	JZ 0D853H
-	CALL 0DE66H
+	CALL 0DE66H	; Echo char
 	CPI 1BH	; ESC?
 	JNZ 0DEACH
 	CALL 0DE8AH	; ESC
@@ -1070,9 +1087,9 @@ TOUPPER:
 ;
 PRTCRLF:
 	MVI A,0DH
-	CALL 0DE66H
+	CALL 0DE66H	; Prints '\r'
 	MVI A,0AH
-	JMP 0DE66H
+	JMP 0DE66H	; Prints '\n'
 ;
 ; Prints 2 digits hex number
 ;
@@ -1086,6 +1103,7 @@ PRTHEX2:
 	POP PSW
 ;
 ; Prints single digit hex number
+; (using the head-scratching classic DAA hack)
 ;
 PRTHEX1:
 	ANI 0FH	; Print hex digit
@@ -1132,6 +1150,10 @@ APPENDHEX:
 	MOV L,A	; HL << 4 | A
 	POP PSW
 	JMP 0DEE3H
+;
+; Takes an ASCII character (0-9A-F) and convert it to hex (0-F).
+; Sets Carry if invalid.
+;
 HEXFROMASCII:
 	SUI 30H	; '0'
 	RC
@@ -1159,7 +1181,10 @@ DUMP_BOL:
 	CALL 0DED8H	; And content
 	INX H
 	RET
-XXX:
+;
+; This data does not seem to be used anywhere
+;
+UNUSED:
 	DB 3,96H,6,48H,0BH,24H,17H,12H
 	DB 2EH,6,5EH,3,0FFH,1,0
 BAUD_TABLE:
