@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string>
 #include <unordered_map>
+#include <cstring>
 
 Annotations::Annotations(Rom& rom, const std::string& filename)
     : rom_{ rom }

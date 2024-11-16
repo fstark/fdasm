@@ -14,6 +14,8 @@ class Comment;
 #include "comment.h"
 #include "ioport.h"
 
+#include <unordered_map>
+
 //	Annotations are stuff about the ROM that are managed by the user
 //	Annotations are used to create the right disassembly
 class Annotations

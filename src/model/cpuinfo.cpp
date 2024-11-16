@@ -3,6 +3,8 @@
 #include <iostream>
 #include <stdio.h>
 
+#include <cstring>
+
 Instruction::Instruction(uint8_t opcode, const std::string& mnemonic, const std::string& description, const std::string& flags, const std::string& effect)
 	: opcode_{ opcode }
 	, mnemonic_{ mnemonic }

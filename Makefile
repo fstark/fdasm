@@ -1,4 +1,4 @@
 fdasm:
-	( cd src && make )
+	( cd src && make -j )
 
 .PHONY : fdasm

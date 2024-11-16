@@ -3,6 +3,10 @@
 #include "common.h"
 #include <vector>
 
+#include <string>
+
+#include <stdexcept>
+
 //	A ROM file loaded into memory
 class Rom
 {

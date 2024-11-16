@@ -1,6 +1,10 @@
 # fdasm
 Fred's disassembler
 
+# Build
+
+use ``git clone --recurse-submodules <repository_url>`` to checkout the imgui dependency
+
 # Overview
 
 This is a powerful graphical user interface to reverse-engineer a 8085 ROM.

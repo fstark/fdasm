@@ -81,6 +81,10 @@
         "forward_list": "cpp",
         "span": "cpp",
         "*.inc": "cpp",
-        "__availability": "cpp"
+        "__availability": "cpp",
+        "unordered_set": "cpp",
+        "ranges": "cpp",
+        "chrono": "cpp",
+        "format": "cpp"
     }
 }

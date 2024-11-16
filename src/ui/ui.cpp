@@ -19,6 +19,8 @@
 #include "iospanel.h"
 #include "preferences.h"
 
+#include <algorithm>
+
 //move to uicommon.cpp
 void UnderlineTextColored(const ImVec4& color, const char* text)
 {
@@ -396,9 +398,9 @@ void UI::draw_comment( adrs_t from_adrs, const CommentText &comment )
 				const char *p = chunk.c_str();
 				if (strlen(p)==5 && p[4]=='H')
 				{
-					adrs_t v;
+					unsigned int v;
 					if (sscanf( p, "%04XH", &v )==1)
-						show_context_menu( 100+chunk_id, from_adrs, v );
+						show_context_menu( 100+chunk_id, from_adrs, (adrs_t)v );
 				}
 			}
 		}

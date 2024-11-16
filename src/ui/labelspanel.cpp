@@ -8,6 +8,7 @@
 
 
 #include <sstream>
+#include <algorithm>
 
 LabelsPanel::LabelsPanel(UI& ui)
     : Panel(ui)

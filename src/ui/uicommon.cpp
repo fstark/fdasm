@@ -1,22 +1,22 @@
 #include "uicommon.h"
 
-auto dbg_color = ImVec4(0 / 255.0, 255 / 255.0, 0 / 255.0, 1.0f);
+ImVec4 dbg_color = ImVec4(0 / 255.0, 255 / 255.0, 0 / 255.0, 1.0f);
 
-auto adrs_color        = ImVec4(244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f);
-auto data_color        = ImVec4(0.8f, 0.8f, 0.1f, 1.0f);
+ImVec4 adrs_color        = ImVec4(244 / 255.0, 71 / 255.0, 71 / 255.0, 1.0f);
+ImVec4 data_color        = ImVec4(0.8f, 0.8f, 0.1f, 1.0f);
 
-auto std_color        = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
-auto std_select_color = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
+ImVec4 std_color        = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+ImVec4 std_select_color = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
 
 
-auto select_color = ImVec4(255 / 255.0, 255 / 255.0, 255 / 255.0, 1.0f);
-auto select_color2 = ImVec4(255 / 255.0, 192 / 255.0, 192 / 255.0, 1.0f);
+ImVec4 select_color = ImVec4(255 / 255.0, 255 / 255.0, 255 / 255.0, 1.0f);
+ImVec4 select_color2 = ImVec4(255 / 255.0, 192 / 255.0, 192 / 255.0, 1.0f);
 
-auto line_color = ImVec4(30 / 255.0, 30 / 255.0, 30 / 255.0, 1.0f);
+ImVec4 line_color = ImVec4(30 / 255.0, 30 / 255.0, 30 / 255.0, 1.0f);
 
-auto data_ref_color = ImVec4( 0.3f, 0.3f, 0.3f, 1.0f );
+ImVec4 data_ref_color = ImVec4( 0.3f, 0.3f, 0.3f, 1.0f );
 
-auto info_color = ImVec4( 0.5f, 0.5f, 0.5f, 1.0f );
+ImVec4 info_color = ImVec4( 0.5f, 0.5f, 0.5f, 1.0f );
 
 
 void paint_line(ImU32 color)
@@ -50,6 +50,7 @@ void format_byte( char *buffer, uint8_t byte, eDisplayStyle display_style )
 				break;
 			}
 			// fallthrought to hex
+			[[fallthrough]];
 		}
 		case kDisplayHex|kDisplayStyleASM:
 			snprintf(buffer, 256, "%02XH", byte);
