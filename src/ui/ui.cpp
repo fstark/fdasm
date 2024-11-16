@@ -13,9 +13,33 @@
 #include "codeinspector.h"
 #include "datainspector.h"
 #include "adrsinspector.h"
+#include "ioinspector.h"
 
 #include "labelspanel.h"
+#include "iospanel.h"
 #include "preferences.h"
+
+//move to uicommon.cpp
+void UnderlineTextColored(const ImVec4& color, const char* text)
+{
+    // Get the current window's draw list
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+    // Get the position and size of the text
+    ImVec2 text_pos = ImGui::GetCursorScreenPos();
+    ImVec2 text_size = ImGui::CalcTextSize(text);
+
+    // Draw the text
+    ImGui::TextColored(color, "%s", text);
+
+    // Draw the underline
+    ImVec2 line_start = ImVec2(text_pos.x, text_pos.y + text_size.y);
+    ImVec2 line_end = ImVec2(text_pos.x + text_size.x, text_pos.y + text_size.y);
+    draw_list->AddLine(line_start, line_end, ImGui::GetColorU32(ImGuiCol_Text));
+}
+
+
+
 
 UI::UI(Explorer& explorer)
 	: explorer_{ explorer }
@@ -38,6 +62,10 @@ UI::UI(Explorer& explorer)
 	byte_inspector_->set_unique();
 	labels_panel_ = std::make_unique<LabelsPanel>(*this);
 	labels_panel_->set_unique();
+	ios_panel_ = std::make_unique<IOsPanel>(*this);
+	ios_panel_->set_unique();
+	io_inspector_panel_ = std::make_unique<IOInspectorPanel>(*this,0);
+	io_inspector_panel_->set_unique();
 }
 
 UI::~UI()
@@ -65,6 +93,11 @@ void UI::update_adrs_panel( adrs_t adrs )
 void UI::update_byte_panel( uint8_t b )
 {
 	byte_inspector_->set_data(b);
+}
+
+void UI::update_io_panel( uint8_t b )
+{
+	io_inspector_panel_->set_data(b);
 }
 
 void UI::update_code_panel( adrs_t adrs )
@@ -278,7 +311,38 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 	DrawAddress(adrs, display_style, kInteractNone, adrs_color);
 }
 
-//  #### Should pass an optional address for interaction?
+void UI::DrawIOPort(uint8_t io_adrs, eDisplayStyle display_style )
+{
+	char buffer[256];
+
+	display_style = static_cast<eDisplayStyle>(display_style & ~kDisplayStyleASM);
+
+	if (display_style==kDisplayLabel)
+	{
+		auto port = explorer().annotations().io_list().get_port(io_adrs);
+		if (port.name().empty())
+		{
+			snprintf(buffer, 256, "%02XH", io_adrs);
+		}
+		else
+		{
+			snprintf(buffer, 256, "%s", port.name().c_str());
+		}
+	}
+	else /* if (display_style==kDisplayHex) */
+	{
+		snprintf(buffer, 256, "%02XH", io_adrs);
+	}
+	if (is_hoover_io(io_adrs))
+	{
+		DrawSelectRect(buffer);
+	}
+
+	ImGui::TextColored(preferences().get_color(Preferences::kIOColor), "%s",buffer);
+
+	ImGui::SameLine(0,0);
+}
+
 void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* interactions */, adrs_t adrs)
 {
 	char buffer[256];
@@ -295,6 +359,118 @@ void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* in
 
 	ImGui::SameLine();
 }
+
+
+void UI::draw_comment( adrs_t from_adrs, const CommentText &comment )
+{
+	// ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), ";; %s", comment->text().c_str());
+
+	const std::vector<std::string> &chunks = comment.chunks();
+
+	ImGui::TextColored(preferences().get_color(Preferences::kCommentColor), "; ");
+
+	bool even = true;
+	int chunk_id = 0;
+	for (auto &chunk: chunks)
+	{
+		if (even)
+		{
+			ImGui::SameLine(0,0);
+			ImGui::TextColored(preferences().get_color(Preferences::kCommentColor), "%s", chunk.c_str());
+			show_context_menu( 200+chunk_id, from_adrs, from_adrs, (void *)&comment );
+		}
+		else
+		{
+			ImGui::SameLine(0,0);
+			UnderlineTextColored( preferences().get_color(Preferences::kCommentColor), chunk.c_str() );
+
+			//	Lookup address for the chunk
+			Label *l = explorer().annotations().label_from_name(chunk);
+			if (l)
+			{
+				show_context_menu( 100+chunk_id, from_adrs, l->start_adrs() );
+			}
+			else
+			{
+				//	Maybe an hex address?
+				const char *p = chunk.c_str();
+				if (strlen(p)==5 && p[4]=='H')
+				{
+					adrs_t v;
+					if (sscanf( p, "%04XH", &v )==1)
+						show_context_menu( 100+chunk_id, from_adrs, v );
+				}
+			}
+		}
+
+		even = !even;
+		chunk_id++;
+	}
+}
+
+#include "modal.h"
+
+void UI::show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const void *id )
+{
+		// Add right-click context menu
+	char buffer[256];
+	if (!id)
+		snprintf(buffer, 256, "##%04X-%04X-%d", from_adrs, to_adrs, tag);
+	else
+		snprintf(buffer, 256, "##%p-%d", id, tag);
+
+if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) // Check for left-click
+{
+    ImGui::OpenPopup(buffer); // Open the popup
+}
+	if (ImGui::BeginPopup(buffer))
+	{
+		if (from_adrs!=to_adrs && ImGui::MenuItem("Go to"))
+		{
+			update_code_panel(to_adrs);	//	We move within the code
+		}
+
+		if (ImGui::MenuItem("Show in address inspector"))
+		{
+			update_adrs_panel(to_adrs);
+		}
+
+		if (ImGui::MenuItem("Show in data inspector"))
+		{
+			update_data_panel(to_adrs);
+		}
+
+		if (ImGui::MenuItem("Open code in new Window"))
+		{
+			new_disassembly_panel( to_adrs );
+		}
+
+		Label *l = explorer().annotations().label_from_adrs(to_adrs);
+		if (l)
+		{
+			if (ImGui::MenuItem("Label..."))
+			{
+				add_panel(std::make_unique<LabelEditModal>(*this, to_adrs, l->name(),true));
+			}
+		}
+		else
+		{
+			if (ImGui::MenuItem("Label..."))
+			{
+				add_panel(std::make_unique<LabelEditModal>(*this, to_adrs, "",true));
+			}
+		}
+
+		if (ImGui::MenuItem("Edit line comment..."))
+				add_panel(std::make_unique<CommentEditModal>(*this, from_adrs));
+
+		if (from_adrs!=to_adrs && ImGui::MenuItem("Edit target comment..."))
+				add_panel(std::make_unique<CommentEditModal>(*this, to_adrs));
+
+		ImGui::EndPopup();
+	}
+}
+
 
 void UI::run()
 {
@@ -367,6 +543,14 @@ void UI::run()
 		//	Labels
 		if (labels_panel_)
 			labels_panel_->draw();
+
+		//	IO Ports
+		if (ios_panel_)
+			ios_panel_->draw();
+
+		//	IO
+		if (io_inspector_panel_)
+			io_inspector_panel_->draw();
 
 		std::vector<Panel*> to_draw;
 		for (const auto& p : panels_)

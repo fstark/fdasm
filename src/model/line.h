@@ -99,6 +99,8 @@ protected:
     std::vector<uint8_t> bytes_;
 };
 
+#include "comment.h"
+
 //  This line displays a single line comment
 class CommentLine : public Line
 {
@@ -108,12 +110,12 @@ class CommentLine : public Line
     {
     }
 
-    const std::string& comment() const { return comment_; }
+    const CommentText& comment() const { return comment_; }
 
     void do_visit( LineVisitor& visitor ) const override { visitor.visit(*this); }
 
     protected:
-    std::string comment_;
+    CommentText comment_;
 };
 
 class Instruction;

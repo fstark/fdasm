@@ -80,6 +80,7 @@
         "charconv": "cpp",
         "forward_list": "cpp",
         "span": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "__availability": "cpp"
     }
 }

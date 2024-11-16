@@ -9,7 +9,7 @@ const int LABEL_COMMENT_START_COLUMN = 2;
 
 const int ADRS_START_COLUMN = 0;
 const int BYTES_START_COLUMN = 6;
-const int DELETE_LABEL_START_COLUMN = 20;
+// const int DELETE_LABEL_START_COLUMN = 20;
 const int LABEL_START_COLUMN = 23;
 const int INSTRUCTION_START_COLUMN = 32;
 const int COMMENT_START_COLUMN = 55;
@@ -64,7 +64,7 @@ void CodeInspectorPanel::draw_line_adrs( const Line &line )
 	ui_.DrawAddress(line.start_adrs(), display, UI::kInteractNone);
 	ui_.hoover(line.start_adrs(), tag + 0, ImGui::IsItemHovered());
 
-	if (ImGui::IsItemClicked())
+/*	if (ImGui::IsItemClicked())
 	{
 		if (ImGui::GetMouseClickedCount(0) == 1)
 		{
@@ -78,6 +78,8 @@ void CodeInspectorPanel::draw_line_adrs( const Line &line )
 			ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
 		}
 	}
+*/
+		ui_.show_context_menu(4, line.start_adrs(), line.start_adrs());
 }
 
 void CodeInspectorPanel::draw_line_bytes( const Line &line )
@@ -152,7 +154,7 @@ void CodeInspectorPanel::will_visit(const Line& line)
 	else
 	{
 		ImGui::Text("");
-		ImGui::SameLine(4 * char_width_,0);
+		ImGui::SameLine(8 * char_width_,0);
 	}
 }
 
@@ -173,18 +175,18 @@ void CodeInspectorPanel::did_visit(const Line& line)
 	const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs());
 	if (comment)
 	{
-		ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "; %s", comment->text().c_str());
+
+		ui_.draw_comment( line.start_adrs(), comment->comment_text() );
 	}
 	else
 	{
 		//  #### Haaack just for the click. This is bad.
 		ImGui::Text("                 ");
 	}
-	if (ImGui::IsItemClicked())
-	{
-		ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
-	}
-
+	// if (ImGui::IsItemClicked())
+	// {
+	// 	ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
+	// }
 }
 
 void CodeInspectorPanel::visit(const OrgDirectiveLine& line)
@@ -285,11 +287,23 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 	if (inst.has_d8())
 	{
 		ImGui::SameLine(0,0);
-		ui_.DrawByte(line.byte(), static_cast<eDisplayStyle>(display | kDisplayStyleASM), UI::kInteractNone, line.start_adrs() + 1);
-		ui_.hoover(line.start_adrs() + 1, tag + 64, ImGui::IsItemHovered());
+		if (inst.is_io_read() || inst.is_io_write())
+		{
+			ui_.DrawIOPort(line.byte(), static_cast<eDisplayStyle>(kDisplayLabel | kDisplayStyleASM));
+			ui_.hoover_io(line.byte(), 0, ImGui::IsItemHovered());
+		}
+		else
+		{
+			ui_.DrawByte(line.byte(), static_cast<eDisplayStyle>(display | kDisplayStyleASM), UI::kInteractNone, line.start_adrs() + 1);
+			ui_.hoover(line.start_adrs() + 1, tag + 64, ImGui::IsItemHovered());
+		}
 		if (ImGui::IsItemClicked())
 		{
 			ui_.update_byte_panel(line.byte());
+			if (inst.is_io_read() || inst.is_io_write())
+			{
+				ui_.update_io_panel(line.byte());
+			}
 		}
 		ImGui::Text("");
 	}
@@ -300,12 +314,7 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 
 		ui_.DrawAddress(adrs, static_cast<eDisplayStyle>(display_adrs|kDisplayStyleASM), UI::kInteractNone);
 		ui_.hoover(adrs, tag + 2, ImGui::IsItemHovered());
-		if (ImGui::IsItemClicked())
-		{
-			ui_.inspect_adrs(adrs, false);
-			ui_.update_data_panel(adrs);
-			ui_.update_code_panel(adrs);	//	We move within the code
-		}
+		ui_.show_context_menu(1, line.start_adrs(), adrs);
 	}
 	if (inst.has_adrs())
 	{
@@ -314,6 +323,7 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 
 		ui_.DrawAddress(adrs, static_cast<eDisplayStyle>(display_adrs|kDisplayStyleASM), UI::kInteractNone);
 		ui_.hoover(adrs, tag + 3, ImGui::IsItemHovered());
+		ui_.show_context_menu(2,line.start_adrs(), adrs);
 
 		//	Special case for JUMP instructions
 		if (inst.is_jump() && ImGui::IsItemHovered())
@@ -322,17 +332,10 @@ void CodeInspectorPanel::visit(const InstructionLine& line)
 			code_preview( adrs );
 			ImGui::EndTooltip();
 		}
-
-		if (ImGui::IsItemClicked())
-		{
-			ui_.inspect_adrs(adrs, false);
-			ui_.update_data_panel(adrs);
-			ui_.update_code_panel(adrs);	//	We move within the code
-		}
 	}
 }
 
-void CodeInspectorPanel::code_preview( adrs_t adrs )
+void CodeInspectorPanel::code_preview( adrs_t adrs, int count )
 {
 	//	### Bad: this has to be calculated for the tool-tip use case
 	char_width_ = ImGui::CalcTextSize("A").x;
@@ -372,6 +375,8 @@ void CodeInspectorPanel::code_preview( adrs_t adrs )
 			if (dynamic_cast<const BlankLine*>(l) == nullptr)
 			{
 				paint_selection_if_needed( *l );
+				draw_line_adrs( *l );
+				ImGui::SameLine();
 				l->visit(*this);
 			}
 
@@ -379,7 +384,7 @@ void CodeInspectorPanel::code_preview( adrs_t adrs )
 			if (dynamic_cast<const InstructionLine*>(l) != nullptr)
 			{
 				drawn++;
-				if (drawn>=8)
+				if (drawn>=count)
 					break;
 			}
 		}
@@ -393,31 +398,34 @@ void CodeInspectorPanel::visit(const CommentLine& line)
 {
 	ImGui::SameLine(LABEL_COMMENT_START_COLUMN * char_width_,0);
 
-	ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), ";");
-	ImGui::SameLine();
-	ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "%s", line.comment().c_str());
-	if (ImGui::IsItemClicked())
-	{
-		ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
-	}
+	// ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), ";");
+	// ImGui::SameLine();
+	// ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "%s", line.comment().c_str());
+
+	ui_.draw_comment( line.start_adrs(), line.comment() );
+
+	// if (ImGui::IsItemClicked())
+	// {
+	// 	ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
+	// }
 }
 
 void CodeInspectorPanel::visit(const LabelLine& line)
 {
 	//  Label
 	ImGui::Text("");
-	if (nested_==0)
-		ImGui::SameLine(DELETE_LABEL_START_COLUMN * char_width_,0);
-	else
+	// if (nested_==0)
+	// 	ImGui::SameLine(DELETE_LABEL_START_COLUMN * char_width_,0);
+	// else
 		ImGui::SameLine(0.01 * char_width_,0);
 
 	if (nested_==0)
 	{
-		std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs());
-		if (is_hovering_line_ && small_icon_button(button_id.c_str()))
-		{
-			ui_.remove_label_if_exists(line.label().name());
-		}
+		// std::string button_id = ICON_FA_CIRCLE_XMARK"##" + std::to_string(line.start_adrs());
+		// if (is_hovering_line_ && small_icon_button(button_id.c_str()))
+		// {
+		// 	ui_.remove_label_if_exists(line.label().name());
+		// }
 		ImGui::SameLine(LABEL_START_COLUMN * char_width_,0);
 	}
 
@@ -429,11 +437,7 @@ void CodeInspectorPanel::visit(const LabelLine& line)
 	else
 		ImGui::TextColored(ui_.preferences().get_color(Preferences::kLabelColor), "%s:", line.label().name().c_str());
 	ui_.hoover(line.start_adrs(), tag + 3, ImGui::IsItemHovered());
-
-	if (ImGui::IsItemClicked())
-	{
-		ui_.add_panel(std::make_unique<LabelEditModal>(ui_, line.start_adrs(), "",false));
-	}
+	ui_.show_context_menu(3,line.start_adrs(), line.start_adrs());
 }
 
 void CodeInspectorPanel::visit(const BlankLine& )

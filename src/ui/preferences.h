@@ -32,6 +32,7 @@ public:
         kSelectedLabelColor,
         kStringColor,
         kLineSelectionColor,
+        kIOColor,
         kCount
     } eColors;
 

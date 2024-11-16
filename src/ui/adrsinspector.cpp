@@ -131,7 +131,10 @@ void AdrsInspectorPanel::do_draw_data()
 		if (comment)
 		{
 			ImGui::SameLine( COMMENT_START_COLUMN * char_width_, 0);
-			ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "; %s", comment->text().c_str());
+			// ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "; %s", comment->text().c_str());
+//	XXX
+//	####
+//	TODO
 			if (ImGui::IsItemClicked())
 				select(adrs);
 		}

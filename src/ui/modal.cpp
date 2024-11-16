@@ -152,7 +152,7 @@ CommentEditModal::CommentEditModal(UI& ui, adrs_t adrs)
 
 	if (comment)
 	{
-		snprintf(comment_buffer_, 1024, "%s", comment->text().c_str());
+		snprintf(comment_buffer_, 1024, "%s", comment->comment_text().text().c_str());
 	}
 }
 
@@ -170,5 +170,37 @@ void CommentEditModal::do_draw_content()
 bool CommentEditModal::apply()
 {
 	ui_.replace_comment(adrs_, comment_buffer_);
+	return true;
+}
+
+
+
+
+IOEditModal::IOEditModal(UI& ui, uint8_t io_adrs ) : Modal(ui)
+{
+	title_ = "Edit I/O port";
+	io_adrs_ = io_adrs;
+	strncpy( name_buffer_, ui.explorer().annotations().io_list().get_port(io_adrs).name().c_str(), 128 );
+	strncpy( comment_buffer_, ui.explorer().annotations().io_list().get_port(io_adrs).comment().c_str(), 16384 );
+}
+
+void IOEditModal::do_draw_content()
+{
+	// Add a text field for inputting a name
+	ImGui::Text("Name:");
+	ImGui::SameLine();
+	if (first_open_)
+		ImGui::SetKeyboardFocusHere();
+	ImGui::InputText("##name", name_buffer_, IM_ARRAYSIZE(name_buffer_));
+
+	// Add a text field for inputting a description
+	ImGui::Text("Description:");
+	ImGui::SameLine();
+	ImGui::InputTextMultiline("##description", comment_buffer_, IM_ARRAYSIZE(comment_buffer_), ImVec2(400, 100));
+}
+
+bool IOEditModal::apply()
+{
+	ui_.replace_io(io_adrs_, name_buffer_, comment_buffer_);
 	return true;
 }

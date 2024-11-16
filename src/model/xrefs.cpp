@@ -4,12 +4,22 @@
 #include "cpuinfo.h"
 #include "rom.h"
 
+#include <algorithm>
+
 XRefs::XRefs(const Rom& rom, const CPUInfo& cpu_info, const Annotations &annotations )
     : rom_{ rom }
     , cpu_info_{ cpu_info }
     , annotations_{ annotations }
 // annotations_{ annotations }
 {
+
+    std::array<XRefIOStats, 256> io_stats;
+    //  Init port numbers
+    for (int i = 0; i < 256; i++)
+    {
+        io_stats[i].port = i;
+    }
+
     for (adrs_t adrs = rom.load_adrs(); adrs <= rom.last_adrs(); adrs++)
     {
         auto refs = references_from(adrs);
@@ -17,6 +27,36 @@ XRefs::XRefs(const Rom& rom, const CPUInfo& cpu_info, const Annotations &annotat
         {
             references_.push_back(ref);
         }
+
+        //  Look if instruction is a read or write to an I/O port
+        if (rom.contains(adrs + 1))
+        {
+            auto& i = cpu_info_.instruction(rom.get(adrs));
+            if (i.is_io_read() || i.is_io_write())
+            {
+                XRefIO ref;
+                ref.adrs = adrs;
+                ref.is_read = i.is_io_read();
+                ref.port = rom.get(adrs + 1);
+                io_references_.push_back(ref);
+
+                if (ref.is_read)
+                {
+                    io_stats[ref.port].reads++;
+                }
+                else
+                {
+                    io_stats[ref.port].writes++;
+                }
+            }
+        }      
+    }
+
+    //  Builds io_stats_
+    for (int i = 0; i < 256; i++)
+    {
+        if (io_stats[i].reads || io_stats[i].writes)
+            io_stats_.push_back(io_stats[i]);
     }
 }
 

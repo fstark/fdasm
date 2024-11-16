@@ -10,7 +10,9 @@
 
 class Label;
 class Comment;
+
 #include "comment.h"
+#include "ioport.h"
 
 //	Annotations are stuff about the ROM that are managed by the user
 //	Annotations are used to create the right disassembly
@@ -69,6 +71,12 @@ public:
 
 	void replace_comment( adrs_t line, const std::string &comment );
 
+	const IOList &io_list() const { return io_list_; }
+	IOList &io_list() { return io_list_; }
+
+	void replace_io( uint8_t io_adrs, const std::string &name, const std::string &description );
+
+
 private:
 		//	The list of labels
 	std::vector<Label> all_labels_;
@@ -82,9 +90,13 @@ private:
 		//	The adrs <=> comments
 	std::vector<const Comment*> comments_;
 
-
 		//	The region of each byte
 	std::vector<RegionType> regions_;
+
+		//	The set of IOs
+	IOList io_list_;
+
+		//	IOs changed
 
 	void set_region(adrs_t start, adrs_t end, Annotations::RegionType type)
 	{

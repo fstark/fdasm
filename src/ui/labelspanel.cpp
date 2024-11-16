@@ -121,7 +121,7 @@ void LabelsPanel::do_draw()
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			bool is_hovering_line = is_hover_line();	//	True if mouse over current line
+//			bool is_hovering_line = is_hover_line();	//	True if mouse over current line
 
             auto& label = *labels_[i];
             adrs_t adrs = label.adrs();
@@ -131,13 +131,13 @@ void LabelsPanel::do_draw()
             ImGui::Text("");
             same_line_at_column( 0 );
 
-		    std::string button_id = ICON_FA_CIRCLE_XMARK"##" + name;
-			if (is_hovering_line)
-            {
-                if (small_icon_button(button_id.c_str()))
-					ui_.remove_label_if_exists(label.name());
-            }
-            else
+		    // std::string button_id = ICON_FA_CIRCLE_XMARK"##" + name;
+			// if (is_hovering_line)
+            // {
+            //     if (small_icon_button(button_id.c_str()))
+			// 		ui_.remove_label_if_exists(label.name());
+            // }
+            // else
                 ImGui::Text("");
 
             same_line_at_column( 3 );
@@ -170,7 +170,8 @@ void LabelsPanel::do_draw()
             if (comment)
             {
                 same_line_at_column( 28 );
-                ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "; %s", comment->text().c_str());
+                // ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), "; %s", comment->text().c_str());
+                ui_.draw_comment( adrs, comment->comment_text() );
             }
             else
             {

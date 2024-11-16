@@ -12,8 +12,10 @@ class AdrsInspectorPanel;
 class CodeInspectorPanel;
 class DataInspectorPanel;
 class ByteInspectorPanel;
+class IOInspectorPanel;
 
 class LabelsPanel;
+class IOsPanel;
 
 #include "uicommon.h"
 #include "preferences.h"
@@ -47,11 +49,24 @@ public:
 		(void)explorer_.annotations().write_annotations();
 	}
 
+
+	void replace_io( uint8_t io_adrs, const std::string &name, const std::string &description )
+	{
+		explorer_.annotations().replace_io( io_adrs, name, description );
+		(void)explorer_.annotations().write_annotations();
+	}
+
 	bool hoover_ = false;
 	adrs_t hoover_adrs_ = 0;
 
+	bool hoover_io_ = false;
+	uint8_t hoover_io_adrs_ = 0;
+
 	bool new_hoover_ = false;
 	adrs_t new_hoover_adrs_ = 0;
+
+	bool new_hoover_io_ = false;
+	uint8_t new_hoover_io_adrs_ = 0;
 
 	//  Hoover mecanism
 	void hoover(adrs_t adrs, int , bool flag)
@@ -63,9 +78,24 @@ public:
 		}
 	}
 
+	//  Hoover mecanism
+	void hoover_io(uint8_t io_adrs, int , bool flag)
+	{
+		if (flag)
+		{
+			new_hoover_io_ = true;
+			new_hoover_io_adrs_ = io_adrs;
+		}
+	}
+
 	bool is_hoover(adrs_t adrs) const
 	{
 		return hoover_ && adrs==hoover_adrs_;
+	}
+
+	bool is_hoover_io(uint8_t io_adrs) const
+	{
+		return hoover_io_ && io_adrs==hoover_io_adrs_;
 	}
 
 	void hoover_start_frame()
@@ -73,6 +103,10 @@ public:
 		hoover_ = new_hoover_;
 		hoover_adrs_ = new_hoover_adrs_;
 		new_hoover_ = false;
+
+		hoover_io_ = new_hoover_io_;
+		hoover_io_adrs_ = new_hoover_io_adrs_;
+		new_hoover_io_ = false;
 	}
 
 	typedef enum
@@ -97,14 +131,22 @@ public:
 	void DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions interactions);
 	void DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions interactions, const ImVec4& color);
 
-	// void DrawAddress( adrs_t adrs );
-	void DrawAddress(const Line& l);
+	void DrawIOPort(uint8_t adrs, eDisplayStyle display_style );
+
+	// void DrawAddress(const Line& l);
 
 	void DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions interactions, adrs_t adrs);
+
+	// Draw a comment
+	void draw_comment( adrs_t from_adrs, const CommentText &comment );
+
+	//	Draw an (address-based) context menu
+	void show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const void *id=nullptr );
 
 	void add_panel(std::unique_ptr<Panel> panel);
 	void update_adrs_panel( adrs_t adrs );
 	void update_byte_panel( uint8_t b );
+	void update_io_panel( uint8_t b );
 	void update_code_panel( adrs_t adrs );
 	void update_data_panel( adrs_t adrs );
 	void new_disassembly_panel( adrs_t adrs );
@@ -159,6 +201,9 @@ protected:
 	std::unique_ptr<AdrsInspectorPanel> adrs_inspector_;
 	std::unique_ptr<DataInspectorPanel> data_inspector_panel_;
 	std::unique_ptr<LabelsPanel> labels_panel_;
+	std::unique_ptr<IOsPanel> ios_panel_;
+
+	std::unique_ptr<IOInspectorPanel> io_inspector_panel_;
 
 	std::vector<std::unique_ptr<Panel>> panels_;
 

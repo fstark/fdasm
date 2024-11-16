@@ -16,9 +16,13 @@ int main(int argc, char* argv[])
 	// const char *fda_file = "M100rom.fda";
 	// const char *asm_file = "M100rom.asm";
 
-	const char *rom_file = "vdp-80.rom";
-	const char *fda_file = "vdp-80.fda";
-	const char *asm_file = "vdp-80.asm";
+	// const char *rom_file = "vdp-80.rom";
+	// const char *fda_file = "vdp-80.fda";
+	// const char *asm_file = "vdp-80.asm";
+
+	const char *rom_file = "../portal/roms/portal.bin";
+	const char *fda_file = "../portal/roms/portal.fda";
+	const char *asm_file = "../portal/roms/portal.asm";
 
 	if (argc == 3)
 	{
@@ -27,8 +31,9 @@ int main(int argc, char* argv[])
 		asm_file = argv[3];
 	}
 
-	Explorer explorer("8085.txt", rom_file, 0xd800, fda_file, asm_file);
+	// Explorer explorer("8085.txt", rom_file, 0xd800, fda_file, asm_file);
 	// Explorer explorer("8085.txt", rom_file, 0x0, fda_file, asm_file);
+	Explorer explorer("8085.txt", rom_file, 0xF7E9, fda_file, asm_file);
 
 	// Annotations rom_contents( fda_file );
 	// Disassembler *disassembler = load_rom( rom_file, rom_contents );

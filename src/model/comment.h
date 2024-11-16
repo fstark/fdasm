@@ -1,7 +1,28 @@
 #pragma once
 
 #include "common.h"
+
 #include <string>
+#include <vector>
+
+//	A text comment
+//	Contains the "chunked" version, for hyperlinking
+class CommentText
+{
+public:
+	CommentText( const std::string &text );
+
+	const std::string& text() const { return text_; }
+	const std::vector<std::string>& chunks() const { return chunks_; }
+	const std::vector<std::string>& first_chunks() const { return first_chunks_; }
+
+protected:
+	void chunkify();
+
+	std::string text_;
+	std::vector<std::string> chunks_;
+	std::vector<std::string> first_chunks_;
+};
 
 //  This holds a comment for a given address
 //  User comments are created by the user
@@ -9,19 +30,15 @@
 class Comment
 {
 public:
-	Comment(adrs_t adrs, const std::string& text, bool user)
-	    : adrs_{ adrs }
-	    , text_{ text }
-	    , user_{ user }
-	{
-	}
+	Comment(adrs_t adrs, const std::string& text, bool user);
 
 	adrs_t adrs() const { return adrs_; }
-	const std::string& text() const { return text_; }
+	const CommentText &comment_text() const { return comment_text_; }
 	bool user() const { return user_; }
 
-private:
+protected:
 	adrs_t adrs_;
-	std::string text_;
 	bool user_;
+
+	CommentText comment_text_;
 };

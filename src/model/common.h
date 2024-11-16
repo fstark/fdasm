@@ -1,3 +1,9 @@
+#pragma once
+
 #include <cstdint>
 
-typedef uint16_t adrs_t;
+//  Adresses are 0000-FFFF
+//  We use an int to have an invalid value
+typedef int adrs_t;
+
+const adrs_t INVALID_ADRS = -1;

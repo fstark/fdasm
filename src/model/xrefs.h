@@ -31,6 +31,23 @@ public:
 	const Instruction* instruction; //  The instruction that references this address
 };
 
+struct XRefIO
+{
+	adrs_t adrs;
+	bool is_read;
+	uint8_t port;
+};
+
+
+struct XRefIOStats
+{
+	XRefIOStats() : port(0), reads(0), writes(0) {}
+
+	uint8_t port;
+	uint32_t reads;
+	uint32_t writes;
+};
+
 class XRefs
 {
 
@@ -41,12 +58,18 @@ public:
 
 	const std::vector<XRef>& xrefs() const;
 
+	const std::vector<XRefIO>& get_io_refs() const { return io_references_; }
+
+	const std::vector<XRefIOStats>& get_io_stats() const { return io_stats_; }
+
 private:
 	const Rom& rom_;      //  The ROM we cross reference
 	const CPUInfo& cpu_info_; //  Information about instructions and their relation to addresses
 	const Annotations &annotations_;      //  The annotations helps to identify regions of the ROM
 
 	std::vector<XRef> references_;
+	std::vector<XRefIO> io_references_;
+	std::vector<XRefIOStats> io_stats_;
 
 	//  True if the address has an instruction
 	//  (we do not want data ref from the next byte)

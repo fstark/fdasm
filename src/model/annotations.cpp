@@ -33,45 +33,17 @@ int Annotations::read_annotations(const std::string& filename)
 		return -1;
 	}
 
+	io_list_ = {};
+
 	char line[256];
 	while (fgets(line, sizeof(line), file))
 	{
 		unsigned int adrs;
 		char type[16];
-		char label[16];
-		char lbl_comment[16384];
-		*label = 0;
-		// fprintf( stderr, "> %s\n", line );
-		int n;
-		if ((n = sscanf(line, "%X %s %s \"%[^\"]\"", &adrs, type, label, lbl_comment)))
+		char name[16];
+		char comment[16384];
+		if (sscanf(line, "LABEL %04XH %s %s", &adrs, type, name )==3)
 		{
-			if (n>=2 && !strcmp(type, "COMMENT"))
-			{
-				//	Read the comment (ADRS COMM "comment")
-				char comment[256];	//	#### Overflow
-				n = sscanf(line, "%X COMMENT \"%[^\"]\"", &adrs, comment);
-				if (n!=2)
-				{
-					fprintf( stderr, "Error reading comment line: [%s]\n", line );
-					continue;
-				}
-
-				all_comments_.emplace_back( adrs, comment, true );
-				continue;
-			}
-
-			if (n==3)
-			{
-				lbl_comment[0] = 0;
-				n = 4;
-			}
-
-			if (n!=4)
-			{
-				fprintf( stderr, "Error reading region line: [%s]\n", line );
-				continue;
-			}
-			// fprintf( stderr, "     %x %x %s\n", start, end, type );
 			Annotations::RegionType RegionType = Annotations::kCODE;
 			if (strcmp(type, "CODE") == 0)
 				RegionType = Annotations::kCODE;
@@ -86,7 +58,39 @@ int Annotations::read_annotations(const std::string& filename)
 			else if (strcmp(type, "STRF2") == 0)
 				RegionType = Annotations::kSTRF2;
 
-			all_labels_.push_back({ static_cast<adrs_t>(adrs), label, RegionType, unescape(lbl_comment) });
+			all_labels_.push_back({ static_cast<adrs_t>(adrs), name, RegionType });
+		}
+
+		if (sscanf(line, "COMMENT LABEL %s \"%[^\"]\"", name, comment )==2)
+		{
+			//	Find the last 
+			if (all_labels_.size()>0)
+			{
+				if (all_labels_.back().name()==name)
+					all_labels_.back().set_comment(unescape(comment));
+				else
+					for (Label l:all_labels_)
+						if (l.name()==name)
+						{
+							l.set_comment( unescape(comment) );
+							break;
+						}
+			}
+		}
+
+		if (sscanf(line, "IO %02XH %s \"%[^\"]\"", &adrs, name, comment )==3)
+		{
+			auto &port = io_list_.get_port( adrs );
+			port.set_name( name );
+			port.set_comment( unescape(comment) );
+		}
+
+		if (sscanf(line, "COMMENT LINE %04XH \"%[^\"]\"", &adrs, comment )==2)
+		{
+			std::clog << "COMMENT LINE " << std::hex << adrs << " " << comment << std::endl;
+
+			all_comments_.emplace_back( adrs, unescape(comment), true );
+			continue;
 		}
 	}
 
@@ -94,6 +98,7 @@ int Annotations::read_annotations(const std::string& filename)
 
 	comments_changed();
 	labels_changed();
+	// ios_changed();
 
 	return 0;
 }
@@ -120,16 +125,27 @@ int Annotations::write_annotations(const std::string& filename) const
 			case kSTRF2: type = "STRF2"; break;
 			case kCOUNT: type = "ERROR"; break;
 		}
-		if (label.comment().empty())
-			fprintf(file, "%04X %s %s\n", label.start_adrs(), type.c_str(), label.name().c_str());
-		else
-			fprintf(file, "%04X %s %s \"%s\"\n", label.start_adrs(), type.c_str(), label.name().c_str(), escape(label.comment()).c_str());
+		fprintf(file, "LABEL %04XH %s %s\n", label.start_adrs(), type.c_str(), label.name().c_str());
+		if (!label.comment().empty())
+			fprintf(file, "COMMENT LABEL %s \"%s\"\n", label.name().c_str(), escape(label.comment()).c_str());
 	}
 
 	//	Write the comments
 	for (const auto& comment : all_comments_)
 	{
-		fprintf(file, "%04X COMMENT \"%s\"\n", comment.adrs(), comment.text().c_str());
+		fprintf(file, "COMMENT LINE %04XH \"%s\"\n", comment.adrs(), escape(comment.comment_text().text()).c_str());
+	}
+
+	//	Write the I/O ports
+	for (int ix=0;ix!=256;ix++)
+	{
+		auto &port = io_list().get_port(ix);
+		if (!port.name().empty() || !port.comment().empty())
+			fprintf(file, "IO %02XH %s \"%s\"\n",
+				ix,
+				port.name().c_str(),
+				escape(port.comment()).c_str()
+			);
 	}
 
 	fclose(file);
@@ -196,6 +212,16 @@ void Annotations::comments_changed()
 		comments_[comment.adrs()] = &comment;
 	}
 }
+
+void Annotations::replace_io( uint8_t io_adrs, const std::string &name, const std::string &description )
+{
+	auto &port = io_list_.get_port( io_adrs );
+	port.set_name( name );
+	port.set_comment( description );
+
+	// ios_changed();
+}
+
 
 size_t Annotations::label_count() const { return all_labels_.size(); }
 

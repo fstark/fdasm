@@ -1,6 +1,6 @@
 #include "preferences.h"
 
-ImVec4 initial_colors[] = {
+ImVec4 initial_colors[Preferences::kCount] = {
 { 0.955882, 0.281142, 0.281142, 1.000000 },
 { 0.857094, 0.956863, 0.278431, 1.000000 },
 { 0.956863, 0.577739, 0.278431, 1.000000 },
@@ -22,6 +22,7 @@ ImVec4 initial_colors[] = {
 { 0.000000, 0.000000, 0.000000, 1.000000 },
 { 0.822075, 0.995098, 0.014634, 1.000000 },
 { 0.017445, 0.017445, 0.593137, 1.000000 },
+{ 1.000000, 0.000000, 0.000000, 1.000000 }
 };
 
 Preferences::Preferences( UI& ui )
@@ -32,7 +33,7 @@ Preferences::Preferences( UI& ui )
     load();
 }
 
-const char *adrs_color_names[] = {
+const char *adrs_color_names[Preferences::kCount] = {
 	"Code out of ROM, in hex",
 	"Data out of ROM, in hex",
 	"Code in ROM, in hex",
@@ -54,7 +55,8 @@ const char *adrs_color_names[] = {
     "Labels",
     "Labels (when selected)",
     "Strings in disassembly",
-    "Selected line in disassembly"
+    "Selected line in disassembly",
+    "I/O port"
 };
 
 
@@ -104,7 +106,7 @@ void Preferences::do_draw()
 
 	if (ImGui::CollapsingHeader("Other colors"))
 	{
-		for (int i=12; i!=21; i++)
+		for (int i=12; i!=kCount; i++)
 		{
             if (i==kOperandColor)
                 continue;

@@ -26,6 +26,9 @@ public:
 	bool has_d16() const { return has_d16_; }
 	bool has_adrs() const { return has_adrs_; }
 
+	bool is_io_read() const { return opcode_ == 0xdb; }
+	bool is_io_write() const { return opcode_ == 0xd3; }
+
 	friend class CPUInfo;
 
 private:

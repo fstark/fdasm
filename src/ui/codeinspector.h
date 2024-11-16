@@ -15,7 +15,7 @@ public:
 	void scroll_to_adrs(int adrs);
 
 	//	Preview 8 lines of code from adrs
-	void code_preview( adrs_t adrs );
+	void code_preview( adrs_t adrs, int count = 8 );
 
 protected:
 	void data_changed() override;
@@ -32,6 +32,7 @@ protected:
 	void paint_selection_if_needed( const Line &line );
 	void draw_line_adrs( const Line &line );
 	void draw_line_bytes( const Line &line );
+
 
 	//	Line visitor
 	void will_visit(const Line& line) override;

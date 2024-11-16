@@ -258,9 +258,15 @@ LD9A0:
 	RET
 CMD_J:
 	POP D
+;
+; 'C': Jump to an address
+;
 CMD_C:
 	CALL 0DEE0H
 	PCHL
+;
+; 'K': Jump to an address with standard memory map
+;
 CMD_K:
 	CALL 0DEE0H
 	MVI A,0C0H

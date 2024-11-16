@@ -48,3 +48,16 @@ private:
 	adrs_t adrs_;
 	char comment_buffer_[1024];
 };
+
+class IOEditModal : public Modal
+{
+public:
+	IOEditModal(UI& ui, uint8_t io_adrs );
+	void do_draw_content() override;
+	bool apply() override;
+
+private:
+	uint8_t io_adrs_;
+	char name_buffer_[128];
+	char comment_buffer_[16384];
+};

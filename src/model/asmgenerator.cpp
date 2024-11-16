@@ -33,7 +33,7 @@ void AsmGenerator::end_line( const Line &line )
 	const Comment *comment = annotations_->comment_from_adrs( adrs );
     if (!line.is_empty() && comment)
     {
-        fprintf(file_, "\t; %s\n", comment->text().c_str() );
+        fprintf(file_, "\t; %s\n", comment->comment_text().text().c_str() );
     }
     else
     {
@@ -156,7 +156,7 @@ void AsmGenerator::visit(const LabelLine& line)
 
 void AsmGenerator::visit(const CommentLine& line)
 {
-    fprintf(file_, "; %s", line.comment().c_str() );
+    fprintf(file_, "; %s", line.comment().text().c_str() );
     end_line( line );
 }
 
