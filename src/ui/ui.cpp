@@ -260,11 +260,20 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 {
 	char buffer[256];
 
+	//	Find number of call to this address
+	size_t count = explorer().xrefs().xrefs_to_count(adrs);
+	int count_char = ' ';
+
+	if (count>0 && count<10)
+		count_char = '0' + count;
+	else if (count>=10)
+		count_char = '*';
+
 	//  Default is hexadecimal
 	if (display_style&kDisplayStyleASM)
 		snprintf(buffer, 256, "%04XH", adrs);
 	else
-		snprintf(buffer, 256, "%04x", adrs);
+		snprintf(buffer, 256, "%04x %c ", adrs, count_char);
 
 	switch (display_style)
 	{
@@ -305,7 +314,13 @@ void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* 
 		DrawSelectRect(buffer);
 	}
 
+	// ImGui::PushID(adrs);
+
 	ImGui::TextColored(address_color(adrs), "%s", buffer); // Display address
+
+	// ImGui::Text("LOL"); // Display address
+
+	// ImGui::PopID();
 }
 
 void UI::DrawAddress(adrs_t adrs, eDisplayStyle display_style, eInteractions /* interactions */ )

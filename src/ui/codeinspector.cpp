@@ -8,7 +8,7 @@
 const int LABEL_COMMENT_START_COLUMN = 2;
 
 const int ADRS_START_COLUMN = 0;
-const int BYTES_START_COLUMN = 6;
+const int BYTES_START_COLUMN = 7;
 // const int DELETE_LABEL_START_COLUMN = 20;
 const int LABEL_START_COLUMN = 23;
 const int INSTRUCTION_START_COLUMN = 32;

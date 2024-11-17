@@ -71,6 +71,12 @@ const std::vector<XRef> XRefs::xrefs_to(adrs_t adrs) const
     return result;
 }
 
+size_t XRefs::xrefs_to_count(adrs_t adrs) const
+{
+    return xrefs_to(adrs).size();    
+}
+
+
 const std::vector<XRef>& XRefs::xrefs() const
 {
     return references_;

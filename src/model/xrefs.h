@@ -56,6 +56,8 @@ public:
 
 	const std::vector<XRef> xrefs_to(adrs_t adrs) const;
 
+	size_t xrefs_to_count(adrs_t adrs) const;
+
 	const std::vector<XRef>& xrefs() const;
 
 	const std::vector<XRefIO>& get_io_refs() const { return io_references_; }
