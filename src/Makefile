@@ -1,13 +1,30 @@
+
+# Detect the operating system (sad)
+UNAME_S := $(shell uname -s)
+
 # Define the object directory
 OBJDIR = ../obj
 
 # Define the compiler and flags
 CXX = g++
-CXXFLAGS = -g -Wall -Wextra -Werror -pedantic -Wno-switch -I/usr/include/SDL2 -Wno-format-zero-length -Wno-format-truncation
+CXXFLAGS = -g -Wall -Wextra -Werror -pedantic -Wno-switch -I/usr/include/SDL2 
+LDFLAGS = -std=c++2a -lSDL2 -lSDL2_image
+
+# Linux
+ifeq ($(UNAME_S), Linux)
+	CXXFLAGS += -Wno-format-zero-length -Wno-format-truncation
+	LDFLAGS += -lGL
+endif
+
+# Mac
+# Update LDFLAGS for macOS (Darwin)
+ifeq ($(UNAME_S), Darwin)
+    LDFLAGS += -framework OpenGL
+endif
+
+
 # CXXFLAGS = -g -Wall
 CXXFLAGS += -std=c++2a `sdl2-config --cflags` -I external/imgui -Iexternal/imgui/backends -I. -Iui -Imodel
-# LDFLAGS = -std=c++2a -lSDL2 -lSDL2_image -framework OpenGL
-LDFLAGS = -std=c++2a -lSDL2 -lSDL2_image -lGL
 CLANGTIDY = /usr/local/opt/llvm/bin/clang-tidy
 
 # List of source directories
