@@ -115,9 +115,9 @@ This view allows you to choose the colors for the syntax highlighting and other 
 # BUGS
 
 
-- [Adrs] Look at BUFFER: line on each others
 - [Code][Data] Cannot create label outside of begining of line
 
+- [Adrs] Look at BUFFER: line on each others [DONE]
 - [Data] Sync of the "Data Window" with the disassembly view is not working properly (click on data adrs) [DONE]
 - [Code] Disassembly should not attempt to scroll to address out of ROM (may display it differently to start with) [DONE]
 - [Adrs] CMD_F (for instance) does not appear in the window (but should as it is referenced from df54) [DONE]

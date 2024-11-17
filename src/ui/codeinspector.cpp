@@ -175,7 +175,6 @@ void CodeInspectorPanel::did_visit(const Line& line)
 	const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs());
 	if (comment)
 	{
-
 		ui_.draw_comment( line.start_adrs(), comment->comment_text() );
 	}
 	else

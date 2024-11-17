@@ -138,7 +138,10 @@ public:
 	void DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions interactions, adrs_t adrs);
 
 	// Draw a comment
-	void draw_comment( adrs_t from_adrs, const CommentText &comment );
+	void draw_comment( const CommentText &comment, bool semicolon = true );
+
+	//	Draw a comment for code at a specific address
+	void draw_comment( adrs_t from_adrs, const CommentText &comment, bool semicolon = true );
 
 	//	Draw an (address-based) context menu
 	void show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const void *id=nullptr );

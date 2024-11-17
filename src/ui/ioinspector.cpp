@@ -36,10 +36,11 @@ void IOInspectorPanel::do_draw_data()
         ui_.add_panel(std::make_unique<IOEditModal>(ui_, data()));
     }
 
-    if (!port.comment().empty())
+    if (!port.comments().empty())
     {
         ImGui::Separator();
-        ImGui::Text("%s", port.comment().c_str());
+        for (auto &comment:port.comments())
+            ui_.draw_comment(comment,false);
     }
 
     for (auto &x:ui_.explorer().xrefs().get_io_refs())

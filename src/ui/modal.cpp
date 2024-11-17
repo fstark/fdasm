@@ -181,7 +181,7 @@ IOEditModal::IOEditModal(UI& ui, uint8_t io_adrs ) : Modal(ui)
 	title_ = "Edit I/O port";
 	io_adrs_ = io_adrs;
 	strncpy( name_buffer_, ui.explorer().annotations().io_list().get_port(io_adrs).name().c_str(), 128 );
-	strncpy( comment_buffer_, ui.explorer().annotations().io_list().get_port(io_adrs).comment().c_str(), 16384 );
+	strncpy( comment_buffer_, ui.explorer().annotations().io_list().get_port(io_adrs).full_comments().c_str(), 16384 );
 }
 
 void IOEditModal::do_draw_content()

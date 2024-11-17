@@ -141,11 +141,12 @@ int Annotations::write_annotations(const std::string& filename) const
 	for (int ix=0;ix!=256;ix++)
 	{
 		auto &port = io_list().get_port(ix);
-		if (!port.name().empty() || !port.comment().empty())
+		//	Only write if there is a name or a comment
+		if (!port.name().empty() || !port.full_comments().empty())
 			fprintf(file, "IO %02XH %s \"%s\"\n",
 				ix,
 				port.name().c_str(),
-				escape(port.comment()).c_str()
+				escape(port.full_comments()).c_str()
 			);
 	}
 

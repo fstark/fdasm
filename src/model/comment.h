@@ -15,6 +15,7 @@ public:
 	const std::string& text() const { return text_; }
 	const std::vector<std::string>& chunks() const { return chunks_; }
 	const std::vector<std::string>& first_chunks() const { return first_chunks_; }
+	bool empty() const { return text_.empty(); }
 
 protected:
 	void chunkify();

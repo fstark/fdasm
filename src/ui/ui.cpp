@@ -377,14 +377,22 @@ void UI::DrawByte(uint8_t byte, eDisplayStyle display_style, eInteractions /* in
 	ImGui::SameLine();
 }
 
+void UI::draw_comment( const CommentText &comment, bool semicolon )
+{
+	draw_comment( INVALID_ADRS, comment, semicolon );
+}
 
-void UI::draw_comment( adrs_t from_adrs, const CommentText &comment )
+
+void UI::draw_comment( adrs_t from_adrs, const CommentText &comment, bool semicolon )
 {
 	// ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), ";; %s", comment->text().c_str());
 
 	const std::vector<std::string> &chunks = comment.chunks();
 
-	ImGui::TextColored(preferences().get_color(Preferences::kCommentColor), "; ");
+	if (semicolon)
+		ImGui::TextColored(preferences().get_color(Preferences::kCommentColor), "; ");
+	else
+		ImGui::Text("");
 
 	bool even = true;
 	int chunk_id = 0;
@@ -436,11 +444,12 @@ void UI::show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const voi
 	else
 		snprintf(buffer, 256, "##%p-%d", id, tag);
 
-if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) // Check for left-click
-{
-    ImGui::OpenPopup(buffer); // Open the popup
-}
-	if (ImGui::BeginPopup(buffer))
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) // Check for left-click
+	{
+	    ImGui::OpenPopup(buffer); // Open the popup
+	}
+
+	if (to_adrs!=INVALID_ADRS && ImGui::BeginPopup(buffer))
 	{
 		if (from_adrs!=to_adrs && ImGui::MenuItem("Go to"))
 		{
@@ -478,7 +487,7 @@ if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) // Check for left-click
 			}
 		}
 
-		if (ImGui::MenuItem("Edit line comment..."))
+		if (from_adrs!=INVALID_ADRS && ImGui::MenuItem("Edit line comment..."))
 				add_panel(std::make_unique<CommentEditModal>(*this, from_adrs));
 
 		if (from_adrs!=to_adrs && ImGui::MenuItem("Edit target comment..."))

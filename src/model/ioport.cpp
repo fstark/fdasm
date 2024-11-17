@@ -2,17 +2,24 @@
 
 #include <iostream>
 
-const std::string IOPort::short_comment() const
+void IOPort::set_comment( const std::string &comment )
 {
-    //  We return the first line of the comment
-    auto chunks = comment_.chunks();
-    
-    if (chunks.size()==0)
-        return "";
+    full_comments_ = comment;
 
-    std::cout << "> " << chunks[0] << "\n";
-
-    return chunks[0];
+    //  We create a comment text for each line in comment
+    comments_.clear();
+    size_t pos = 0;
+    while (pos<comment.size())
+    {
+        size_t eol = comment.find("\n", pos);
+        if (eol==std::string::npos)
+        {
+            comments_.emplace_back( comment.substr(pos) );
+            break;
+        }
+        comments_.emplace_back( comment.substr(pos, eol-pos) );
+        pos = eol+1;
+    }
 }
 
 IOPort &IOList::get_port( uint8_t port ) const

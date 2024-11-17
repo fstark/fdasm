@@ -54,9 +54,14 @@ void IOsPanel::do_draw()
             ImGui::Text(" -");
             ImGui::SameLine();
         }
-        if (!port.comment().empty())
+        if (!port.comments().empty())
         {
-            ImGui::TextColored( ui_.preferences().get_color(Preferences::kCommentColor), "   ; %s", port.short_comment().c_str());
+            for (auto &comment:port.comments())
+            {
+                ImGui::Text("");
+                ImGui::SameLine(24*char_width_);
+                ui_.draw_comment(comment,false);
+            }
             ImGui::SameLine();
         }
         ImGui::Text("");
