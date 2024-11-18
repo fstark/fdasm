@@ -48,7 +48,9 @@ public:
 	//  Label management (#### move to separate class)
 	//  Label count
 	size_t label_count() const;
+	const Label* label_from_adrs(adrs_t adrs) const;
 	Label* label_from_adrs(adrs_t adrs);
+	const Label* label_before_adrs(adrs_t adrs, int limit) const;
 	Label* label_before_adrs(adrs_t adrs, int limit);
 	const std::vector<Label>& get_labels() const { return all_labels_; }
 	Label* label_from_name(const std::string& name); // unsure if good idea. maybe never let Labels leak and treat only names

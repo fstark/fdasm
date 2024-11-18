@@ -18,6 +18,8 @@ public:
 
     protected:
 
+        const char *hex( int n, bool symbol = false );
+
         void visit(const OrgDirectiveLine& line);
         void visit(const DBDirectiveLine& line);
         void visit(const DWDirectiveLine& line);

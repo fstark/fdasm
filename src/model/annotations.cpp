@@ -265,11 +265,37 @@ Annotations::RegionType Annotations::get_region_type(adrs_t adrs) const
 	return kCODE;
 }
 
+// #### Beurk
 Label* Annotations::label_from_adrs(adrs_t adrs)
 {
 	auto it = labels_map_.find(adrs);
 	if (it != labels_map_.end())
 		return &it->second;
+	return nullptr;
+}
+
+const Label* Annotations::label_from_adrs(adrs_t adrs) const
+{
+	auto it = labels_map_.find(adrs);
+	if (it != labels_map_.end())
+		return &it->second;
+	return nullptr;
+}
+
+const Label* Annotations::label_before_adrs(adrs_t adrs, int limit) const
+{
+	// #### Must use a find!
+	for (auto it = all_labels_.rbegin(); it != all_labels_.rend(); it++)
+	{
+		if (it->start_adrs() <= adrs)
+		{
+			if (adrs - it->start_adrs() <= limit)
+				return &(*it);
+			else
+				return nullptr;
+		}
+	}
+
 	return nullptr;
 }
 

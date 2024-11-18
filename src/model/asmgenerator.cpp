@@ -3,9 +3,29 @@
 #include "line.h"
 #include "cpuinfo.h"
 
-const char *hex( int n )
+const char *AsmGenerator::hex( int n, bool symbol )
 {
     static char buf[64];
+
+    if (symbol && n>=256)
+    {
+        auto label = annotations_->label_from_adrs(n);
+        if (label)
+        {
+            snprintf( buf, 64, "%s", label->name().c_str() );
+            return buf;
+        }
+    }
+
+    if (symbol && n>=256)
+    {
+        auto label = annotations_->label_before_adrs(n,5);
+        if (label)
+        {
+            snprintf( buf, 64, "%s+%d", label->name().c_str(), n-label->start_adrs() );
+            return buf;
+        }
+    }
 
     if (n<10)
         snprintf( buf, 64, "%d", n );
@@ -51,6 +71,13 @@ void AsmGenerator::generate( const std::vector<Line *> &lines, const Annotations
     if (!file_)
         throw std::runtime_error("Failed to open file: " + filename_);
 
+    //  Generates all labels
+    for (auto &label:annotations_->get_labels())
+    {
+        fprintf( file_, "%s:   ; %s\n", label.name().c_str(), hex(label.start_adrs()) );
+    }
+
+
     for (auto &line: lines)
     {
         line->visit(*this);
@@ -74,7 +101,7 @@ void AsmGenerator::visit(const DBDirectiveLine& line)
     const char *sep = "";
     for (auto b:line.data())
     {
-        fprintf( file_, "%s%s", sep, hex(b) );
+        fprintf( file_, "%s%s", sep, hex(b,true) );
         sep = ",";
     }
     end_line( line );
@@ -139,18 +166,18 @@ void AsmGenerator::visit(const InstructionLine& line)
     }
     if (inst.has_d16())
     {
-        fprintf(file_, "%s", hex(line.word()));
+        fprintf(file_, "%s", hex(line.word(),true));
     }
     if (inst.has_adrs())
     {
-        fprintf(file_, "%s", hex(line.word()));
+        fprintf(file_, "%s", hex(line.word(),true));
     }
     end_line( line );
 }
 
 void AsmGenerator::visit(const LabelLine& line)
 {
-    fprintf(file_, "%s:", line.label().name().c_str() );
+    fprintf(file_, "%s:   ; %s", line.label().name().c_str(), hex(line.start_adrs()) );
     end_line( line );
 }
 
