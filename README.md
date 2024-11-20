@@ -116,6 +116,7 @@ This view allows you to choose the colors for the syntax highlighting and other 
 
 
 - [Code][Data] Cannot create label outside of begining of line
+- [Disass] ~/Development/fdasm/fdasm --disass portal.bin => disassembles an extra line
 
 - [Adrs] Look at BUFFER: line on each others [DONE]
 - [Data] Sync of the "Data Window" with the disassembly view is not working properly (click on data adrs) [DONE]

@@ -138,6 +138,7 @@ void UI::inspect_adrs(adrs_t adrs, bool /* hoover */)
 	// }
 }
 
+#include "resmanager.h"
 
 void UI::init_imgui()
 {
@@ -186,18 +187,18 @@ void UI::init_imgui()
 	ImGui::CreateContext();
 
 	// Set the font size
-    //  #### TODO: Make this configurable/smarter
-	io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
+	// io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
+	io.Fonts->AddFontFromFileTTF(ResourceManager::default_manager().path_for_resource("ProggyClean.ttf").c_str(), 13.0f);
+
 	ImFontConfig config;
 	config.MergeMode = true;
 	config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
 	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	io.Fonts->AddFontFromFileTTF("src/fontawesome-free-solid-900.otf", 12.0f, &config, icon_ranges);
+	// io.Fonts->AddFontFromFileTTF("src/fontawesome-free-solid-900.otf", 12.0f, &config, icon_ranges);
+	io.Fonts->AddFontFromFileTTF(ResourceManager::default_manager().path_for_resource("fontawesome-free-solid-900.otf").c_str(), 12.0f, &config, icon_ranges);
 
-	tiny_font_  = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f / 3);
-	large_font_ = io.Fonts->AddFontFromFileTTF("src/external/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
-
-	// icon_font_ = io.Fonts->AddFontFromFileTTF( "src/fontawesome-free-solid-900.otf", 13.0f );
+	tiny_font_  = io.Fonts->AddFontFromFileTTF(ResourceManager::default_manager().path_for_resource("ProggyClean.ttf").c_str(), 26.0f / 3);
+	large_font_ = io.Fonts->AddFontFromFileTTF(ResourceManager::default_manager().path_for_resource("ProggyClean.ttf").c_str(), 26.0f);
 }
 
 void UI::replace_label(const std::string& label, adrs_t adrs, Annotations::RegionType type, const std::string &comment)

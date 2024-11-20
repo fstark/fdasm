@@ -52,6 +52,7 @@
             "problemMatcher": [],
             "type": "shell",
             "command": "./fdasm",
+            "args": ["--rom", "../portal/roms/portal.bin", "--fda", "../portal/roms/portal.fda", "--asm", "../portal/roms/portal.asm", "--adrs", "f7e9"], // Arguments to pass to your program
             "options": {
                 "cwd": "${workspaceFolder}"
             },

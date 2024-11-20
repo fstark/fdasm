@@ -32,6 +32,8 @@ private:
 		if (!contains(adrs))
 		{
 			fprintf( stderr, "Rom: address %04X out of bounds\n", adrs );
+			fprintf( stderr, "Rom: bounds %04X - %04X\n", load_adrs(), last_adrs() );
+			
 			throw std::runtime_error("Rom: address out of bounds");
 		}
 	}

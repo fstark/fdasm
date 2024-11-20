@@ -6,12 +6,13 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/fdasm", // Path to your executable
-            "args": [], // Arguments to pass to your program
+            "args": ["--rom", "../portal/roms/portal.bin", "--fda", "../portal/roms/portal.fda", "--asm", "../portal/roms/portal.asm", "--adrs", "f7e9"], // Arguments to pass to your program
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

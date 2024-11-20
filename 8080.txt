@@ -154,10 +154,9 @@
     Flags affected: C
     A = A >> 1; bit 7 = CY; CY = prev bit 0
 
-20: RIM
-    Read interrupt mask
-    Flags affected: None
-    A <- interrupt mask
+20: ???
+    Undocumented
+    Flags affected: Undocumented
 
 21: LXI H,D16
     Load register pair immediate
@@ -233,10 +232,9 @@
     Flags affected: None
     A <- ~A
 
-30: SIM
-    Set interrupt mask
-    Flags affected: None
-    Set mask in A
+30: ???
+    Undocumented
+    Flags affected: Undocumented
 
 31: LXI SP,D16
     Load register pair immediate

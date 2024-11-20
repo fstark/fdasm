@@ -56,8 +56,12 @@ Instruction::Instruction(uint8_t opcode, const std::string& mnemonic, const std:
 	}
 }
 
-CPUInfo::CPUInfo(const std::string filename)
+#include "resmanager.h"
+
+CPUInfo::CPUInfo(const std::string name)
 {
+	auto filename = ResourceManager::default_manager().path_for_resource(name);
+
 	instructions_.resize(256);
 
 	// Read the file and populate the instruction set

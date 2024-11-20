@@ -332,6 +332,15 @@ uint8_t Disassembler::read_byte()
 
 uint16_t Disassembler::read_word()
 {
+	if (current_==rom_.last_adrs())
+	{
+		current_ ++;
+		return 0xffff;
+	}
+	if (current_==rom_.last_adrs()+1)
+	{
+		return 0xffff;
+	}
 	uint16_t word = rom_.get_word( current_ );
 	current_ += 2;
 	return word;
