@@ -72,8 +72,7 @@ adrs_t Guesser::matches() const
 
 	fprintf( stdout, "\n" );
 
-#if 0
-	//	Find the index and the value of the top 64 elements of matches
+	//	Find the index and the value of the top matches
 	std::vector<std::tuple<int,int>> top;
 	for (int i=0;i<16;i++)
 	{
@@ -96,7 +95,6 @@ adrs_t Guesser::matches() const
 	{
 		fprintf( stdout, "%04X: %d\n", std::get<0>(t), std::get<1>(t) );
 	}
-#endif
 
 	return max_offset;
 }

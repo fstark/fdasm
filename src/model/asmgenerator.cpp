@@ -3,6 +3,30 @@
 #include "line.h"
 #include "cpuinfo.h"
 
+void AsmGenerator::emit_string( const std::string &str )
+{
+    current_line_ += str;
+}
+
+void AsmGenerator::go_to_column( size_t col )
+{
+    while (current_line_.size()<col)
+        emit_string( " " );
+}
+
+void AsmGenerator::will_visit(const Line& line )
+{
+    current_line_ = "";
+    emit_string( hex( line.start_adrs(), false ) );
+    emit_string( ": " );
+}
+
+void AsmGenerator::did_visit(const Line& )
+{
+    fprintf(file_, "%s\n", current_line_.c_str() );
+}
+
+
 const char *AsmGenerator::hex( int n, bool symbol )
 {
     static char buf[64];
@@ -53,11 +77,9 @@ void AsmGenerator::end_line( const Line &line )
 	const Comment *comment = annotations_->comment_from_adrs( adrs );
     if (!line.is_empty() && comment)
     {
-        fprintf(file_, "\t; %s\n", comment->comment_text().text().c_str() );
-    }
-    else
-    {
-        fprintf(file_, "\n" );
+        go_to_column( 30 );
+        emit_string( "; " );
+        emit_string( comment->comment_text().text() );
     }
 }
 
@@ -74,9 +96,11 @@ void AsmGenerator::generate( const std::vector<Line *> &lines, const Annotations
     //  Generates all labels
     for (auto &label:annotations_->get_labels())
     {
-        fprintf( file_, "%s:   ; %s\n", label.name().c_str(), hex(label.start_adrs()) );
+        emit_string( label.name() );
+        emit_string( ":" );
+        // emit_string( " ; " );
+        // emit_string( hex(label.start_adrs()) );
     }
-
 
     for (auto &line: lines)
     {
@@ -91,17 +115,19 @@ void AsmGenerator::generate( const std::vector<Line *> &lines, const Annotations
 
 void AsmGenerator::visit(const OrgDirectiveLine& line)
 {
-    fprintf(file_, "\tORG %s", hex(line.adrs()) );
-    fprintf( file_, "\n" );
+    emit_string( "\tORG " );
+    emit_string( hex(line.adrs()) );
 }
 
 void AsmGenerator::visit(const DBDirectiveLine& line)
 {
-    fprintf(file_, "\tDB " );
+    emit_string( "\tDB " );
+
     const char *sep = "";
     for (auto b:line.data())
     {
-        fprintf( file_, "%s%s", sep, hex(b,true) );
+        emit_string( sep );
+        emit_string( hex(b,true) );
         sep = ",";
     }
     end_line( line );
@@ -109,11 +135,12 @@ void AsmGenerator::visit(const DBDirectiveLine& line)
 
 void AsmGenerator::visit(const DWDirectiveLine& line)
 {
-    fprintf(file_, "\tDW " );
+    emit_string( "\tDW " );
     const char *sep = "";
     for (auto w:line.data())
     {
-        fprintf( file_, "%s%s", sep, hex(w) );
+        emit_string( sep );
+        emit_string( hex(w,true) );
         sep = ",";
     }
     end_line( line );
@@ -123,7 +150,7 @@ void AsmGenerator::visit(const DSDirectiveLine& line)
 {
     auto data = line.unescaped_data();
 
-    fprintf(file_, "\tDB ");
+    emit_string( "\tDB " );
 
     std::string current = "";
     const char *sep = "";
@@ -137,11 +164,15 @@ void AsmGenerator::visit(const DSDirectiveLine& line)
         {
             if (current != "")
             {
-                fprintf(file_, "%s\"%s\"", sep, current.c_str() );
+                emit_string( sep );
+                emit_string( "\"" );
+                emit_string( current );
+                emit_string( "\"" );
                 sep = ",";
                 current = "";
             }
-            fprintf(file_, "%s%s", sep, hex(c) );
+            emit_string( sep );
+            emit_string( hex(c) );
             sep = ",";
         }
     }
@@ -149,41 +180,49 @@ void AsmGenerator::visit(const DSDirectiveLine& line)
         //  Last string
     if (current != "")
     {
-        fprintf(file_, "%s\"%s\"", sep, current.c_str() );
+        emit_string( sep );
+        emit_string( "\"" );
+        emit_string( current );
+        emit_string( "\"" );
     }
 
-    fprintf(file_, ",0" );
+    emit_string( ",0" );
     end_line( line );
 }
 
 void AsmGenerator::visit(const InstructionLine& line)
 {
     auto inst = line.instruction();
-    fprintf(file_, "\t%s", inst.short_mnemonic().c_str() );
+    emit_string( "\t" );
+    emit_string( inst.short_mnemonic() );
+
     if (inst.has_d8())
     {
-        fprintf(file_, "%s", hex(line.byte()));
+        emit_string( hex(line.byte()) );
     }
     if (inst.has_d16())
     {
-        fprintf(file_, "%s", hex(line.word(),true));
+        emit_string( hex(line.word(),true) );
     }
     if (inst.has_adrs())
     {
-        fprintf(file_, "%s", hex(line.word(),true));
+        emit_string( hex(line.word(),true) );
     }
     end_line( line );
 }
 
 void AsmGenerator::visit(const LabelLine& line)
 {
-    fprintf(file_, "%s:   ; %s", line.label().name().c_str(), hex(line.start_adrs()) );
+    emit_string( line.label().name() );
+    emit_string( ":   ; " );
+    emit_string( hex(line.start_adrs()) );
     end_line( line );
 }
 
 void AsmGenerator::visit(const CommentLine& line)
 {
-    fprintf(file_, "; %s", line.comment().text().c_str() );
+    emit_string( "; " );
+    emit_string( line.comment().text() );
     end_line( line );
 }
 
@@ -192,5 +231,5 @@ void AsmGenerator::visit(const BlankLine& line )
     // A blank line with no content is for formatting purposes
     // when there is content, it is for displaying the bytes in the UI
     if (line.is_empty())
-        fprintf(file_, ";\n" );
+        emit_string( ";" );
 }

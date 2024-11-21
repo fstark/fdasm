@@ -52,7 +52,7 @@ typedef enum
 
 void format_byte( char *buffer, uint8_t byte, eDisplayStyle display_style );
 
-//  A small button with a singlt icon
+//  A small button with a single icon
 bool small_icon_button(const char* label);
 
 //  True if we are hovering on the current line

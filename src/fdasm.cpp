@@ -12,7 +12,7 @@
 void disass( CPUInfo& cpu_info, std::vector<uint8_t> &code, adrs_t adrs  )
 {
 	auto p = std::begin(code);
-	while (p!=std::end(code))
+	while (p<std::end(code))
 	{
 		std::vector<uint8_t> data;
 
@@ -61,10 +61,12 @@ void disass( const char *binary, adrs_t adrs )
 	}
 
 	std::vector<uint8_t> code;
-	while (!file.eof())
+	while (1)
 	{
 		uint8_t byte;
 		file.read((char*)&byte, 1);
+		if (file.eof())
+			break;
 		code.push_back(byte);
 	}
 

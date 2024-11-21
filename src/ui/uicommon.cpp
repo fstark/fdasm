@@ -141,7 +141,7 @@ bool small_icon_button(const char* label)
         //  Restore changes
     g.Style.FramePadding.y = backup_padding_y;
     ImGui::PopStyleColor(4); // Restore previous colors
-g.Style.ItemSpacing.y = 4 ;
+	g.Style.ItemSpacing.y = 4 ;
 
     return pressed;
 }

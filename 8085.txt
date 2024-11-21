@@ -1124,9 +1124,10 @@ E2: JPO adr
     Flags affected: None
     If P = 0, PC <- adr
 
-E3: ???
-    Undocumented
-    Flags affected: Undocumented
+E3: XTHL
+    Exchange stack top with HL
+    Flags affected: None
+    L <-> (SP); H <-> (SP+1)
 
 E4: CPO adr
     Call if parity odd

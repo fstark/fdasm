@@ -178,14 +178,21 @@ void CodeInspectorPanel::did_visit(const Line& line)
 		ui_.draw_comment( line.start_adrs(), comment->comment_text() );
 	}
 	else
+		ImGui::Text("");
+	if (ImGui::IsItemClicked())
 	{
-		//  #### Haaack just for the click. This is bad.
-		ImGui::Text("                 ");
+		ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
 	}
-	// if (ImGui::IsItemClicked())
-	// {
-	// 	ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
-	// }
+
+	std::string button_id = ICON_FA_LIST"##" + std::to_string(line.start_adrs());
+	if (is_hovering_line_)
+	{
+		ImGui::SameLine(360,0);
+		if (small_icon_button(button_id.c_str()))
+		{
+		 	ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
+		}
+	}
 }
 
 void CodeInspectorPanel::visit(const OrgDirectiveLine& line)

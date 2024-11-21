@@ -18,6 +18,10 @@ public:
 
     protected:
 
+        std::string current_line_;
+        void emit_string( const std::string &str );
+        void go_to_column( size_t col );
+
         const char *hex( int n, bool symbol = false );
 
         void visit(const OrgDirectiveLine& line);
@@ -28,6 +32,9 @@ public:
         void visit(const LabelLine& line);
         void visit(const CommentLine& line);
         void visit(const BlankLine& line);
+
+        void will_visit(const Line& line);
+        void did_visit(const Line& line);
 
         void end_line( const Line &line );
 
