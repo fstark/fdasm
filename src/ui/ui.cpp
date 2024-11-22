@@ -386,7 +386,7 @@ void UI::draw_comment( const CommentText &comment, bool semicolon )
 
 void UI::draw_comment( adrs_t from_adrs, const CommentText &comment, bool semicolon )
 {
-	// ImGui::TextColored(ui_.preferences().get_color(Preferences::kCommentColor), ";; %s", comment->text().c_str());
+	// ImGui::BeginGroup();
 
 	const std::vector<std::string> &chunks = comment.chunks();
 
@@ -432,6 +432,8 @@ void UI::draw_comment( adrs_t from_adrs, const CommentText &comment, bool semico
 		even = !even;
 		chunk_id++;
 	}
+
+	// ImGui::EndGroup();
 }
 
 #include "modal.h"
@@ -447,6 +449,8 @@ void UI::show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const voi
 
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) // Check for left-click
 	{
+printf( "CONTEXT!\n");
+
 	    ImGui::OpenPopup(buffer); // Open the popup
 	}
 
