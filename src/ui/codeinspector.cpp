@@ -79,7 +79,7 @@ void CodeInspectorPanel::draw_line_adrs( const Line &line )
 		}
 	}
 */
-		ui_.show_context_menu(4, line.start_adrs(), line.start_adrs());
+	ui_.show_context_menu(4, line.start_adrs(), line.start_adrs());
 }
 
 void CodeInspectorPanel::draw_line_bytes( const Line &line )
@@ -175,16 +175,18 @@ void CodeInspectorPanel::did_visit(const Line& line)
 	const Comment *comment = ui_.explorer().annotations().comment_from_adrs(line.start_adrs());
 	if (comment)
 	{
+		ui_.set_click_handled( false );
 		ui_.draw_comment( line.start_adrs(), comment->comment_text() );
 	}
 	else
 		ImGui::Text("");
-	if (ImGui::IsItemClicked())
+
+	if (!ui_.click_handled() && ImGui::IsItemClicked())
 	{
 		ui_.add_panel(std::make_unique<CommentEditModal>(ui_, line.start_adrs()));
 	}
 
-	std::string button_id = ICON_FA_LIST"##" + std::to_string(line.start_adrs());
+	std::string button_id = ICON_FA_COMMENT"##" + std::to_string(line.start_adrs());
 	if (is_hovering_line_)
 	{
 		ImGui::SameLine(360,0);
@@ -496,6 +498,27 @@ void CodeInspectorPanel::do_draw_data()
 		ImGui::Combo("##AdrsCol2", &item_current, items, IM_ARRAYSIZE(items));
 		// Stores new display style
 		bytes_display_style_ = (eDisplayStyle)map[item_current];
+	}
+	{
+		//	Dawr a menu with the list of labels
+		ImGui::SameLine();
+		if (ImGui::Button("Labels"))
+		{
+			ImGui::OpenPopup("Labels");
+		}
+		if (ImGui::BeginPopup("Labels"))
+		{
+			for (const auto& label : ui_.explorer().annotations().labels_by_name())
+			{
+				if (ImGui::Selectable(label.name().c_str()))
+				{
+					ui_.inspect_adrs(label.adrs(), false);
+					ui_.update_data_panel(label.adrs());
+					ui_.update_code_panel(label.adrs());
+				}
+			}
+			ImGui::EndPopup();
+		}
 	}
 	ImGui::PopItemWidth();
 

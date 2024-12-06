@@ -4,6 +4,20 @@
 #include "codeinspector.h"
 #include "modal.h"
 
+IOInspectorPanel::IOInspectorPanel(UI& ui, uint8_t data)
+    : InspectorPanel(ui, data)
+{
+    title_ = "I/O";
+    data_changed();
+}
+
+std::unique_ptr<InspectorPanel<uint8_t>> IOInspectorPanel::duplicate() const
+{
+    auto res = std::make_unique<IOInspectorPanel>(ui_,data());
+    *res = *this;
+    return res;
+}
+
 void IOInspectorPanel::data_changed()
 {
     // const IOPort &port = ui_.explorer().annotations().io_list().get_port(data());
@@ -39,10 +53,14 @@ void IOInspectorPanel::do_draw_data()
     if (!port.comments().empty())
     {
         ImGui::Separator();
-        for (auto &comment:port.comments())
-            ui_.draw_comment(comment,false);
+        ui_.draw_comments(port.comments(),false);
+        if (!ui_.click_handled() && ImGui::IsItemClicked())
+        {
+           ui_.add_panel(std::make_unique<IOEditModal>(ui_, data()));
+        }
     }
 
+    bool found = false;
     for (auto &x:ui_.explorer().xrefs().get_io_refs())
     {
         if (x.port==data())
@@ -61,6 +79,14 @@ void IOInspectorPanel::do_draw_data()
             adrs = ui_.lines()[index]->start_adrs();
 
             inspector->code_preview( adrs, 2 );
+
+            found = true;
         }
+    }
+
+    if (!found)
+    {
+        ImGui::Text("\n\n\nPort %02XH is not directly referenced in the code", port.value());
+        return ;
     }
 }

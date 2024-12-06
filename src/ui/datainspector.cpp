@@ -6,7 +6,7 @@
 DataInspectorPanel::DataInspectorPanel(UI& ui)
     : InspectorPanel(ui,0)
 {
-	title_     = "Data";
+	title_     = ICON_FA_CHART_SIMPLE" Data";
 	has_resize = true;
 }
 

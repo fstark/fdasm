@@ -22,13 +22,3 @@ void IOPort::set_comment( const std::string &comment )
     }
 }
 
-IOPort &IOList::get_port( uint8_t port ) const
-{
-    auto p = ports_[port];
-    if (!p)
-    {
-        p = new IOPort(port);
-        ports_[port] = p;
-    }
-    return *p;
-}

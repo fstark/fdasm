@@ -88,8 +88,6 @@ int Annotations::read_annotations(const std::string& filename)
 
 		if (sscanf(line, "COMMENT LINE %04XH \"%[^\"]\"", &adrs, comment )==2)
 		{
-			std::clog << "COMMENT LINE " << std::hex << adrs << " " << comment << std::endl;
-
 			all_comments_.emplace_back( adrs, unescape(comment), true );
 			continue;
 		}
@@ -166,6 +164,11 @@ void Annotations::labels_changed()
 	// Sorts the labels by address
 	std::sort(all_labels_.begin(), all_labels_.end(), [](const Label& a, const Label& b)
 	    { return a.start_adrs() < b.start_adrs(); });
+	    // { return a.name() < b.name(); });
+
+	alpha_labels_ = all_labels_;
+	std::sort(alpha_labels_.begin(), alpha_labels_.end(), [](const Label& a, const Label& b)
+	    { return a.name() < b.name(); });
 
 	labels_map_.clear();
 	for (const auto& label : all_labels_)

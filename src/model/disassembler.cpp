@@ -439,7 +439,7 @@ Disassembly Disassembler::disassemble()
 
 	lines_.push_back(line);
 
-	for (const auto& l : annotations_.get_labels())
+	for (const auto& l : annotations_.labels())
 	{
 		disassemble_label(l);
 	}

@@ -383,10 +383,19 @@ void UI::draw_comment( const CommentText &comment, bool semicolon )
 	draw_comment( INVALID_ADRS, comment, semicolon );
 }
 
+void UI::draw_comments( const std::vector<const CommentText> &comments, bool semicolon )
+{
+	ImGui::BeginGroup();
+	for (auto &comment:comments)
+	{
+		draw_comment(comment,semicolon);
+	}
+	ImGui::EndGroup();
+}
 
 void UI::draw_comment( adrs_t from_adrs, const CommentText &comment, bool semicolon )
 {
-	// ImGui::BeginGroup();
+	ImGui::BeginGroup();
 
 	const std::vector<std::string> &chunks = comment.chunks();
 
@@ -403,7 +412,7 @@ void UI::draw_comment( adrs_t from_adrs, const CommentText &comment, bool semico
 		{
 			ImGui::SameLine(0,0);
 			ImGui::TextColored(preferences().get_color(Preferences::kCommentColor), "%s", chunk.c_str());
-			show_context_menu( 200+chunk_id, from_adrs, from_adrs, (void *)&comment );
+			// show_context_menu( 200+chunk_id, from_adrs, from_adrs, (void *)&comment );
 		}
 		else
 		{
@@ -433,13 +442,17 @@ void UI::draw_comment( adrs_t from_adrs, const CommentText &comment, bool semico
 		chunk_id++;
 	}
 
-	// ImGui::EndGroup();
+	ImGui::EndGroup();
 }
 
 #include "modal.h"
 
 void UI::show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const void *id )
 {
+		//	If someone already handled a click, let's give up
+	if (click_handled())
+		return ;
+
 		// Add right-click context menu
 	char buffer[256];
 	if (!id)
@@ -449,53 +462,58 @@ void UI::show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const voi
 
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) // Check for left-click
 	{
-printf( "CONTEXT!\n");
-
+		set_click_handled( true );	//	No-one else should try to handle clicks
 	    ImGui::OpenPopup(buffer); // Open the popup
 	}
 
 	if (to_adrs!=INVALID_ADRS && ImGui::BeginPopup(buffer))
 	{
-		if (from_adrs!=to_adrs && ImGui::MenuItem("Go to"))
+		char go_to_buffer[1024];
+		snprintf( go_to_buffer, 1024, ICON_FA_ARROW_RIGHT" Go to %04XH", to_adrs );
+		if (from_adrs!=to_adrs && ImGui::MenuItem( go_to_buffer ))
 		{
 			update_code_panel(to_adrs);	//	We move within the code
 		}
 
-		if (ImGui::MenuItem("Show in address inspector"))
+		char show_adrs_buffer[1024];
+		snprintf( show_adrs_buffer, 1024, ICON_FA_LIST" Show %04XH in address inspector", to_adrs );
+		if (ImGui::MenuItem(show_adrs_buffer))
 		{
 			update_adrs_panel(to_adrs);
 		}
 
-		if (ImGui::MenuItem("Show in data inspector"))
+		char show_data_buffer[1024];
+		snprintf( show_data_buffer, 1024, ICON_FA_MAGNIFYING_GLASS_CHART" Show %04XH in data inspector", to_adrs );
+		if (ImGui::MenuItem(show_data_buffer))
 		{
 			update_data_panel(to_adrs);
 		}
 
-		if (ImGui::MenuItem("Open code in new Window"))
+		char open_code_buffer[1024];
+		snprintf( open_code_buffer, 1024, ICON_FA_WINDOW_MAXIMIZE" Open code at %04XH in new Window", to_adrs );
+		if (ImGui::MenuItem(open_code_buffer))
 		{
 			new_disassembly_panel( to_adrs );
 		}
 
 		Label *l = explorer().annotations().label_from_adrs(to_adrs);
-		if (l)
+		char create_label_buffer[1024];
+		snprintf( create_label_buffer, 1024, ICON_FA_TAG" Edit label for %04XH...", to_adrs );
+		if (ImGui::MenuItem(create_label_buffer))
 		{
-			if (ImGui::MenuItem("Label..."))
-			{
+			if (l)
 				add_panel(std::make_unique<LabelEditModal>(*this, to_adrs, l->name(),true));
-			}
-		}
-		else
-		{
-			if (ImGui::MenuItem("Label..."))
-			{
+			else
 				add_panel(std::make_unique<LabelEditModal>(*this, to_adrs, "",true));
-			}
 		}
 
-		if (from_adrs!=INVALID_ADRS && ImGui::MenuItem("Edit line comment..."))
-				add_panel(std::make_unique<CommentEditModal>(*this, from_adrs));
+		char edit_comment_buffer[1024];
+		// snprintf( edit_comment_buffer, 1024, ICON_FA_COMMENT" Edit this comment (%04XH)...", from_adrs );
+		// if (from_adrs!=INVALID_ADRS && ImGui::MenuItem(edit_comment_buffer))
+		// 		add_panel(std::make_unique<CommentEditModal>(*this, from_adrs));
 
-		if (from_adrs!=to_adrs && ImGui::MenuItem("Edit target comment..."))
+		snprintf( edit_comment_buffer, 1024, ICON_FA_COMMENT" Edit target comment (%04XH)...", to_adrs );
+		if (from_adrs!=to_adrs && ImGui::MenuItem(edit_comment_buffer))
 				add_panel(std::make_unique<CommentEditModal>(*this, to_adrs));
 
 		ImGui::EndPopup();

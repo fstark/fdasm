@@ -11,7 +11,7 @@ const int COMMENT_START_COLUMN = 26;
 AdrsInspectorPanel::AdrsInspectorPanel(UI& ui, adrs_t d)
     : InspectorPanel(ui, d)
 {
-	title_ = "Address";
+	title_ = ICON_FA_LIST" Address";
 }
 
 void AdrsInspectorPanel::data_changed()

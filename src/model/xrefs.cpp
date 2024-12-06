@@ -55,7 +55,7 @@ XRefs::XRefs(const Rom& rom, const CPUInfo& cpu_info, const Annotations &annotat
     //  Builds io_stats_
     for (int i = 0; i < 256; i++)
     {
-        if (io_stats[i].reads || io_stats[i].writes)
+        // if (io_stats[i].reads || io_stats[i].writes)
             io_stats_.push_back(io_stats[i]);
     }
 }

@@ -13,7 +13,7 @@
 LabelsPanel::LabelsPanel(UI& ui)
     : Panel(ui)
 {
-    title_ = "Labels";
+    title_ = ICON_FA_TAG" Labels";
 	has_resize = true;
 }
 
@@ -49,7 +49,7 @@ void LabelsPanel::draw_filter()
         for (std::string s; iss >> s; )
             filters.push_back(s);
 
-        for (auto& label : ui_.explorer().annotations().get_labels())
+        for (auto& label : ui_.explorer().annotations().labels())
         {
             // case insensitive search
             std::string name = label.name();
@@ -69,7 +69,7 @@ void LabelsPanel::draw_filter()
     }
     else
     {
-        for (auto& label : ui_.explorer().annotations().get_labels())
+        for (auto& label : ui_.explorer().annotations().labels())
            labels_.push_back(&label);
     }
 }

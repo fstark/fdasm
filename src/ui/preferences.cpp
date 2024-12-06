@@ -28,7 +28,7 @@ ImVec4 initial_colors[Preferences::kCount] = {
 Preferences::Preferences( UI& ui )
     : Panel( ui )
 {
-    title_ = "Preferences";
+    title_ = ICON_FA_GEAR" Preferences";
     memcpy( colors_, initial_colors, sizeof( initial_colors ) );
     load();
 }
@@ -58,7 +58,6 @@ const char *adrs_color_names[Preferences::kCount] = {
     "Selected line in disassembly",
     "I/O port"
 };
-
 
 void Preferences::load()
 {

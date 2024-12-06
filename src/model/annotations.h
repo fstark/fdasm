@@ -52,7 +52,8 @@ public:
 	Label* label_from_adrs(adrs_t adrs);
 	const Label* label_before_adrs(adrs_t adrs, int limit) const;
 	Label* label_before_adrs(adrs_t adrs, int limit);
-	const std::vector<Label>& get_labels() const { return all_labels_; }
+	const std::vector<Label>& labels() const { return all_labels_; } // Sorted by adrs
+	const std::vector<Label>& labels_by_name() const { return alpha_labels_; } // Sorted by name
 	Label* label_from_name(const std::string& name); // unsure if good idea. maybe never let Labels leak and treat only names
 
 	//  Adds a label
@@ -84,6 +85,7 @@ public:
 private:
 		//	The list of labels
 	std::vector<Label> all_labels_;
+	std::vector<Label> alpha_labels_;
 
 		//	The adrs <=> label map (could also be a simpler vector, would help for the label_before_adrs)
 	std::unordered_map<adrs_t, Label> labels_map_;

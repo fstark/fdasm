@@ -111,7 +111,7 @@ This view allows you to choose the colors for the syntax highlighting and other 
 
 
 
- 
+
 # BUGS
 
 
@@ -129,6 +129,8 @@ This view allows you to choose the colors for the syntax highlighting and other 
 
 # TODO
 
+- [UI] Add icons to menu items
+- [UI] Handle double-click
 - [Data] Adrs selection when clicking on word view content [DONE]
 - Selected line in Data view [DONE]
 - Edit label from Adrs view header [DONE]

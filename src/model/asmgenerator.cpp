@@ -94,7 +94,7 @@ void AsmGenerator::generate( const std::vector<Line *> &lines, const Annotations
         throw std::runtime_error("Failed to open file: " + filename_);
 
     //  Generates all labels
-    for (auto &label:annotations_->get_labels())
+    for (auto &label:annotations_->labels())
     {
         emit_string( label.name() );
         emit_string( ":" );

@@ -8,20 +8,10 @@
 class IOInspectorPanel : public InspectorPanel<uint8_t>
 {
 public:
-	IOInspectorPanel(UI& ui, uint8_t data)
-	    : InspectorPanel(ui, data)
-	{
-		title_ = "I/O";
-		data_changed();
-	}
+	IOInspectorPanel(UI& ui, uint8_t data);
 
 protected:
-    std::unique_ptr<InspectorPanel<uint8_t>> duplicate() const override
-	{
-		auto res = std::make_unique<IOInspectorPanel>(ui_,data());
-		*res = *this;
-		return res;
-	}
+    std::unique_ptr<InspectorPanel<uint8_t>> duplicate() const override;
 
 	void data_changed() override;
 	void do_draw_data() override;

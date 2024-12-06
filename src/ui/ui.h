@@ -143,6 +143,9 @@ public:
 	//	Draw a comment for code at a specific address
 	void draw_comment( adrs_t from_adrs, const CommentText &comment, bool semicolon = true );
 
+	// Draw a list of comments
+	void draw_comments( const std::vector<const CommentText> &comments, bool semicolon = true );
+
 	//	Draw an (address-based) context menu
 	void show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const void *id=nullptr );
 
@@ -176,6 +179,17 @@ public:
 	//	Returns the appropriate color for the given address
 	//	Color is choosen according to label presence, rom or data
 	ImVec4 address_color(adrs_t adrs) const;
+
+	//	This is set to true if a click was handled dureing the current event loop
+	//	This helps avoiding different levels of fighting for different interactions
+	//	Canonical example is the navigation contextmenu in comments:
+	//	when it is displayed, it should not be replaced by the later
+	//	comment-level interaction of editing the comment
+	//	The concept is a "first-serve" basis, ie; the first one that sets this flag will win
+	//	This is co-operative => you need to be careful about checking if a click
+	//	has already been handled in crucial places
+	void set_click_handled( bool flag ) { click_handled_ = flag; }
+	bool click_handled() const { return click_handled_; }
 
 protected:
 	Explorer& explorer_;
@@ -214,4 +228,6 @@ protected:
 
 	//  If not empty, we remove this label after the next draw
 	std::string remove_label_;
+
+	bool click_handled_ = false;
 };
