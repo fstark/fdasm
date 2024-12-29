@@ -76,7 +76,15 @@ void disass( const char *binary, adrs_t adrs )
 
 void usage( const char *exec )
 {
-	std::cerr << "Usage: " << exec << " <rom file> <fdafile> <asmfile> adrs" << std::endl;
+	std::cerr << "Usage: " << std::endl;
+	std::cerr << "  " << exec << " --rom <rom file> --fda <fdafile> --asm <asmfile> [--adrs adrs]" << std::endl;
+	std::cerr << "      start a UI disassembly session for the rom file, storing projecy in the fda file." << std::endl;
+	std::cerr << "      an asm file is generated." << std::endl;
+	std::cerr << "      a load address can be optinally specified." << std::endl;
+	std::cerr << "  " << exec << " --disass <rom file>" << std::endl;
+	std::cerr << "      trivial disassembly, no labels, on output." << std::endl;
+	std::cerr << "  " << exec << " --guess <rom file>" << std::endl;
+	std::cerr << "      tries to guess the load address based on the jumps targets." << std::endl;
 	exit( EXIT_FAILURE );
 }
 
@@ -147,8 +155,6 @@ int main(int argc, char* argv[])
 
 //0xF7E9
 
-	Explorer explorer("8085.txt", rom_file, adrs, fda_file, asm_file);
-
 	// Explorer explorer(
 	// 		"8085.txt",
 	// 		"/home/fred/Development/portal/disks/files/p_0006-0001_track00_0_hxcstream_afi/CP.O",
@@ -161,8 +167,16 @@ int main(int argc, char* argv[])
 	// Annotations rom_contents( fda_file );
 	// Disassembler *disassembler = load_rom( rom_file, rom_contents );
 
-	UI ui(explorer);
-	ui.run();
-
+	try
+	{
+		Explorer explorer("8085.txt", rom_file, adrs, fda_file, asm_file);
+		UI ui(explorer);
+		ui.run();
+	}
+	catch( std::exception &e )
+	{
+		std::cerr << "A fatal error occured: " << e.what() << std::endl;
+		usage( exec );
+	}
 	return 0;
 }
