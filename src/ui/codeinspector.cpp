@@ -510,6 +510,9 @@ void CodeInspectorPanel::do_draw_data()
 		{
 			for (const auto& label : ui_.explorer().annotations().labels_by_name())
 			{
+	    		if (!ui_.explorer().rom().contains(label.start_adrs()))
+					continue;
+
 				if (ImGui::Selectable(label.name().c_str()))
 				{
 					ui_.inspect_adrs(label.adrs(), false);

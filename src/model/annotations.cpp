@@ -28,9 +28,25 @@ Annotations::Annotations(Rom& rom, const std::string& filename)
 int Annotations::read_annotations(const std::string& filename)
 {
 	FILE* file = fopen(filename.c_str(), "r");
+
+	//	We failed to open, let's try to create an empty file
 	if (file == NULL)
 	{
-		fprintf( stderr, "Failed to open file: %s\n", filename.c_str());
+		// Create the file if it does not exist
+		file = fopen(filename.c_str(), "w");
+		if (file == NULL)
+		{
+			fprintf(stderr, "Failed to create file: %s\n", filename.c_str());
+			return -1;
+		}
+		fclose(file);
+		// Reopen the file in read mode
+		file = fopen(filename.c_str(), "r");
+	}
+
+	if (file == NULL)
+	{
+		fprintf(stderr, "Failed to open file: %s\n", filename.c_str());
 		return -1;
 	}
 

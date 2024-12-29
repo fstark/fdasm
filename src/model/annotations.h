@@ -53,7 +53,7 @@ public:
 	const Label* label_before_adrs(adrs_t adrs, int limit) const;
 	Label* label_before_adrs(adrs_t adrs, int limit);
 	const std::vector<Label>& labels() const { return all_labels_; } // Sorted by adrs
-	const std::vector<Label>& labels_by_name() const { return alpha_labels_; } // Sorted by name
+	const std::vector<Label>& labels_by_name() const { return alpha_labels_; } // Sorted by name, only ROMs labels
 	Label* label_from_name(const std::string& name); // unsure if good idea. maybe never let Labels leak and treat only names
 
 	//  Adds a label

@@ -17,7 +17,7 @@ public:
 	const std::string &name() const { return name_; }
 	const std::string &full_comments() const { return full_comments_; }
 
-	const std::vector<const CommentText> &comments() const { return comments_; }
+	const std::vector<CommentText> &comments() const { return comments_; }
 
 	void set_name( const std::string &name ) { name_ = name; }
 	void set_comment( const std::string &comment );
@@ -26,7 +26,7 @@ protected:
     uint8_t value_;
     std::string name_;
 	std::string full_comments_;
-    std::vector<const CommentText> comments_;
+    std::vector<CommentText> comments_;
 };
 
 //	I/O port lists

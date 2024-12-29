@@ -4,6 +4,7 @@
 #include "ui.h"
 
 #include "modal.h"
+#include <algorithm>
 
 IOsPanel::IOsPanel(UI& ui)
     : Panel(ui)

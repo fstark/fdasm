@@ -383,7 +383,7 @@ void UI::draw_comment( const CommentText &comment, bool semicolon )
 	draw_comment( INVALID_ADRS, comment, semicolon );
 }
 
-void UI::draw_comments( const std::vector<const CommentText> &comments, bool semicolon )
+void UI::draw_comments( const std::vector<CommentText> &comments, bool semicolon )
 {
 	ImGui::BeginGroup();
 	for (auto &comment:comments)

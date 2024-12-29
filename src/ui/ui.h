@@ -144,7 +144,7 @@ public:
 	void draw_comment( adrs_t from_adrs, const CommentText &comment, bool semicolon = true );
 
 	// Draw a list of comments
-	void draw_comments( const std::vector<const CommentText> &comments, bool semicolon = true );
+	void draw_comments( const std::vector<CommentText> &comments, bool semicolon = true );
 
 	//	Draw an (address-based) context menu
 	void show_context_menu( int tag, adrs_t from_adrs, adrs_t to_adrs, const void *id=nullptr );
