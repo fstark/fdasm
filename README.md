@@ -5,6 +5,12 @@ Fred's disassembler
 
 use ``git clone --recurse-submodules <repository_url>`` to checkout the imgui dependency
 
+# Usage
+
+fdasm --rom SOMETHING.bin --fda SOMETHING.fda --asm SOMETHING.asm
+
+This will start a UI for disassembling SOMETHING.BIN. The disassembly data ("the project?") will be stored in the ``fda`` file. SOMETHING.ASM will contains a text assembly version (much less complete than the one in the UI for now). 
+
 # Overview
 
 This is a powerful graphical user interface to reverse-engineer a 8085 ROM.
